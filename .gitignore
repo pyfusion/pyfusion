@@ -1,0 +1,4 @@
+# ignore emacs backups
+*~
+*.pyc
+*.so

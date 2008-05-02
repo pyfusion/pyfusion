@@ -19,7 +19,7 @@ import pyfusion
 
 def get_shot(shot_number):    
     try:
-        existing_shot = pyfusion.pyfsession.query(Shot).filter(Shot.device_id == pyfusion._device.id).filter(Shot.shot == shot_number).one()
+        existing_shot = pyfusion.session.query(Shot).filter(Shot.device_id == pyfusion._device.id).filter(Shot.shot == shot_number).one()
         return existing_shot
     except:
         print "Creating shot %s:%d" %(pyfusion._device.name, shot_number)    
@@ -44,19 +44,19 @@ class Shot(pyfusion.Base):
         self.shot = sn
         self.device_id = pyfusion._device.id
         self.metadata.create_all()
-        pyfusion.pyfsession.save_or_update(self)
-        pyfusion.pyfsession.commit()
+        pyfusion.session.save_or_update(self)
+        pyfusion.session.commit()
 
 
     def load_diag(self, diagnostic, ignore_channels=[]):
         print "Only MultiChannel Timeseries data works for now"
-        diag = pyfusion.pyfsession.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name==diagnostic)[0]
+        diag = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name==diagnostic)[0]
         channel_list = []
         for ch in diag.ordered_channel_list:
             if ch not in ignore_channels:
                 channel_list.append(ch)
         for chi, chn in enumerate(channel_list):
-            ch = pyfusion.pyfsession.query(pyfusion.Channel).filter(pyfusion.Channel.name==chn)[0]
+            ch = pyfusion.session.query(pyfusion.Channel).filter(pyfusion.Channel.name==chn)[0]
             _ProcessData = __import__('pyfusion.data_acq.%s.%s' %(ch.data_acq_type,ch.data_acq_type), globals(), locals(), ['ProcessData'], -1).ProcessData()
             if chi==0:
                 channel_MCT = _ProcessData.load_channel(ch, self.shot)
@@ -246,7 +246,7 @@ class MultiChannelSVD(pyfusion.Base):
                 tmp1 = SingularValue(svd_id = self.id, number=svi, value=sv, chrono=chronos[svi].tolist(), topo=topos[svi].tolist())
             else:
                 tmp1 = SingularValue(svd_id = self.id, number=svi, value=sv, chrono=None, topo=topos[svi].tolist())
-            pyfusion.pyfsession.save(tmp1)
+            pyfusion.session.save(tmp1)
             self.svs.append(tmp1)
         ### (I read somewhere that x*x is faster than x**2)
         sv_sq = svs*svs
@@ -276,16 +276,16 @@ class SingularValue(pyfusion.Base):
 def get_time_segments(shot, primary_diag, n_samples = settings.N_SAMPLES_TIME_SEGMENT):
     shot.define_time_segments(primary_diag, n_samples = n_samples)
     output_list = []
-    diag_inst = pyfusion.pyfsession.query(pyfusion.Diagnostic).filter_by(name = primary_diag).one()
+    diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter_by(name = primary_diag).one()
     for seg_i, seg_min in enumerate(shot.time_segments):
         try:
-            seg = pyfusion.pyfsession.query(TimeSegment).filter_by(shot = shot, primary_diagnostic=diag_inst, parent_min_sample=seg_min[0], n_samples=n_samples).one()
+            seg = pyfusion.session.query(TimeSegment).filter_by(shot = shot, primary_diagnostic=diag_inst, parent_min_sample=seg_min[0], n_samples=n_samples).one()
         except:# exceptions.InvalidRequestError:
             print "Creating segment %d" %seg_i
             seg  = TimeSegment(shot=shot, primary_diagnostic_id = diag_inst.id, n_samples = n_samples, parent_min_sample = seg_min[0])
         seg._load_data()
         output_list.append(seg)
-        pyfusion.pyfsession.save_or_update(seg)
-    pyfusion.pyfsession.flush()
+        pyfusion.session.save_or_update(seg)
+    pyfusion.session.flush()
     return output_list
 

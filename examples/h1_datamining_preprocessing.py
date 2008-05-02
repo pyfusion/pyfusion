@@ -24,7 +24,7 @@ generate_flucstrucs(s, diag_name, store_chronos=True)
 
 
 
-#seg = pyfusion.pyfsession.query(pyfusion.TimeSegment).filter_by(shot = s, diag_name=).filter(pyfusion.TimeSegment.primary_diagnostic.name == diag_inst.id).all()#.filter(TimeSegment.parent_min_sample == seg_min[0]).filter(TimeSegment.n_samples == n_samples).one()
+#seg = pyfusion.session.query(pyfusion.TimeSegment).filter_by(shot = s, diag_name=).filter(pyfusion.TimeSegment.primary_diagnostic.name == diag_inst.id).all()#.filter(TimeSegment.parent_min_sample == seg_min[0]).filter(TimeSegment.n_samples == n_samples).one()
 #print seg
 #t = pyfusion.get_time_segments(s, diag_name)
 

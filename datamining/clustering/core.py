@@ -30,7 +30,7 @@ class FluctuationStructure(pyfusion.Base):
     phases = relation("DeltaPhase", backref='flucstruc')
     def get_phases(self, phase_method = 'inversion', do_ends = False):
         # flush so we have self.svd.timebase....
-        pyfusion.pyfsession.flush()
+        pyfusion.session.flush()
         if do_ends:
             raise NotImplementedError            
         if not phase_method in ['inversion', 'topo']:
@@ -43,7 +43,7 @@ class FluctuationStructure(pyfusion.Base):
             sv_topo_arr = transpose(array([i.topo for i in self.svs]))
             fs_signals = dot(sv_topo_arr,dot(sv_val_arr, sv_chrono_arr))
             individual_phases = [get_single_phase(fs_signals[i], array(self.svd.timebase), self.frequency) for i in range(len(fs_signals))]
-            ordered_channels = [pyfusion.pyfsession.query(pyfusion.Channel).filter_by(name=name_i).one() for name_i in self.svd.diagnostic.ordered_channel_list]
+            ordered_channels = [pyfusion.session.query(pyfusion.Channel).filter_by(name=name_i).one() for name_i in self.svd.diagnostic.ordered_channel_list]
             for ci,c in enumerate(ordered_channels[:-1]):
                 tmp = DeltaPhase(flucstruc_id = self.id, channel_1_id = ordered_channels[ci].id, channel_2_id = ordered_channels[ci+1].id, d_phase = individual_phases[ci+1]-individual_phases[ci])
                 self.phases.append(tmp)
@@ -79,26 +79,26 @@ def generate_flucstrucs(shot, diag_name, store_chronos=False, threshold=pyfusion
     import datetime
     segs = pyfusion.get_time_segments(shot, diag_name)
     print "check that we can still calculate flucstrucs if we don't store the cronos"
-    diag_inst = pyfusion.pyfsession.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == diag_name).one()
+    diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == diag_name).one()
     for seg_i, seg in enumerate(segs[::-1]):
         # clear out session (dramatically improves performance)
-        pyfusion.pyfsession.clear()
+        pyfusion.session.clear()
         seg._load_data()
         try:
-            seg_svd = pyfusion.pyfsession.query(pyfusion.MultiChannelSVD).filter_by(timesegment_id=seg.id, diagnostic_id = diag_inst.id).one()
+            seg_svd = pyfusion.session.query(pyfusion.MultiChannelSVD).filter_by(timesegment_id=seg.id, diagnostic_id = diag_inst.id).one()
         except:
             seg_svd = pyfusion.MultiChannelSVD(timesegment_id=seg.id, diagnostic_id = diag_inst.id)
-            pyfusion.pyfsession.save(seg_svd)
-            pyfusion.pyfsession.flush()
+            pyfusion.session.save(seg_svd)
+            pyfusion.session.flush()
             seg_svd._do_svd(store_chronos=store_chronos)
-            pyfusion.pyfsession.flush()
+            pyfusion.session.flush()
         E = seg_svd.energy
         sv_groupings = group_svs(seg_svd, threshold=threshold)
         for sv_group in sv_groupings:
             energy = sum([sv.value**2 for sv in sv_group])/E
             freq = peak_freq(sv_group[0].chrono, seg_svd.timebase)
             fs = FluctuationStructure(svd_id=seg_svd.id, frequency=freq, energy=energy, gamma_threshold=threshold)
-            pyfusion.pyfsession.save(fs)
+            pyfusion.session.save(fs)
             for sv in sv_group:
                 fs.svs.append(sv)
             fs.get_phases()
@@ -115,7 +115,7 @@ def group_svs(input_SVD, threshold = pyfusion.settings.SV_GROUPING_THRESHOLD):
     #check_inputtype(self,input_SVD,'MultiChannelSVD')
     
     output_fs_list = []
-    sv_query = pyfusion.pyfsession.query(pyfusion.SingularValue).filter_by(svd = input_SVD).order_by(pyfusion.SingularValue.number)
+    sv_query = pyfusion.session.query(pyfusion.SingularValue).filter_by(svd = input_SVD).order_by(pyfusion.SingularValue.number)
     
     remaining_svs = [i for i in sv_query]
     for i,_sv in enumerate(remaining_svs):
@@ -203,7 +203,7 @@ def get_clusters(fs_query, channel_pairs, n_cluster_list = range(2,11)):
     for fs in fs_query:
         tmp_data = []
         for chpair in channel_pairs:
-            tmp = pyfusion.pyfsession.query(DeltaPhase).filter_by(flucstruc_id=fs.id, channel_1_id=chpair[0].id, channel_2_id = chpair[1].id).all()
+            tmp = pyfusion.session.query(DeltaPhase).filter_by(flucstruc_id=fs.id, channel_1_id=chpair[0].id, channel_2_id = chpair[1].id).all()
             if len(tmp) == 1:
                 tmp_data.append(sin(tmp[0].d_phase))
                 tmp_data.append(cos(tmp[0].d_phase))
@@ -211,16 +211,16 @@ def get_clusters(fs_query, channel_pairs, n_cluster_list = range(2,11)):
             data_array.append(tmp_data)
             used_fs.append(fs)
     clusterdataset = ClusterDataSet()
-    pyfusion.pyfsession.save(clusterdataset)
-    pyfusion.pyfsession.flush()
+    pyfusion.session.save(clusterdataset)
+    pyfusion.session.flush()
     
     for n_clusters in n_cluster_list:
         MX = r.Mclust(array(data_array),G=n_clusters, header='FALSE')
         clusterset = ClusterSet(modelname=MX['modelName'], bic=MX['bic'], loglik=MX['loglik'], n_clusters=n_clusters, n_flucstrucs=MX['n'])
-        pyfusion.pyfsession.save(clusterset)
+        pyfusion.session.save(clusterset)
         clusterdataset.clustersets.append(clusterset)
         # to get id...
-        pyfusion.pyfsession.flush()
+        pyfusion.session.flush()
         clusters = [Cluster(clusterset_id=clusterset.id) for i in range(n_clusters)]
         cluster_labels = unique(MX['classification']).tolist()
         if len(cluster_labels) != n_clusters:
@@ -229,5 +229,5 @@ def get_clusters(fs_query, channel_pairs, n_cluster_list = range(2,11)):
             cluster_el = cluster_labels.index(MX['classification'][fsi])
             clusters[cluster_el].flucstrucs.append(fs)
         for cl in clusters:
-            pyfusion.pyfsession.save(cl)
+            pyfusion.session.save(cl)
     

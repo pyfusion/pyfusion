@@ -6,7 +6,7 @@ import pylab as pl
 from pyfusion.datamining.clustering.core import ClusterDataSet
 cluster_dataset = 1
 
-clusterdataset = pyfusion.pyfsession.query(ClusterDataSet).filter_by(id=cluster_dataset).one()
+clusterdataset = pyfusion.session.query(ClusterDataSet).filter_by(id=cluster_dataset).one()
 
 for csi, cs in enumerate(clusterdataset.clustersets[:3]):
     for cli,cl in  enumerate(cs.clusters):

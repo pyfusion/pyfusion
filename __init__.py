@@ -38,7 +38,7 @@ engine = create_engine(SQL_SERVER, echo=False)
 Session = scoped_session(sessionmaker(autoflush=True, transactional=True, bind=engine))
 Base = declarative_base(engine)
 
-pyfsession = Session()
+session = Session()
 
 class Device(Base):
     __tablename__ = "devices"
@@ -73,14 +73,14 @@ Base.metadata.create_all()
 # here we check all instances defined in _device_module and update the database 
 
 def update_device_info(pyf_class):
-    existing = pyfsession.query(pyf_class).all()
+    existing = session.query(pyf_class).all()
     for devmod_object_str in _device_module.__dict__.keys():
         if hasattr(_device_module.__dict__[devmod_object_str], '__class__'):        
             devmod_inst_bases = _device_module.__dict__[devmod_object_str].__class__.__bases__
             if pyf_class in devmod_inst_bases:
                 if _device_module.__dict__[devmod_object_str].name not in [i.name for i in existing]:
-                    pyfsession.save_or_update(_device_module.__dict__[devmod_object_str]) 
-                    pyfsession.flush()
+                    session.save_or_update(_device_module.__dict__[devmod_object_str]) 
+                    session.flush()
 
 # do seperately with Channels first, so they are defined for Diagnostics, though this may not be ness - check
 
@@ -89,9 +89,9 @@ update_device_info(Diagnostic)
 update_device_info(Device)
 
 
-_device = pyfsession.query(Device).filter(Device.name == _device_module.__dict__[DEVICE].name).one()
+_device = session.query(Device).filter(Device.name == _device_module.__dict__[DEVICE].name).one()
 
 
-pyfsession.commit()
+session.commit()
 
 from core import *

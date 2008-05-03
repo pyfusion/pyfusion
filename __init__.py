@@ -67,7 +67,8 @@ class Channel(Base):
     diagnostic = relation(Diagnostic, primaryjoin=diagnostic_id==Diagnostic.id, backref="channels")
 
 
-_device_module = __import__('pyfusion.devices.%s.%s' %(DEVICE,DEVICE), globals(), locals(), [DEVICE], -1)
+#_device_module = __import__('pyfusion.devices.%s.%s' %(DEVICE,DEVICE), globals(), locals(), [DEVICE], -1)
+_device_module = __import__('pyfusion.devices.%s.%s' %(DEVICE,DEVICE), globals(), locals(), [DEVICE])
 Base.metadata.create_all()
 
 # here we check all instances defined in _device_module and update the database 

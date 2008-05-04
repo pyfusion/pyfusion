@@ -82,6 +82,8 @@ def update_device_info(pyf_class):
                 if _device_module.__dict__[devmod_object_str].name not in [i.name for i in existing]:
                     session.save_or_update(_device_module.__dict__[devmod_object_str]) 
                     session.flush()
+    # this commit isn't needed for H1 (python 2.5), but is for heliotron (python 2.4) - why?
+    session.commit()
 
 # do seperately with Channels first, so they are defined for Diagnostics, though this may not be ness - check
 

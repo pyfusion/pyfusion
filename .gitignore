@@ -1,4 +1,6 @@
 # ignore emacs backups
 *~
+# compiled python binaries
 *.pyc
+# other binaries
 *.so

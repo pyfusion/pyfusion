@@ -52,6 +52,8 @@ class Shot(pyfusion.Base):
         print "Only MultiChannel Timeseries data works for now"
         diag = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name==diagnostic)[0]
         channel_list = []
+        print diag
+        print diag.ordered_channel_list
         for ch in diag.ordered_channel_list:
             if ch not in ignore_channels:
                 channel_list.append(ch)

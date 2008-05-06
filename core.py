@@ -7,12 +7,12 @@ numpy
 sqlalchemy version >= 0.4.4 (version 0.4.4 is required for the declarative extension)
 """
 
-from numpy import array,mean,ravel,transpose,arange,var,log, take, shape
+from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones
 from numpy.dual import svd
 from utils import local_import, get_conditional_select, check_same_timebase
 import settings 
 
-from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float#, Numeric
+from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean#, Numeric
 from sqlalchemy.orm import relation
 import pyfusion
 
@@ -236,9 +236,22 @@ class MultiChannelSVD(pyfusion.Base):
     entropy = Column('entropy', Float)
     energy = Column('energy', Float)
     timebase = Column('timebase', PickleType)
-    def _do_svd(self, store_chronos=False):
+    channel_norms = Column('channel_norms', PickleType)
+    normalised = Column('normalised', Boolean)
+    def _do_svd(self, store_chronos=False, normalise = False):
         data = array([self.timesegment.data[self.diagnostic.name].signals[c] for c in self.timesegment.data[self.diagnostic.name].ordered_channel_list])
         self.timebase = self.timesegment.data[self.diagnostic.name].timebase.tolist()
+        if normalise == True:
+            self.normalised = True
+            norm_list = []
+            for ci,c in enumerate(data):
+                normval = c.var()
+                norm_list.append(normval)
+                data[ci] /= norval
+            self.channel_norms = norm_list
+        else:
+            self.normalised = False
+            self.channel_norms = []
         [tmp,svs,chronos] = svd(data,0)
         topos = transpose(tmp)
         print 'done svd for %s' %(str(self.id))

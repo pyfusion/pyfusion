@@ -75,7 +75,7 @@ def get_single_phase(data,timebase,freq):
 	return phase_val
 
 
-def generate_flucstrucs(shot, diag_name, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD):
+def generate_flucstrucs(shot, diag_name, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
     import datetime
     segs = pyfusion.get_time_segments(shot, diag_name)
     print "check that we can still calculate flucstrucs if we don't store the cronos"
@@ -90,7 +90,7 @@ def generate_flucstrucs(shot, diag_name, store_chronos=False, threshold=pyfusion
             seg_svd = pyfusion.MultiChannelSVD(timesegment_id=seg.id, diagnostic_id = diag_inst.id)
             pyfusion.session.save(seg_svd)
             pyfusion.session.flush()
-            seg_svd._do_svd(store_chronos=store_chronos)
+            seg_svd._do_svd(store_chronos=store_chronos, normalise=normalise)
             pyfusion.session.flush()
         E = seg_svd.energy
         sv_groupings = group_svs(seg_svd, threshold=threshold)

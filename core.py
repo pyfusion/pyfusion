@@ -247,7 +247,7 @@ class MultiChannelSVD(pyfusion.Base):
             for ci,c in enumerate(data):
                 normval = c.var()
                 norm_list.append(normval)
-                data[ci] /= norval
+                data[ci] /= normval
             self.channel_norms = norm_list
         else:
             self.normalised = False

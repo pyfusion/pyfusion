@@ -281,7 +281,7 @@ def get_time_segments(shot, primary_diag, n_samples = settings.N_SAMPLES_TIME_SE
     diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter_by(name = primary_diag).one()
     for seg_i, seg_min in enumerate(shot.time_segments):
         try:
-            seg = pyfusion.session.query(TimeSegment).filter_by(shot = shot, primary_diagnostic=diag_inst, parent_min_sample=seg_min[0], n_samples=n_samples).one()
+            seg = pyfusion.session.query(TimeSegment).filter_by(shot = shot, primary_diagnostic_id=diag_inst.id, parent_min_sample=seg_min[0], n_samples=n_samples).one()
         except:# exceptions.InvalidRequestError:
             print "Creating segment %d" %seg_i
             seg  = TimeSegment(shot=shot, primary_diagnostic_id = diag_inst.id, n_samples = n_samples, parent_min_sample = seg_min[0])

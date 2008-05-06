@@ -143,49 +143,48 @@ class MultiChannelTimeseries(object):
             print "Timebase not the same. Not joining multichannel data"
     
         
-    def ica(self,selected_channels = [], exclude_selected=True):
-        """
-        Independent Component Analysis
-        """
-        import mdp
-        use_channels = get_conditional_select(self.signals.keys(), selected_channels, exclude_selected)
+    #def ica(self,selected_channels = [], exclude_selected=True):
+    #    """
+    #    Independent Component Analysis
+    #    """
+    #    import mdp
+    #    use_channels = get_conditional_select(self.signals.keys(), selected_channels, exclude_selected
+    #
+    #    use_channel_data = array([self.signals[i] for i in use_channels])
+    #    ica_out = mdp.fastica(transpose(use_channel_data),failures=10)
+    #
+    #    return ica_out
 
-        use_channel_data = array([self.signals[i] for i in use_channels])
-        ica_out = mdp.fastica(transpose(use_channel_data),failures=10)
-
-        return ica_out
-
-    def normalise(self, norm = 'var', remove_baseline = True, seperate_channels = True):
-        """
-        normalise signals. use undo_normalisation to reverse the process.
-        """
-        if not [norm, remove_baseline, seperate_channels] == ['var', True, True]:
-            print 'Not normalising: arguments not implemented yet: ', norm, remove_baseline, seperate_channels
-        else:
-            self.norm_info['channels'] = self.signals.keys()
-
-            self.norm_info['baseline'] = {}
-            self.norm_info['type'] = norm
-            self.norm_info['norms'] = {}
-            
-            if remove_baseline:
-                for ch_i, ch in enumerate(self.norm_info['channels']):
-                    baseline = mean(self.signals[ch])
-                    self.norm_info['baseline'][ch] = baseline
-                    self.signals[ch] = self.signals[ch]-baseline
-            if norm == 'var':
-                for ch_i, ch in enumerate(self.norm_info['channels']):
-                    var_val = self.signals[ch].var()
-                    self.norm_info['norms'][ch] = var_val
-                    self.signals[ch] = self.signals[ch]/var_val
+    #def normalise(self, norm = 'var', remove_baseline = True, seperate_channels = True):
+    #    """
+    #    normalise signals. use undo_normalisation to reverse the process.
+    #    """
+    #    if not [norm, remove_baseline, seperate_channels] == ['var', True, True]:
+    #        print 'Not normalising: arguments not implemented yet: ', norm, remove_baseline, seperate_channels
+    #    else:
+    #        self.norm_info['channels'] = self.signals.keys()
+    #        self.norm_info['baseline'] = {}
+    #        self.norm_info['type'] = norm
+    #        self.norm_info['norms'] = {}
+    #        
+    #        if remove_baseline:
+    #            for ch_i, ch in enumerate(self.norm_info['channels']):
+    #                baseline = mean(self.signals[ch])
+    #                self.norm_info['baseline'][ch] = baseline
+    #                self.signals[ch] = self.signals[ch]-baseline
+    #        if norm == 'var':
+    #            for ch_i, ch in enumerate(self.norm_info['channels']):
+    #                var_val = self.signals[ch].var()
+    #                self.norm_info['norms'][ch] = var_val
+    #                self.signals[ch] = self.signals[ch]/var_val
                 
                 
 
-    def undo_normalise(self):
-        if self.norm_info == {}:
-            print 'Data not normalised'
-        else:
-            print 'undo_normalise not implemented yet'
+    #def undo_normalise(self):
+    #    if self.norm_info == {}:
+    #        print 'Data not normalised'
+    #    else:
+    #        print 'undo_normalise not implemented yet'
 
 
     def timesegment(self, t0, dt, use_samples=[False, False]):

@@ -67,6 +67,7 @@ class Shot(pyfusion.Base):
                 channel_MCT.add_multichannel(_tmp)
         self.data[diagnostic] = channel_MCT
 
+
     def define_time_segments(self, diag, n_samples = settings.N_SAMPLES_TIME_SEGMENT, include_remainder = False):
         """
         Create a list of time segments defined with width n_samples for primary_diag. 
@@ -142,50 +143,25 @@ class MultiChannelTimeseries(object):
         else:
             print "Timebase not the same. Not joining multichannel data"
     
-        
-    #def ica(self,selected_channels = [], exclude_selected=True):
-    #    """
-    #    Independent Component Analysis
-    #    """
-    #    import mdp
-    #    use_channels = get_conditional_select(self.signals.keys(), selected_channels, exclude_selected
-    #
-    #    use_channel_data = array([self.signals[i] for i in use_channels])
-    #    ica_out = mdp.fastica(transpose(use_channel_data),failures=10)
-    #
-    #    return ica_out
-
-    #def normalise(self, norm = 'var', remove_baseline = True, seperate_channels = True):
-    #    """
-    #    normalise signals. use undo_normalisation to reverse the process.
-    #    """
-    #    if not [norm, remove_baseline, seperate_channels] == ['var', True, True]:
-    #        print 'Not normalising: arguments not implemented yet: ', norm, remove_baseline, seperate_channels
-    #    else:
-    #        self.norm_info['channels'] = self.signals.keys()
-    #        self.norm_info['baseline'] = {}
-    #        self.norm_info['type'] = norm
-    #        self.norm_info['norms'] = {}
-    #        
-    #        if remove_baseline:
-    #            for ch_i, ch in enumerate(self.norm_info['channels']):
-    #                baseline = mean(self.signals[ch])
-    #                self.norm_info['baseline'][ch] = baseline
-    #                self.signals[ch] = self.signals[ch]-baseline
-    #        if norm == 'var':
-    #            for ch_i, ch in enumerate(self.norm_info['channels']):
-    #                var_val = self.signals[ch].var()
-    #                self.norm_info['norms'][ch] = var_val
-    #                self.signals[ch] = self.signals[ch]/var_val
-                
-                
-
-    #def undo_normalise(self):
-    #    if self.norm_info == {}:
-    #        print 'Data not normalised'
-    #    else:
-    #        print 'undo_normalise not implemented yet'
-
+    def export(self, filename, compression = 'bzip2', filetype = 'csv'):
+        if compression != 'bzip2':
+            raise NotImplementedError
+        if filetype != 'csv':
+            raise NotImplementedError
+        import bz2
+        if filename[-4:] != '.bz2':
+            filename = filename + '.bz2'
+        outfile = bz2.BZ2File(filename,'w')
+        header_line = 't'
+        for chname in self.ordered_channel_list:
+            header_line = header_line + ', %s' %chname
+        outfile.write(header_line+'\n')
+        for i in range(len(self.timebase)):
+            line = str(self.timebase[i])
+            for chname in self.ordered_channel_list:
+                line = line + ', '+str(self.signals[chname][i])
+            outfile.write(line+'\n')
+        outfile.close()
 
     def timesegment(self, t0, dt, use_samples=[False, False]):
         """

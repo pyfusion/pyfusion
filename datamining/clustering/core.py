@@ -28,6 +28,12 @@ class FluctuationStructure(pyfusion.Base):
     energy = Column('energy', Float)
     gamma_threshold = Column('gamma_threshold', Numeric)
     phases = relation("DeltaPhase", backref='flucstruc')
+    def get_signals(self):
+        sv_chrono_arr = array([i.chrono for i in self.svs])
+        sv_val_arr = diag(array([i.value for i in self.svs]))
+        sv_topo_arr = transpose(array([i.topo for i in self.svs]))
+        fs_signals = dot(sv_topo_arr,dot(sv_val_arr, sv_chrono_arr))
+        return fs_signals
     def get_phases(self, phase_method = 'inversion', do_ends = False):
         # flush so we have self.svd.timebase....
         pyfusion.session.flush()
@@ -38,10 +44,7 @@ class FluctuationStructure(pyfusion.Base):
         if phase_method == 'topo':
             raise NotImplementedError
         elif phase_method == 'inversion':
-            sv_chrono_arr = array([i.chrono for i in self.svs])
-            sv_val_arr = diag(array([i.value for i in self.svs]))
-            sv_topo_arr = transpose(array([i.topo for i in self.svs]))
-            fs_signals = dot(sv_topo_arr,dot(sv_val_arr, sv_chrono_arr))
+            fs_signals = self.get_signals()
             individual_phases = [get_single_phase(fs_signals[i], array(self.svd.timebase), self.frequency) for i in range(len(fs_signals))]
             ordered_channels = [pyfusion.session.query(pyfusion.Channel).filter_by(name=name_i).one() for name_i in self.svd.diagnostic.ordered_channel_list]
             for ci,c in enumerate(ordered_channels[:-1]):

@@ -19,6 +19,7 @@ class DeltaPhase(pyfusion.Base):
     channel_2_id = Column('channel_2_id', Integer, ForeignKey('channels.id'))
     d_phase = Column('d_phase', Float)
 
+
 class FluctuationStructure(pyfusion.Base):
     __tablename__ = 'dm_fs'
     id = Column('id', Integer, primary_key=True)
@@ -28,6 +29,7 @@ class FluctuationStructure(pyfusion.Base):
     energy = Column('energy', Float)
     gamma_threshold = Column('gamma_threshold', Numeric)
     phases = relation("DeltaPhase", backref='flucstruc')
+    set_id = Column('set_id', Integer, ForeignKey('dm_fs_set.id'))
     def get_signals(self):
         sv_chrono_arr = array([i.chrono for i in self.svs])
         sv_val_arr = diag(array([i.value for i in self.svs]))
@@ -56,6 +58,13 @@ flucstruc_svs = Table('flucstruc_svs', pyfusion.Base.metadata,
                       Column('flucstruc_id', Integer, ForeignKey('dm_fs.id')),
                       Column('sv_id', Integer, ForeignKey('svs.id')))
 
+class FluctuationStructureSet(pyfusion.Base):
+    __tablename__ = 'dm_fs_set'
+    id = Column('id', Integer, primary_key=True)
+    name = Column("name", String(100), unique=True)
+    flucstrucs = relation("FluctuationStructure", backref='set')
+
+
 pyfusion.Base.metadata.create_all()
 FluctuationStructure.svs = relation(pyfusion.SingularValue, secondary=flucstruc_svs)
 
@@ -78,7 +87,14 @@ def get_single_phase(data,timebase,freq):
 	return phase_val
 
 
-def generate_flucstrucs(shot, diag_name, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
+
+
+def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
+    # register the fs_set name
+    fs_set = FluctuationStructureSet(name = fs_set_name)
+    # get id ofr fs_set    
+    pyfusion.session.save(fs_set)
+    pyfusion.session.commit()
     import datetime
     segs = pyfusion.get_time_segments(shot, diag_name)
     print "check that we can still calculate flucstrucs if we don't store the cronos"
@@ -100,7 +116,7 @@ def generate_flucstrucs(shot, diag_name, store_chronos=False, threshold=pyfusion
         for sv_group in sv_groupings:
             energy = sum([sv.value**2 for sv in sv_group])/E
             freq = peak_freq(sv_group[0].chrono, seg_svd.timebase)
-            fs = FluctuationStructure(svd_id=seg_svd.id, frequency=freq, energy=energy, gamma_threshold=threshold)
+            fs = FluctuationStructure(svd_id=seg_svd.id, frequency=freq, energy=energy, gamma_threshold=threshold, set_id = fs_set.id)
             pyfusion.session.save(fs)
             for sv in sv_group:
                 fs.svs.append(sv)

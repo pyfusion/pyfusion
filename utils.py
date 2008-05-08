@@ -45,5 +45,7 @@ def timestamp(fstr = '%y%m%d%H%M'):
     return datetime.now().strftime(fstr)
     
 def check_same_timebase(a,b):
-    return max(abs(a.timebase - b.timebase)) < settings.TIMEBASE_DIFFERENCE_TOLERANCE
+    if len(a.timebase) != len(b.timebase):
+        return False
+    return max(abs(array(a.timebase) - array(b.timebase))) < settings.TIMEBASE_DIFFERENCE_TOLERANCE
 

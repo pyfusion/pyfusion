@@ -213,10 +213,12 @@ class MultiChannelSVD(pyfusion.Base):
     energy = Column('energy', Float)
     timebase = Column('timebase', PickleType)
     channel_norms = Column('channel_norms', PickleType)
+    used_channels = Column('used_channels', PickleType)
     normalised = Column('normalised', Boolean)
     def _do_svd(self, store_chronos=False, normalise = False):
         data = array([self.timesegment.data[self.diagnostic.name].signals[c] for c in self.timesegment.data[self.diagnostic.name].ordered_channel_list])
         self.timebase = self.timesegment.data[self.diagnostic.name].timebase.tolist()
+        self.used_channels = self.timesegment.data[self.diagnostic.name].ordered_channel_list
         if normalise == True:
             self.normalised = True
             norm_list = []

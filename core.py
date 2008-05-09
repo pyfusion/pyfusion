@@ -12,8 +12,9 @@ from numpy.dual import svd
 from utils import local_import, get_conditional_select, check_same_timebase
 import settings 
 
-from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean#, Numeric
-from sqlalchemy.orm import relation
+from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean
+from sqlalchemy.orm import relation, synonym
+#from sqlalchemy.ext.declarative import declared_synonym
 import pyfusion
 
 
@@ -66,7 +67,7 @@ class Shot(pyfusion.Base):
                 _tmp = _ProcessData.load_channel(ch, self.shot)
                 channel_MCT.add_multichannel(_tmp)
         self.data[diagnostic] = channel_MCT
-
+        
 
     def define_time_segments(self, diag, n_samples = settings.N_SAMPLES_TIME_SEGMENT, include_remainder = False):
         """
@@ -198,8 +199,13 @@ class TimeSegment(pyfusion.Base):
     n_samples = Column('s_samples', Integer)
     data = {}
     def _load_data(self):
+        # if there is no data in the shot (ie - reading from previous run) then try loading the primary diagnostic
+        if len(self.shot.data.keys()) == 0:
+            pd = pyfusion.session.query(pyfusion.Diagnostic).filter_by(id = self.primary_diagnostic_id).one()
+            self.shot.load_diag(pd.name)
         for diag in self.shot.data.keys():
             self.data[diag] = self.shot.data[diag].timesegment(self.parent_min_sample, self.n_samples, use_samples=[True, True])
+
 
 class MultiChannelSVD(pyfusion.Base):
     __tablename__ = 'svds'
@@ -215,6 +221,23 @@ class MultiChannelSVD(pyfusion.Base):
     channel_norms = Column('channel_norms', PickleType)
     used_channels = Column('used_channels', PickleType)
     normalised = Column('normalised', Boolean)
+    def _get_chrono(self, chrono_number):
+        data = array([self.timesegment.data[self.diagnostic.name].signals[c] for c in self.timesegment.data[self.diagnostic.name].ordered_channel_list])
+        #self.timebase = self.timesegment.data[self.diagnostic.name].timebase.tolist()
+        #self.used_channels = self.timesegment.data[self.diagnostic.name].ordered_channel_list
+        if self.normalised == True:
+            #norm_list = []
+            for ci,c in enumerate(data):
+                #normval = c.var()
+                #norm_list.append(normval)
+                data[ci] /= self.channel_norms[ci]
+            #self.channel_norms = norm_list
+        #else:
+        #    self.normalised = False
+        #    self.channel_norms = []
+        [tmp,svs,chronos] = svd(data,0)
+        return chronos[chrono_number]
+
     def _do_svd(self, store_chronos=False, normalise = False):
         data = array([self.timesegment.data[self.diagnostic.name].signals[c] for c in self.timesegment.data[self.diagnostic.name].ordered_channel_list])
         self.timebase = self.timesegment.data[self.diagnostic.name].timebase.tolist()
@@ -258,11 +281,33 @@ class SingularValue(pyfusion.Base):
     id = Column('id', Integer, primary_key=True)        
     svd_id = Column('svd_id', Integer, ForeignKey('svds.id'))
     number = Column('number', Integer)
+    store_chrono = Column('store_chrono', Boolean)
     value = Column('value', Float)
-    chrono = Column('chrono', PickleType)
+    _chrono = Column('_chrono', PickleType)
+    # if we don't store the chrono in sql, keep it here for as long as the object instance lasts..
+    _tmp_chrono = []
     topo = Column('topo', PickleType)
-
-
+    def _get_chrono(self):
+        if self.store_chrono:
+            return self._chrono
+        else:
+            try:
+                if len(self._tmp_chrono) > 0:
+                    return self._tmp_chrono
+            except:
+                # need to recalculate chrono
+                parent_svd = pyfusion.session.query(MultiChannelSVD).filter_by(id=self.svd_id).one()
+                self._tmp_chrono = parent_svd._get_chrono(self.number)
+                return self._tmp_chrono
+    def _set_chrono(self, chr):
+        if self.store_chrono:
+            self._chrono = chr
+            self._tmp_chrono = []
+        else:
+            self._chrono = []
+            self._tmp_chrono = chr
+        
+    chrono = synonym('_chrono', descriptor=property(_get_chrono, _set_chrono))
 
 
 def get_time_segments(shot, primary_diag, n_samples = settings.N_SAMPLES_TIME_SEGMENT):

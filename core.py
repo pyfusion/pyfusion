@@ -198,13 +198,16 @@ class TimeSegment(pyfusion.Base):
     parent_min_sample = Column('parent_min_sample', Integer)
     n_samples = Column('s_samples', Integer)
     data = {}
-    def _load_data(self):
+    def _load_data(self, diag = None):
         # if there is no data in the shot (ie - reading from previous run) then try loading the primary diagnostic
         if len(self.shot.data.keys()) == 0:
-            pd = pyfusion.session.query(pyfusion.Diagnostic).filter_by(id = self.primary_diagnostic_id).one()
-            self.shot.load_diag(pd.name)
-        for diag in self.shot.data.keys():
-            self.data[diag] = self.shot.data[diag].timesegment(self.parent_min_sample, self.n_samples, use_samples=[True, True])
+            if diag:
+                self.shot.load_diag(diag)
+            else:
+                pd = pyfusion.session.query(pyfusion.Diagnostic).filter_by(id = self.primary_diagnostic_id).one()
+                self.shot.load_diag(pd.name)
+        for diag_i in self.shot.data.keys():
+            self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, self.n_samples, use_samples=[True, True])
 
 
 class MultiChannelSVD(pyfusion.Base):
@@ -222,7 +225,16 @@ class MultiChannelSVD(pyfusion.Base):
     used_channels = Column('used_channels', PickleType)
     normalised = Column('normalised', Boolean)
     def _get_chrono(self, chrono_number):
+        #print '---'
+        #print self.timesegment.data.keys()
+        #data = array([self.timesegment.data[self.diagnostic.name].signals[c] for c in self.timesegment.data[self.diagnostic.name].ordered_channel_list])
+        #data = []
+        if not self.diagnostic.name in self.timesegment.data.keys():
+            self.timesegment._load_data(diag=self.diagnostic.name)
         data = array([self.timesegment.data[self.diagnostic.name].signals[c] for c in self.timesegment.data[self.diagnostic.name].ordered_channel_list])
+        #for c in self.timesegment.data[self.diagnostic.name].ordered_channel_list:
+        #    if not c in self.timesegment.data.keys():
+                
         #self.timebase = self.timesegment.data[self.diagnostic.name].timebase.tolist()
         #self.used_channels = self.timesegment.data[self.diagnostic.name].ordered_channel_list
         if self.normalised == True:
@@ -287,6 +299,11 @@ class SingularValue(pyfusion.Base):
     # if we don't store the chrono in sql, keep it here for as long as the object instance lasts..
     _tmp_chrono = []
     topo = Column('topo', PickleType)
+    def _reload_chrono(self):
+        parent_svd = pyfusion.session.query(MultiChannelSVD).filter_by(id=self.svd_id).one()
+        self._tmp_chrono = parent_svd._get_chrono(self.number)
+        return self._tmp_chrono
+    
     def _get_chrono(self):
         if self.store_chrono:
             return self._chrono
@@ -294,11 +311,11 @@ class SingularValue(pyfusion.Base):
             try:
                 if len(self._tmp_chrono) > 0:
                     return self._tmp_chrono
+                else:
+                    return self._reload_chrono()
             except:
-                # need to recalculate chrono
-                parent_svd = pyfusion.session.query(MultiChannelSVD).filter_by(id=self.svd_id).one()
-                self._tmp_chrono = parent_svd._get_chrono(self.number)
-                return self._tmp_chrono
+                return self._reload_chrono()
+
     def _set_chrono(self, chr):
         if self.store_chrono:
             self._chrono = chr

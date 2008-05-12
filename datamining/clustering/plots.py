@@ -7,7 +7,7 @@ import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure
 from numpy import array,transpose
 
-def plot_flucstrucs_for_shot(shot, diag_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False]):
+def plot_flucstrucs_for_shot(shot, diag_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):
     #TO DO: need to be able to seperate flucstrucs from different runs, etc...
     fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot == shot).filter(pyfusion.Diagnostic.name == diag_name).all()
     data = transpose(array([[f.svd.timebase[0], f.frequency, f.energy] for f in fs_list]))
@@ -24,4 +24,11 @@ def plot_flucstrucs_for_shot(shot, diag_name, size_factor = 30.0, colour_factor 
     if not time_range[1]:
         time_range[1] = max(data[0])
     pl.xlim(time_range[0], time_range[1])
-    pl.show()
+    if savefile != '':
+        try:
+            pl.save(savefile)
+        except:
+            print 'could not save to filename %s. Please make sure filename ends with .png, .jpg, etc.'
+            pl.show()
+    else:
+        pl.show()

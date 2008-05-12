@@ -69,19 +69,18 @@ class Shot(pyfusion.Base):
         self.data[diagnostic] = channel_MCT
         
 
-    def define_time_segments(self, diag, n_samples = settings.N_SAMPLES_TIME_SEGMENT, include_remainder = False):
+    def define_time_segments(self, diag, n_samples = settings.N_SAMPLES_TIME_SEGMENT):
         """
         Create a list of time segments defined with width n_samples for primary_diag. 
         gives self.time_segments = [elements, times]. elements[:-1] and elements[1:] respectively provide lists for t0 and t1 elements for segements. Likewise, times[:-1] and times[1:] give t0 and t1 time lists
         @param n_samples: width of time segment (using sample rate of primary_diag)
-        @param include_remainder: choose how to treat remainder if len(signal) / n_samples is not integer. if True, self.time_segments will include the final segment even if it has length other than n_samples. If False, trailing data will be ignored
         """
         len_timebase = len(self.data[diag].timebase)
         element_list = range(0,len_timebase,n_samples)
         times_list = take(self.data[diag].timebase, element_list).tolist()
-        if (len_timebase%n_samples == 0) or include_remainder:
-            element_list.append(len_timebase)
-            times_list.append(self.data[diag].timebase[-1])
+        #if (len_timebase%n_samples != 0) and zeropad:
+        #    element_list.append(len_timebase)
+        #    times_list.append(self.data[diag].timebase[-1])
 	self.time_segments = [[element_list[i], times_list[i]] for i in range(len(element_list))]
 
     def time_segment(self, segment_number, diag = ''):
@@ -181,7 +180,7 @@ class MultiChannelTimeseries(object):
             e1 = t0+dt
         else:
             e1 = self.timebase.searchsorted(self.timebase[e0] + dt)
-        
+
         new_mc_data = MultiChannelTimeseries(self.timebase[e0:e1], parent_element=e0)
         
         for ch in self.ordered_channel_list:
@@ -196,7 +195,7 @@ class TimeSegment(pyfusion.Base):
     shot = relation(Shot, primaryjoin=shot_id==Shot.id)    
     primary_diagnostic_id = Column('primary_diagnostic_id', Integer, ForeignKey('diagnostics.id'))
     parent_min_sample = Column('parent_min_sample', Integer)
-    n_samples = Column('s_samples', Integer)
+    n_samples = Column('n_samples', Integer)
     data = {}
     def _load_data(self, diag = None):
         # if there is no data in the shot (ie - reading from previous run) then try loading the primary diagnostic
@@ -208,7 +207,7 @@ class TimeSegment(pyfusion.Base):
                 self.shot.load_diag(pd.name)
         for diag_i in self.shot.data.keys():
             self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, self.n_samples, use_samples=[True, True])
-
+    
 
 class MultiChannelSVD(pyfusion.Base):
     __tablename__ = 'svds'

@@ -26,7 +26,7 @@ def plot_flucstrucs_for_shot(shot, diag_name, size_factor = 30.0, colour_factor 
     pl.xlim(time_range[0], time_range[1])
     if savefile != '':
         try:
-            pl.save(savefile)
+            pl.savefig(savefile)
         except:
             print 'could not save to filename %s. Please make sure filename ends with .png, .jpg, etc.'
             pl.show()

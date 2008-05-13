@@ -250,4 +250,4 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
             clusters[cluster_el].flucstrucs.append(fs)
         for cl in clusters:
             pyfusion.session.save(cl)
-    
+    pyfusion.session.flush()

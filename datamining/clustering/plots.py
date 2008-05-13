@@ -24,6 +24,9 @@ def plot_flucstrucs_for_shot(shot, diag_name, size_factor = 30.0, colour_factor 
     if not time_range[1]:
         time_range[1] = max(data[0])
     pl.xlim(time_range[0], time_range[1])
+    pl.title('Fluctuation structures for shot %d' %(shot))
+    pl.xlabel('Time')
+    pl.ylabel('Frequency')
     if savefile != '':
         try:
             pl.savefig(savefile)

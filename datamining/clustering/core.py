@@ -208,7 +208,7 @@ Cluster.flucstrucs = relation(FluctuationStructure, secondary=cluster_flucstrucs
 
 
 
-def get_clusters(fs_query, channel_pairs, n_cluster_list = range(2,11)):
+def get_clusters(fs_list, channel_pairs, n_cluster_list = range(2,11)):
     from rpy import *
     try:
         r.library('mclust')
@@ -219,7 +219,7 @@ def get_clusters(fs_query, channel_pairs, n_cluster_list = range(2,11)):
     
     data_array = []
     used_fs = []
-    for fs in fs_query:
+    for fs in fs_list:
         tmp_data = []
         for chpair in channel_pairs:
             tmp = pyfusion.session.query(DeltaPhase).filter_by(flucstruc_id=fs.id, channel_1_id=chpair[0].id, channel_2_id = chpair[1].id).all()

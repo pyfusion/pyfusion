@@ -56,6 +56,11 @@ class Diagnostic(Base):
     def add_channel(self, channel):
         self.ordered_channel_list.append(channel.name)
         self.channels.append(channel)
+    def ordered_channels(self):
+        outlist = []
+        for oc in self.ordered_channel_list:
+            outlist.append(session.query(Channel).filter_by(name=oc, diagnostic_id=self.id).one())
+        return outlist
 
 class Channel(Base):
     __tablename__ = "channels"

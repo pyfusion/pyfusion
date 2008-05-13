@@ -97,7 +97,6 @@ def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, thres
     pyfusion.session.commit()
     import datetime
     segs = pyfusion.get_time_segments(shot, diag_name)
-    print "check that we can still calculate flucstrucs if we don't store the cronos"
     diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == diag_name).one()
     for seg_i, seg in enumerate(segs[::-1]):
         # clear out session (dramatically improves performance)
@@ -180,6 +179,7 @@ def cps(a,b):
 class ClusterDataSet(pyfusion.Base):
     __tablename__ = 'dm_cluster_datasets'
     id = Column('id', Integer, primary_key=True)
+    name = Column("name", String(20), unique=True)
     clustersets = relation("ClusterSet", backref="clusterdataset")
     
 
@@ -208,7 +208,7 @@ Cluster.flucstrucs = relation(FluctuationStructure, secondary=cluster_flucstrucs
 
 
 
-def get_clusters(fs_list, channel_pairs, n_cluster_list = range(2,11)):
+def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11)):
     from rpy import *
     try:
         r.library('mclust')
@@ -229,11 +229,12 @@ def get_clusters(fs_list, channel_pairs, n_cluster_list = range(2,11)):
         if len(tmp_data) == 2*len(channel_pairs):
             data_array.append(tmp_data)
             used_fs.append(fs)
-    clusterdataset = ClusterDataSet()
+    clusterdataset = ClusterDataSet(name=clusterdatasetname)
     pyfusion.session.save(clusterdataset)
     pyfusion.session.flush()
     
     for n_clusters in n_cluster_list:
+        print 'n_clusters = %d' %n_clusters
         MX = r.Mclust(array(data_array),G=n_clusters, header='FALSE')
         clusterset = ClusterSet(modelname=MX['modelName'], bic=MX['bic'], loglik=MX['loglik'], n_clusters=n_clusters, n_flucstrucs=MX['n'])
         pyfusion.session.save(clusterset)

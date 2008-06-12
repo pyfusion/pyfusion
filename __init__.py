@@ -76,6 +76,8 @@ class Channel(Base):
 _device_module = __import__('pyfusion.devices.%s.%s' %(DEVICE,DEVICE), globals(), locals(), [DEVICE])
 Base.metadata.create_all()
 
+
+
 # here we check all instances defined in _device_module and update the database 
 
 def update_device_info(pyf_class):
@@ -103,3 +105,4 @@ _device = session.query(Device).filter(Device.name == _device_module.__dict__[DE
 session.commit()
 
 from core import *
+

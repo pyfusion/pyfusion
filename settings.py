@@ -55,6 +55,11 @@ CHANNEL_NAME_STRING_LENGTH = 10
 N_SAMPLES_TIME_SEGMENT = 2**10
 SV_GROUPING_THRESHOLD = 0.7
 
+# Device specific:
+
+# H1
+H1_MDS_SERVER = 'h1data.anu.edu.au'
+
 try:
 	from pyfusion_local_settings import *
 except:

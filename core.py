@@ -60,7 +60,10 @@ class Shot(pyfusion.Base):
                 channel_list.append(ch)
         for chi, chn in enumerate(channel_list):
             ch = pyfusion.session.query(pyfusion.Channel).filter(pyfusion.Channel.name==chn)[0]
-            _ProcessData = __import__('pyfusion.data_acq.%s.%s' %(ch.data_acq_type,ch.data_acq_type), globals(), locals(), ['ProcessData']).ProcessData()
+            if ch.processdata_override:
+                _ProcessData = pyfusion._device_module.ProcessData(data_acq_type = ch.data_acq_type, processdata_override = ch.processdata_override)
+            else:
+                _ProcessData = __import__('pyfusion.data_acq.%s.%s' %(ch.data_acq_type,ch.data_acq_type), globals(), locals(), ['ProcessData']).ProcessData()
             if chi==0:
                 channel_MCT = _ProcessData.load_channel(ch, self.shot)
             else:

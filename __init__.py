@@ -70,7 +70,7 @@ class Channel(Base):
     __mapper_args__ = {'polymorphic_on':data_acq_type}
     diagnostic_id = Column('diagnostic_id', Integer, ForeignKey('diagnostics.id'))
     diagnostic = relation(Diagnostic, primaryjoin=diagnostic_id==Diagnostic.id, backref="channels")
-
+    processdata_override = Column('processdata_override', PickleType, nullable=True)
 
 #_device_module = __import__('pyfusion.devices.%s.%s' %(DEVICE,DEVICE), globals(), locals(), [DEVICE], -1)
 _device_module = __import__('pyfusion.devices.%s.%s' %(DEVICE,DEVICE), globals(), locals(), [DEVICE])

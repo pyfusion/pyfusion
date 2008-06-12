@@ -47,6 +47,9 @@ DataMining Settings
 DEVICE = ''
 TIMEBASE_DIFFERENCE_TOLERANCE = 1.e-16
 
+SHOT_T_MIN = -1.e10
+SHOT_T_MAX = 1.e10
+
 # SQL
 SQL_SERVER = 'sqlite:///pyfusion_database.txt'
 CHANNEL_NAME_STRING_LENGTH = 10

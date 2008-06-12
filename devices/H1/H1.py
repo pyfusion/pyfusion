@@ -55,24 +55,6 @@ mirnov_2_18 = MDSPlusChannel(name = 'mirnov_2_18', mds_server = H1_MDS_SERVER, m
 mirnov_2_19 = MDSPlusChannel(name = 'mirnov_2_19', mds_server = H1_MDS_SERVER, mds_tree='MIRNOV_DTACQ', mds_path='acq216_026:input_13', processdata_override=['DTACQ', 'INVERT'])
 mirnov_2_20 = MDSPlusChannel(name = 'mirnov_2_20', mds_server = H1_MDS_SERVER, mds_tree='MIRNOV_DTACQ', mds_path='acq216_026:input_15', processdata_override=['DTACQ', 'INVERT'])
 
-"""
-mirnov_1_1 = MDSPlusChannel(name = 'mirnov_1_1', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_14:input_1')
-mirnov_1_2 = MDSPlusChannel(name = 'mirnov_1_2', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_14:input_2')
-mirnov_1_3 = MDSPlusChannel(name = 'mirnov_1_3', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_14:input_3')
-mirnov_1_4 = MDSPlusChannel(name = 'mirnov_1_4', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_14:input_4')
-mirnov_1_7 = MDSPlusChannel(name = 'mirnov_1_7', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_14:input_6')
-mirnov_1_8 = MDSPlusChannel(name = 'mirnov_1_8', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_15:input_1')
-mirnov_1_9 = MDSPlusChannel(name = 'mirnov_1_9', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_15:input_2')
-mirnov_1_10 = MDSPlusChannel(name = 'mirnov_1_10', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_15:input_3')
-mirnov_1_15 = MDSPlusChannel(name = 'mirnov_1_15', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_16:input_2')
-mirnov_1_16 = MDSPlusChannel(name = 'mirnov_1_16', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_16:input_3')
-mirnov_1_17 = MDSPlusChannel(name = 'mirnov_1_17', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_16:input_4')
-mirnov_1_18 = MDSPlusChannel(name = 'mirnov_1_18', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_16:input_6')
-
-testdt = MDSPlusChannel(name = 'mirnov_1_18a', mds_server = H1_MDS_SERVER, mds_tree='H1DATAa', mds_path='.operations.mirnov:a14_16:input_6a', processdata_override='DTACQ')
-
-mirnovbean1 = pyfusion.Diagnostic(name='mirnovbean1')
-"""
 
 mirnovbeans = pyfusion.Diagnostic(name='mirnovbeans')
 

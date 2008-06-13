@@ -194,8 +194,6 @@ class MultiChannelTimeseries(object):
         import pylab as pl
         for ch_i, ch in enumerate(self.ordered_channel_list):
             pl.subplot(len(self.ordered_channel_list),1,ch_i+1)
-            if ch_1 == 0:
-                pl.title(self.name)
             pl.plot(self.timebase,self.signals[ch])
             pl.ylabel(ch)
         pl.show()
@@ -204,8 +202,6 @@ class MultiChannelTimeseries(object):
         import pylab as pl
         for ch_i, ch in enumerate(self.ordered_channel_list):
             pl.subplot(len(self.ordered_channel_list),1,ch_i+1)
-            if ch_1 == 0:
-                pl.title(self.name)
             Pxx, freqs, bins, im = pl.specgram(self.signals[ch], NFFT=NFFT, Fs=2.*self.nyquist,noverlap=noverlap)
             pl.ylabel(ch)
             if max_freq> 0:

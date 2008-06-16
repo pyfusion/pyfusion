@@ -227,7 +227,6 @@ class TimeSegment(pyfusion.Base):
                 self.shot.load_diag(pd.name)
         for diag_i in self.shot.data.keys():
             self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, self.n_samples, use_samples=[True, True])
-    
 
 class MultiChannelSVD(pyfusion.Base):
     __tablename__ = 'svds'
@@ -356,9 +355,8 @@ def get_time_segments(shot, primary_diag, n_samples = settings.N_SAMPLES_TIME_SE
         except:# exceptions.InvalidRequestError:
             print "Creating segment %d" %seg_i
             seg  = TimeSegment(shot=shot, primary_diagnostic_id = diag_inst.id, n_samples = n_samples, parent_min_sample = seg_min[0])
-        seg._load_data()
-        output_list.append(seg)
         pyfusion.session.save_or_update(seg)
+        output_list.append(seg)
     pyfusion.session.flush()
     return output_list
 

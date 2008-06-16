@@ -17,7 +17,6 @@ class ProcessData:
         if self.data_acq_type == 'MDSPlus':
             if 'DTACQ' in self.processdata_override:
                 _shot = h1data_dtacq_mapping[str(shot)]
-                print 'got shot from dtacq:', mdsch.name, shot, _shot
             else:
                 _shot = shot
             if 'INVERT' in self.processdata_override:

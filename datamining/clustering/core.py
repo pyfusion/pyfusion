@@ -11,6 +11,8 @@ import pylab as pl
 from numpy import mean, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos
 
 
+ordered_channels=[]
+
 class DeltaPhase(pyfusion.Base):
     __tablename__ = 'dm_dphase'
     id = Column('id', Integer, primary_key=True)
@@ -48,7 +50,9 @@ class FluctuationStructure(pyfusion.Base):
         elif phase_method == 'inversion':
             fs_signals = self.get_signals()
             individual_phases = [get_single_phase(fs_signals[i], array(self.svd.timebase), self.frequency) for i in range(len(fs_signals))]
-            ordered_channels = [pyfusion.session.query(pyfusion.Channel).filter_by(name=name_i).one() for name_i in self.svd.used_channels]
+            global ordered_channels
+            if len(ordered_channels) == 0:
+                ordered_channels = [pyfusion.session.query(pyfusion.Channel).filter_by(name=name_i).one() for name_i in self.svd.used_channels]
             for ci,c in enumerate(ordered_channels[:-1]):
                 tmp = DeltaPhase(flucstruc_id = self.id, channel_1_id = ordered_channels[ci].id, channel_2_id = ordered_channels[ci+1].id, d_phase = individual_phases[ci+1]-individual_phases[ci])
                 self.phases.append(tmp)

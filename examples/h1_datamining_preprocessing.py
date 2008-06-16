@@ -7,7 +7,6 @@ DEVICE='H1'
 """
 
 import pyfusion
-import pylab as pl
 diag_name = 'mirnovbeans'
 
 shot_number = 58087

@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, Strin
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
 import pylab as pl
-from numpy import mean, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan, pi, sin, cos
+from numpy import mean, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos
 
 
 class DeltaPhase(pyfusion.Base):
@@ -77,13 +77,7 @@ def get_single_phase(data,timebase,freq):
 	freq_elmt = searchsorted(freq_array,freq)
 	a = data_fft[freq_elmt].real
 	b = data_fft[freq_elmt].imag
-	phase_val = arctan(a/b)
-	if b<0:
-		phase_val += pi
-	while phase_val < -1.*pi:
-		phase_val += 2*pi
-	while phase_val >= pi:
-		phase_val -= 2*pi
+	phase_val = arctan2(a,b)
 	return phase_val
 
 

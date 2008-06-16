@@ -305,7 +305,10 @@ class MultiChannelSVD(pyfusion.Base):
         ### entropy of singular values
         self.entropy = (-1./log(len(svs)))*sum(p*log(p))
 
-    
+    def plot(self):
+        from pyfusion.visual import interactive_svd_plot
+        interactive_svd_plot(self)
+
 class SingularValue(pyfusion.Base):
     __tablename__ = 'svs'
     id = Column('id', Integer, primary_key=True)        

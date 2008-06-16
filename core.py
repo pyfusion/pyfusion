@@ -7,7 +7,7 @@ numpy
 sqlalchemy version >= 0.4.4 (version 0.4.4 is required for the declarative extension)
 """
 
-from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones
+from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted
 from numpy.dual import svd
 from utils import local_import, get_conditional_select, check_same_timebase
 import settings 
@@ -127,6 +127,9 @@ class MultiChannelTimeseries(object):
         self.t0 = min(timebase)
         self.norm_info = {} # raw (not normalised) data has empty dict.
         self.ordered_channel_list = [] # keep the order in which channels are added - use this ordering for SVD, etc
+
+    def t_to_element(self, time_list):
+        return searchsorted(self.timebase,time_list)
 
     def add_channel(self,signal,channel_name):
         signal = array(signal)
@@ -363,3 +366,21 @@ def get_time_segments(shot, primary_diag, n_samples = settings.N_SAMPLES_TIME_SE
     pyfusion.session.flush()
     return output_list
 
+
+def new_timesegment(shot_instance, primary_diagnostic_name, t0, t1):
+    diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == primary_diagnostic_name).one()
+    t_els = shot_instance.data[primary_diagnostic_name].t_to_element([t0,t1])
+    ts = pyfusion.TimeSegment(shot_id=shot_instance.id, primary_diagnostic_id=diag_inst.id, parent_min_sample = t_els[0],n_samples = t_els[1]-t_els[0])
+    pyfusion.session.save(ts)
+    pyfusion.session.flush()
+    ts._load_data()
+    return ts
+
+def new_svd(timesegment_instance, diagnostic_id = -1):
+    if diagnostic_id < 0:
+        diagnostic_id = timesegment_instance.primary_diagnostic_id
+    new_svd = pyfusion.MultiChannelSVD(timesegment_id=timesegment_instance.id, diagnostic_id = diagnostic_id)
+    pyfusion.session.save(new_svd)
+    pyfusion.session.flush()
+    new_svd._do_svd()
+    return new_svd

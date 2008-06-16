@@ -158,7 +158,7 @@ def interactive_svd_plot(input_svd):
     pl.figtext(0.75,0.81,'H = %.2f' %(entropy),fontsize=12, color='b')
     energy_list = [i*i/input_svd.energy for i in sv_sv]
     energy = Energy(energy_list,button_setting_list)
-    energy_label = pl.figtext(0.773,0.78,'E = %.2f %%' %(energy.value),fontsize=12, color='b')
+    energy_label = pl.figtext(0.75,0.78,'E = %.2f %%' %(100.*energy.value),fontsize=12, color='b')
     # grid('True')
     for sv_i, sv in enumerate(sv_list):
 	col = plot_list_1[sv_i].get_color()
@@ -183,9 +183,12 @@ def interactive_svd_plot(input_svd):
     # axes 4: topo
     pl.axes(ax4)
     plot_list_4 = range(n_SV)
-    pl.xlabel('Coil')
+    pl.xlabel('Channel')
     pl.ylabel('Topo [a.u.]')
     angle_array = arange(n_SV+1)
+    channel_names = input_svd.timesegment.data[input_svd.diagnostic.name].ordered_channel_list
+    channel_names.append(channel_names[0])
+    pl.xticks(angle_array,channel_names, rotation=90)
     for sv_i,sv in enumerate(sv_list):
 	col = plot_list_1[sv_i].get_color()
 	tmp_topo = join_ends(sv.topo)

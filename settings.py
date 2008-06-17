@@ -45,6 +45,8 @@ Optimisation
 ============
         OPT
 	---
+	-2: test some expensive assertions
+	-1: test some assertions
 	0: conservative
 	1: pretty safe
 	2..: etc
@@ -58,6 +60,15 @@ Console Output
 	1,2 => 1, few per shot     (for each print call)
 	3,4 => 1, few per segment
 	5     etc
+Note for VERBOSE and OPT - perhaps it would be smart to have function forms
+of these to allow changing "on the fly", and even under intelligent program 
+control.  For example, OPT could be used to check some conditions randomly
+so that there was not a significant performance hit, but repeated violations 
+would probably be detected.
+Probably still should retain the
+simple variable form so that in speed critical cases, the decision would not
+waste time.
+
 """
 
 # General:

@@ -63,10 +63,18 @@ class Shot(pyfusion.Base):
                 _ProcessData = pyfusion._device_module.ProcessData(data_acq_type = ch.data_acq_type, processdata_override = ch.processdata_override)
             else:
                 _ProcessData = __import__('pyfusion.data_acq.%s.%s' %(ch.data_acq_type,ch.data_acq_type), globals(), locals(), ['ProcessData']).ProcessData()
-            if chi==0:
-                channel_MCT = _ProcessData.load_channel(ch, self.shot)
-            else:
+# We trap data item not found exceptions at this level
+# -  advantage is it catches all data systems,
+# -  but the problem is that specific info like MDS stuff (tree, etc) can't be 
+#    easily accessed. bdb
+            try:
                 _tmp = _ProcessData.load_channel(ch, self.shot)
+            except:
+                msg=str('Failed to retrieve data from %s, shot %d') % (ch.name, self.shot)
+                raise LookupError, msg
+            if chi==0:
+                channel_MCT = _tmp
+            else:
                 channel_MCT.add_multichannel(_tmp)
         self.data[diagnostic] = channel_MCT
         

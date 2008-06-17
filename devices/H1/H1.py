@@ -61,6 +61,11 @@ mirnovbeans = pyfusion.Diagnostic(name='mirnovbeans')
 for ch in [mirnov_1_1, mirnov_1_2,mirnov_1_3,mirnov_1_4,mirnov_1_7,mirnov_1_8,mirnov_1_9,mirnov_1_10, mirnov_1_15 ,mirnov_1_16 ,mirnov_1_17,mirnov_1_18, mirnov_2_1, mirnov_2_2, mirnov_2_3, mirnov_2_5, mirnov_2_7, mirnov_2_8, mirnov_2_9, mirnov_2_10, mirnov_2_15, mirnov_2_17, mirnov_2_18, mirnov_2_19, mirnov_2_20]:
     mirnovbeans.add_channel(ch)
 
+mirnovbean1 = pyfusion.Diagnostic(name='mirnovbean1')
+
+for ch in [mirnov_1_1, mirnov_1_2,mirnov_1_3,mirnov_1_4,mirnov_1_7,mirnov_1_8,mirnov_1_9,mirnov_1_10, mirnov_1_15 ,mirnov_1_16 ,mirnov_1_17,mirnov_1_18]:
+    mirnovbean1.add_channel(ch)
+
 testchannel_1 = MDSPlusChannel(name = 'testchannel_1',  mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_14:input_1')
 testchannel_1_inverted = MDSPlusChannel(name = 'testchannel_1_inverted',  mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_14:input_1', processdata_override=['INVERT'])
 testchannel_2_no_dtacq_map  = MDSPlusChannel(name = 'testchannel_2_no_dtacq_map',  mds_server = H1_MDS_SERVER, mds_tree='MIRNOV_DTACQ', mds_path='acq216_026:input_01')

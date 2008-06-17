@@ -53,6 +53,8 @@ class Diagnostic(Base):
     def __init__(self, name):
         self.name= name
         self.ordered_channel_list = []
+        if settings.VERBOSE>2:
+            print('Defining diagnostic %s') % self.name
     def add_channel(self, channel):
         self.ordered_channel_list.append(channel.name)
         self.channels.append(channel)

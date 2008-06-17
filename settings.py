@@ -41,6 +41,23 @@ DataMining Settings
 	---------------------
 	Threshold value of gamma_1,2 used for grouping singular values into fluctuation structures
 
+Optimisation
+============
+        OPT
+	---
+	0: conservative
+	1: pretty safe
+	2..: etc
+ 
+Console Output
+==============
+        VERBOSE
+        -------
+	Level of console output for monitoring and debugging:
+	0 none (except warnings and errors)
+	1,2 => 1, few per shot     (for each print call)
+	3,4 => 1, few per segment
+	5     etc
 """
 
 # General:
@@ -62,6 +79,12 @@ SV_GROUPING_THRESHOLD = 0.7
 
 # H1
 H1_MDS_SERVER = 'h1data.anu.edu.au'
+
+#Optimisation
+OPT=5
+
+# Console Output
+VERBOSE=3
 
 try:
 	from pyfusion_local_settings import *

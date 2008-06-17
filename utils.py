@@ -49,3 +49,15 @@ def check_same_timebase(a,b):
         return False
     return max(abs(array(a.timebase) - array(b.timebase))) < settings.TIMEBASE_DIFFERENCE_TOLERANCE
 
+from time import time
+timelast=time()
+
+def delta_t(categ):
+# simple function is to return a convenient string delta_t in ms since last
+# has the potential to accumulate delta_t in different categories
+    global timelast
+    timenow=time()
+    dt=timenow-timelast
+    retval=str('%.3g s') % (1*dt)
+    timelast=time()
+    return retval

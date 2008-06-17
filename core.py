@@ -10,7 +10,7 @@ sqlalchemy version >= 0.4.4 (version 0.4.4 is required for the declarative exten
 from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted
 from numpy.dual import svd
 from utils import local_import, get_conditional_select, check_same_timebase
-import settings 
+import settings, utils
 
 from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean
 from sqlalchemy.orm import relation, synonym
@@ -53,8 +53,7 @@ class Shot(pyfusion.Base):
         print "Only MultiChannel Timeseries data works for now"
         diag = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name==diagnostic)[0]
         channel_list = []
-        print diag
-        print diag.ordered_channel_list
+        if settings.VERBOSE > 0: print diag.ordered_channel_list
         for ch in diag.ordered_channel_list:
             if ch not in ignore_channels:
                 channel_list.append(ch)
@@ -288,7 +287,7 @@ class MultiChannelSVD(pyfusion.Base):
             self.channel_norms = []
         [tmp,svs,chronos] = svd(data,0)
         topos = transpose(tmp)
-        print 'done svd for %s' %(str(self.id))
+        if settings.VERBOSE >= 3: print 'done svd seg %s, %s' %(str(self.id), utils.delta_t("svd"))
         for svi,sv in enumerate(svs):
             if store_chronos:
                 tmp1 = SingularValue(svd_id = self.id, number=svi, value=sv, chrono=chronos[svi].tolist(), topo=topos[svi].tolist())
@@ -359,7 +358,7 @@ def get_time_segments(shot, primary_diag, n_samples = settings.N_SAMPLES_TIME_SE
         try:
             seg = pyfusion.session.query(TimeSegment).filter_by(shot = shot, primary_diagnostic_id=diag_inst.id, parent_min_sample=seg_min[0], n_samples=n_samples).one()
         except:# exceptions.InvalidRequestError:
-            print "Creating segment %d" %seg_i
+            if settings.VERBOSE >= 4: print "Creating segment %d" % seg_i
             seg  = TimeSegment(shot=shot, primary_diagnostic_id = diag_inst.id, n_samples = n_samples, parent_min_sample = seg_min[0])
         pyfusion.session.save_or_update(seg)
         output_list.append(seg)

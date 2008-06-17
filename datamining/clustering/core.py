@@ -177,9 +177,24 @@ def cps(a,b):
 class ClusterDataSet(pyfusion.Base):
     __tablename__ = 'dm_cluster_datasets'
     id = Column('id', Integer, primary_key=True)
-    name = Column("name", String(20), unique=True)
+    name = Column("name", String(500), unique=True)
     clustersets = relation("ClusterSet", backref="clusterdataset")
-    
+    def plot_BIC(self):
+        import pylab as pl
+        n_cluster_list = [i.n_clusters for i in self.clustersets]
+        bic_list = [i.bic for i in self.clustersets]
+        pl.plot(n_cluster_list, bic_list)
+        pl.plot(n_cluster_list, bic_list,'o')
+        pl.xlabel('Number of Clusters')
+        pl.ylabel('Bayesian Information Classifier (BIC)')
+        pl.title('Cluster Dataset: %s' %self.name)
+        pl.show()
+    def plot_N_clusters(self,N_clusters):
+        clusterset = pyfusion.session.query(ClusterSet).filter_by(clusterdataset_id=self.id).filter_by(n_clusters=N_clusters).one()
+        for cl in clusterset.clusters:
+            t0_freq_list = [[i.svd.timebase[0],i.frequency] for i in cl.flucstrucs]
+            pl.plot([i[0] for i in t0_freq_list], [i[1] for i in t0_freq_list],'o')
+        pl.show()
 
 class ClusterSet(pyfusion.Base):
     __tablename__ = 'dm_cluster_sets'
@@ -249,3 +264,18 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
         for cl in clusters:
             pyfusion.session.save(cl)
     pyfusion.session.flush()
+
+def get_fs_in_set(fs_set_name):
+    fs_set = pyfusion.session.query(FluctuationStructureSet).filter_by(name=fs_set_name).one()
+    return fs_set.flucstrucs
+
+def get_clusters_for_fs_set(fs_set_name):
+    fs_list = get_fs_in_set(fs_set_name)
+    # BAD... should ensure that all used_channels are the same - not just grab them from one FS in the set!
+    # do we need to do a query here? probably not
+    chs = [pyfusion.session.query(pyfusion.Channel).filter_by(name=i).one() for i in fs_list[0].svd.used_channels]
+    # default channel pairs - use pairs from used_channels - assumed to be ordered - at the moment it's taken from ordeed_channel_list
+    ch_pairs = [[chs[i],chs[i+1]] for i in range(len(chs)-1)]
+    cluster_dataset_name = fs_set_name + '_clusters'
+    get_clusters(fs_list, ch_pairs, cluster_dataset_name)
+

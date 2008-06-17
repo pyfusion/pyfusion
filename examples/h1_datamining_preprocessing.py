@@ -9,7 +9,7 @@ DEVICE='H1'
 import pyfusion
 diag_name = 'mirnovbeans'
 
-shot_number = 58087
+shot_number = 58048
 
 s = pyfusion.get_shot(shot_number)
 s.load_diag(diag_name)

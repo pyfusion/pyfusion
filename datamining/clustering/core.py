@@ -90,17 +90,7 @@ def get_single_phase(data,timebase,freq):
 
 
 
-
-def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
-    # register the fs_set name
-    fs_set = FluctuationStructureSet(name = fs_set_name)
-    # get id ofr fs_set    
-    pyfusion.session.save(fs_set)
-    pyfusion.session.commit()
-    import datetime
-    segs = pyfusion.get_time_segments(shot, diag_name)
-    diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == diag_name).one()
-    for seg_i, seg in enumerate(segs[::-1]):
+def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
         # clear out session (dramatically improves performance)
         pyfusion.session.clear()
         seg._load_data()
@@ -122,7 +112,19 @@ def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, thres
             for sv in sv_group:
                 fs.svs.append(sv)
             fs.get_phases()
+    
 
+
+def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
+    # register the fs_set name
+    fs_set = FluctuationStructureSet(name = fs_set_name)
+    # get id for fs_set    
+    pyfusion.session.save(fs_set)
+    pyfusion.session.commit()
+    segs = pyfusion.get_time_segments(shot, diag_name)
+    diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == diag_name).one()
+    for seg_i, seg in enumerate(segs[::-1]):
+        generate_flucstrucs_for_time_segment(seg, diag_inst, fs_set, store_chronos=store_chronos, threshold=threshold, normalise=normalise)
             
     
 

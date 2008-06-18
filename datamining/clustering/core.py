@@ -3,7 +3,7 @@ main clustering libs
 """
 
 
-import pyfusion, settings
+import pyfusion
 from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, String
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
@@ -51,7 +51,7 @@ class FluctuationStructure(pyfusion.Base):
             fs_signals = self.get_signals()
             individual_phases = [get_single_phase(fs_signals[i], array(self.svd.timebase), self.frequency) for i in range(len(fs_signals))]
             global ordered_channels
-            if (settings.OPT < 2) or (len(ordered_channels) == 0):
+            if (pyfusion.settings.OPT < 2) or (len(ordered_channels) == 0):
                 ordered_channels = [pyfusion.session.query(pyfusion.Channel).filter_by(name=name_i).one() for name_i in self.svd.used_channels]
             for ci,c in enumerate(ordered_channels[:-1]):
                 tmp = DeltaPhase(flucstruc_id = self.id, channel_1_id = ordered_channels[ci].id, channel_2_id = ordered_channels[ci+1].id, d_phase = individual_phases[ci+1]-individual_phases[ci])

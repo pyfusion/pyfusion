@@ -1,0 +1,4 @@
+These are examples adapted or created by Boyd.
+Some are simple tests, others are more complicated scripts to do actual 
+analysis.  Their separation from the parent directory ../examples allows
+that directory to be reserved for simple or illustrative scripts.

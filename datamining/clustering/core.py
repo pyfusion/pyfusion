@@ -65,7 +65,11 @@ flucstruc_svs = Table('flucstruc_svs', pyfusion.Base.metadata,
 class FluctuationStructureSet(pyfusion.Base):
     __tablename__ = 'dm_fs_set'
     id = Column('id', Integer, primary_key=True)
-    name = Column("name", String(100), unique=True)
+# david originally specified a unique name:
+#  advantage is that a given name assures the same parameters in processing
+#  disadvantage is that data cannot be appended.
+#  Making it non-unique allows us to select one or all of the same-named sets
+    name = Column("name", String(100), unique=False)
     flucstrucs = relation("FluctuationStructure", backref='set')
 
 
@@ -223,6 +227,8 @@ Cluster.flucstrucs = relation(FluctuationStructure, secondary=cluster_flucstrucs
 
 def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11)):
     from rpy import *
+    from numpy import unique  #bdb added
+
     try:
         r.library('mclust')
     except:

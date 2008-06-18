@@ -1,7 +1,7 @@
 """
 helper functions for pyfusion
 """
-from numpy import fft, conjugate, array
+from numpy import fft, conjugate, array, choose
 import settings
 from datetime import datetime
 
@@ -61,3 +61,16 @@ def delta_t(categ):
     retval=str('%.3g s') % (1*dt)
     timelast=time()
     return retval
+
+def bigger(x,y):
+    """
+    more like the IDL > - note - different to numpy.greater
+    """
+    return choose(x < y, (x,y))
+
+
+def smaller(x,y):
+    """
+    more like the IDL < - note - different to numpy.lesser
+    """
+    return choose(x > y, (x,y))

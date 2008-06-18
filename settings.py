@@ -99,5 +99,8 @@ VERBOSE=3
 
 try:
 	from pyfusion_local_settings import *
+	if VERBOSE>0:
+		print('importing pyfusion_local_settings')
+
 except:
 	print "Local settings not found (looking for pyfusion_local_settings.py in python path)"

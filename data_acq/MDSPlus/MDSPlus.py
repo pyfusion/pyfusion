@@ -8,10 +8,18 @@ class ProcessData:
     from mdsutils import pmds
     def load_channel(self, mdsch, shot, invert=False):        
         from numpy import array, searchsorted
-
-        self.pmds.mdsconnect(mdsch.mds_server)
-        self.pmds.mdsopen(mdsch.mds_tree, int(shot))
-        data = array(self.pmds.mdsvalue(mdsch.mds_path))
+# This exception handler seems to be intercepted by the higher one in load_diag
+#   so we print the message as well!
+        try:
+            self.pmds.mdsconnect(mdsch.mds_server)
+            self.pmds.mdsopen(mdsch.mds_tree, int(shot))
+            data = array(self.pmds.mdsvalue(mdsch.mds_path))
+        except:
+# using the jScope/mdsdcl convention for "full path" here - hope it is right!
+#  mirnov_dtacq ideally should be preceded by a :
+            msg=str('Error accessing server %s: Shot %d, \\%s::top%s') % (mdsch.mds_server, shot, mdsch.mds_tree, mdsch.mds_path)
+            print(msg)
+            raise LookupError, str
         if invert:
             data = -data
         dim_data = array(self.pmds.mdsvalue('dim_of(' + mdsch.mds_path+')'))

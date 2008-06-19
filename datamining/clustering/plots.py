@@ -1,21 +1,30 @@
 """
 plots for clustering
+
+yes, it's a mess.
 """
 
-import pyfusion, utils
+import pyfusion
 import pylab as pl
-from pyfusion.datamining.clustering.core import FluctuationStructure
+from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet
 from numpy import array,transpose, argsort, min, max, average, shape
+
+def plot_flucstrucs_for_set(set_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):
+    #fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(FluctuationStructureSet.name == set_name).all()
+    fs_list = pyfusion.session.query(FluctuationStructure).join(['set']).filter(FluctuationStructureSet.name == set_name).all()
+    plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile)
+    
 
 def plot_flucstrucs_for_shot(shot, diag_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):
     #TO DO: need to be able to separate flucstrucs from different runs, etc...
-
 # quick fix to allow multiple shots
     if len(shape(shot)) == 0:
-        shot=[shot]
-        
+        shot=[shot]        
 #    fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot == shot).filter(pyfusion.Diagnostic.name == diag_name).all()
     fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot.in_(shot)).filter(pyfusion.Diagnostic.name == diag_name).all()
+    plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile)
+
+def plot_flucstrucs(fs_list, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):
     data = transpose(array([[f.svd.timebase[0], f.frequency, f.energy] for f in fs_list]))
     pl.scatter(data[0],data[1],size_factor*data[2], colour_factor*data[2])
     pl.grid(True)
@@ -33,7 +42,7 @@ def plot_flucstrucs_for_shot(shot, diag_name, size_factor = 30.0, colour_factor 
 # need to write a function str_shot_range to compress long sequences of 
 #  shot numbers....  --> [58123-26,39-45], but could do [58123...58245] 
 # as a short-cut
-    pl.title('Fluctuation structures for shot %s' % str(shot))
+    pl.title(' %d Fluctuation structures.... ...what, you want more info?'  %len(fs_list))
     pl.xlabel('Time')
     pl.ylabel('Frequency')
     if savefile != '':
@@ -68,7 +77,7 @@ def simple_cluster_plot(clusterdatasetname, xlims = [False,False], ylims =[False
 #need to look over all data for ylims - quick fix for now
             if ylims[1] == False: 
                 ylims[0] = 0
-                ylims[1] = utils.bigger(1.1*max(data[1]),2*average(data[1]))
+                ylims[1] = pyfusion.utils.bigger(1.1*max(data[1]),2*average(data[1]))
             pl.xlim(xlims[0], xlims[1])
             pl.ylim(ylims[0], ylims[1])
             if cs_i != len(cluster_sets_n_clusters_argsort)-1:

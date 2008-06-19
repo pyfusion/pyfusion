@@ -232,6 +232,8 @@ class TimeSegment(pyfusion.Base):
     data = {}
     def _load_data(self, diag = None):
         # if there is no data in the shot (ie - reading from previous run) then try loading the primary diagnostic
+        #need to update session - we may have called the time segment from another session ...
+        pyfusion.session.save_or_update(self)
         if len(self.shot.data.keys()) == 0:
             if diag:
                 self.shot.load_diag(diag)

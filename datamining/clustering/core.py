@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, Strin
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
 import pylab as pl
-from numpy import mean, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos
+from numpy import mean, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin
 
 
 ordered_channels=[]
@@ -105,7 +105,8 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
             pyfusion.session.flush()
         E = seg_svd.energy
         sv_groupings = group_svs(seg_svd, threshold=threshold)
-        for sv_group in sv_groupings:
+        #sv_groupings = _new_group_svs(seg_svd)
+        for svg_i, sv_group in enumerate(sv_groupings):
             energy = sum([sv.value**2 for sv in sv_group])/E
             freq = peak_freq(sv_group[0].chrono, seg_svd.timebase)
             fs = FluctuationStructure(svd_id=seg_svd.id, frequency=freq, energy=energy, gamma_threshold=threshold, set_id = fs_set.id)

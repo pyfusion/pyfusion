@@ -157,6 +157,34 @@ def group_svs(input_SVD, threshold = pyfusion.settings.SV_GROUPING_THRESHOLD):
     return output_fs_list
         
 
+def _new_group_svs(input_SVD):
+    """
+    input_SVD is an MCSVDData object
+    in this function we implicity assume that SVs are sorted from largest to smallest (as returned by most SVD libs)
+    """
+
+    output_fs_list = []
+    sv_query = pyfusion.session.query(pyfusion.SingularValue).filter_by(svd = input_SVD).order_by(pyfusion.SingularValue.number)
+
+    remaining_svs = [i for i in sv_query]
+    for i,_sv in enumerate(remaining_svs):
+        remaining_svs[i].self_cps = mean(cps(_sv.chrono,_sv.chrono))
+
+    while len(remaining_svs) > 1:
+        tmp_cp = [mean(abs(cps(remaining_svs[0].chrono, sv.chrono)))/(remaining_svs[0].self_cps*sv.self_cps) for sv in remaining_svs]
+        tmp_cp_argsort = array(tmp_cp).argsort()[::-1]
+        sort_cp = take(tmp_cp,tmp_cp_argsort)
+        delta_cp = sort_cp[1:]-sort_cp[:-1]
+
+        output_fs_list.append([remaining_svs[i] for i in tmp_cp_argsort[:argmin(delta_cp)+1]])
+
+        # remove the newly assigned SV from the remaining SV list so they don't get assigned again
+        for i in output_fs_list[-1]: remaining_svs.remove(i)
+    if len(remaining_svs) == 1:
+        output_fs_list.append(remaining_svs)
+
+    return output_fs_list
+
 
 def peak_freq(signal,timebase,minfreq=0,maxfreq=1.e18):
 	"""

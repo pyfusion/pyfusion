@@ -1,4 +1,5 @@
 import pyfusion, settings
+from numpy import arange
 from pyfusion.datamining.clustering.core import generate_flucstrucs
 
 shot_number = [58123,58124]
@@ -11,10 +12,12 @@ execfile('process_cmd_line_args.py')
 
 if not(plot_only):
     for sn in shot_number:
-        s = pyfusion.get_shot(sn)
-        s.load_diag(diag_name)
-        generate_flucstrucs(s, diag_name, flucstruc_set_name, store_chronos=True)
-
+        try:
+            s = pyfusion.get_shot(sn)
+            s.load_diag(diag_name)
+            generate_flucstrucs(s, diag_name, flucstruc_set_name, store_chronos=True)
+        except:
+            print ('failed on shot %s') % sn
 
 from pyfusion.datamining.clustering.plots import plot_flucstrucs_for_shot
 

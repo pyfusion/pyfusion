@@ -1,9 +1,6 @@
 import pyfusion, sys
 from pyfusion.datamining.clustering.core import FluctuationStructureSet, get_clusters
 
-flucstruc_set_name = 'test_flucstrucs'
-diag_name = 'mirnovbeans'
-
 execfile('process_cmd_line_args.py')
 
 from pyfusion.datamining.clustering.plots import simple_cluster_plot

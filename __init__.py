@@ -34,7 +34,7 @@ from sqlalchemy import create_engine, Column, Integer, String, exceptions, Forei
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relation, sessionmaker, scoped_session
 
-engine = create_engine(SQL_SERVER, echo=False)
+engine = create_engine(SQL_SERVER, echo=settings.VERBOSE > 6)
 Session = scoped_session(sessionmaker(autoflush=True, transactional=True, bind=engine))
 Base = declarative_base(engine)
 

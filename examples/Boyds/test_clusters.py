@@ -1,21 +1,22 @@
-import pyfusion, sys
+import pyfusion
 from pyfusion.datamining.clustering.core import FluctuationStructureSet, get_clusters
 
 flucstruc_set_name = 'test_flucstrucs'
 diag_name = 'mirnovbeans'
 
-# override the defaults above
-for i in range(1,len(sys.argv)):
-    print('executing %s') % sys.argv[i]
-    exec(sys.argv[i])
+execfile('process_cmd_line_args.py')
 
-fs_set = pyfusion.session.query(FluctuationStructureSet).filter_by(name=flucstruc_set_name)
+#fs_set = pyfusion.session.query(FluctuationStructureSet).filter_by(name=flucstruc_set_name)
+fs_set = pyfusion.session.query(FluctuationStructureSet)
+
+
 cnt=fs_set.count()
 if (cnt == 0): 
     raise Exception, 'no flucstruc_set named '+ flucstruc_set_name
 if (cnt > 1): 
-    print('CHoosing the first of %d sets from %s') % (cnt, flucstruc_set_name)
+    print('Choosing the first of %d sets from %s') % (cnt, flucstruc_set_name)
 fs_list = fs_set[0].flucstrucs
+print('extracted %d flucstrucs) % len(fs_set[0].flucstrucs)
 
 diag = pyfusion.session.query(pyfusion.Diagnostic).filter_by(name=diag_name).one()
 

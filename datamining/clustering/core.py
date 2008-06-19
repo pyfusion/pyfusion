@@ -69,6 +69,7 @@ class FluctuationStructureSet(pyfusion.Base):
 #  advantage is that a given name assures the same parameters in processing
 #  disadvantage is that data cannot be appended.
 #  Making it non-unique allows us to select one or all of the same-named sets
+# dgp: will make this unique again when functionality is added for appending fluctstrucs to a set (including checking parameters...)
     name = Column("name", String(100), unique=False)
     flucstrucs = relation("FluctuationStructure", backref='set')
 

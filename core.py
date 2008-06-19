@@ -281,21 +281,24 @@ class MultiChannelSVD(pyfusion.Base):
         [tmp,svs,chronos] = svd(data,0)
         return chronos[chrono_number]
 
-    def _do_svd(self, store_chronos=False, normalise = False):
+    def _do_svd(self, store_chronos=False, normalise = False, remove_baseline=True):
         data = array([self.timesegment.data[self.diagnostic.name].signals[c] for c in self.timesegment.data[self.diagnostic.name].ordered_channel_list])
         self.timebase = self.timesegment.data[self.diagnostic.name].timebase.tolist()
         self.used_channels = self.timesegment.data[self.diagnostic.name].ordered_channel_list
+        if remove_baseline == True:
+            data = array([x-mean(x) for x in data])
         if normalise == True:
             self.normalised = True
             norm_list = []
             for ci,c in enumerate(data):
-                normval = c.var()
+                normval = c.std()
                 norm_list.append(normval)
                 data[ci] /= normval
             self.channel_norms = norm_list
         else:
             self.normalised = False
             self.channel_norms = []
+        
         [tmp,svs,chronos] = svd(data,0)
         topos = transpose(tmp)
         if settings.VERBOSE >= 3: print 'done svd seg %s, %s' %(str(self.id), utils.delta_t("svd"))

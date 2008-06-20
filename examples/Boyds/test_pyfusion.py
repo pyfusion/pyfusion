@@ -1,14 +1,14 @@
-import pyfusion, settings
+import pyfusion
 
-shot_number = 58123
-diag_name = 'mirnovbeans'
+shot_number = 58060
+diag_name = 'mirnov_all'
 flucstruc_set_name = 'test_flucstrucsp7'
 figure_filename = 'test_shot_flucstrucs.png'
 
-execfile('process_cmd_line_args.py')
+#execfile('process_cmd_line_args.py')
 
-#settings.SHOT_T_MIN=settings.SHOT_T_MAX-0.01
-#print('tmin, max' , settings.SHOT_T_MIN,settings.SHOT_T_MAX)
+pyfusion.settings.SHOT_T_MIN=pyfusion.settings.SHOT_T_MAX-0.01
+print('tmin, max' , pyfusion.settings.SHOT_T_MIN,pyfusion.settings.SHOT_T_MAX)
 
 s = pyfusion.get_shot(shot_number)
 s.load_diag(diag_name)

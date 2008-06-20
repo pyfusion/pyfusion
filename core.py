@@ -10,7 +10,8 @@ sqlalchemy version >= 0.4.4 (version 0.4.4 is required for the declarative exten
 from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted
 from numpy.dual import svd
 from utils import local_import, get_conditional_select, check_same_timebase
-import settings, utils
+#import settings, utils
+import utils
 
 from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean
 from sqlalchemy.orm import relation, synonym
@@ -53,7 +54,7 @@ class Shot(pyfusion.Base):
         print "Only MultiChannel Timeseries data works for now" 
         diag = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name==diagnostic)[0]
         channel_list = []
-        if settings.VERBOSE > 0:
+        if pyfusion.settings.VERBOSE > 0:
             print "looked up " + diagnostic
             print diag.ordered_channel_list
             
@@ -82,7 +83,7 @@ class Shot(pyfusion.Base):
         self.data[diagnostic] = channel_MCT
         
 
-    def define_time_segments(self, diag, n_samples = settings.N_SAMPLES_TIME_SEGMENT):
+    def define_time_segments(self, diag, n_samples = pyfusion.settings.N_SAMPLES_TIME_SEGMENT):
         """
         Create a list of time segments defined with width n_samples for primary_diag. 
         gives self.time_segments = [elements, times]. elements[:-1] and elements[1:] respectively provide lists for t0 and t1 elements for segements. Likewise, times[:-1] and times[1:] give t0 and t1 time lists
@@ -303,7 +304,7 @@ class MultiChannelSVD(pyfusion.Base):
         
         [tmp,svs,chronos] = svd(data,0)
         topos = transpose(tmp)
-        if settings.VERBOSE >= 3: print 'done svd seg %s, %s' %(str(self.id), utils.delta_t("svd"))
+        if pyfusion.settings.VERBOSE >= 3: print 'done svd seg %s, %s' %(str(self.id), utils.delta_t("svd"))
         for svi,sv in enumerate(svs):
             if store_chronos:
                 tmp1 = SingularValue(svd_id = self.id, number=svi, value=sv, chrono=chronos[svi].tolist(), topo=topos[svi].tolist())
@@ -366,7 +367,7 @@ class SingularValue(pyfusion.Base):
     chrono = synonym('_chrono', descriptor=property(_get_chrono, _set_chrono))
 
 
-def get_time_segments(shot, primary_diag, n_samples = settings.N_SAMPLES_TIME_SEGMENT):
+def get_time_segments(shot, primary_diag, n_samples = pyfusion.settings.N_SAMPLES_TIME_SEGMENT):
     shot.define_time_segments(primary_diag, n_samples = n_samples)
     output_list = []
     diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter_by(name = primary_diag).one()
@@ -374,7 +375,7 @@ def get_time_segments(shot, primary_diag, n_samples = settings.N_SAMPLES_TIME_SE
         try:
             seg = pyfusion.session.query(TimeSegment).filter_by(shot = shot, primary_diagnostic_id=diag_inst.id, parent_min_sample=seg_min[0], n_samples=n_samples).one()
         except:# exceptions.InvalidRequestError:
-            if settings.VERBOSE >= 4: print "Creating segment %d" % seg_i
+            if pyfusion.settings.VERBOSE >= 4: print "Creating segment %d" % seg_i
             seg  = TimeSegment(shot=shot, primary_diagnostic_id = diag_inst.id, n_samples = n_samples, parent_min_sample = seg_min[0])
         pyfusion.session.save_or_update(seg)
         output_list.append(seg)

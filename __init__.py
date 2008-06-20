@@ -29,12 +29,13 @@
 
 """
 
-from settings import *
+#from settings import *
+import pyfusion_settings as settings
 from sqlalchemy import create_engine, Column, Integer, String, exceptions, ForeignKey, PickleType
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relation, sessionmaker, scoped_session
 
-engine = create_engine(SQL_SERVER, echo=settings.VERBOSE > 6)
+engine = create_engine(settings.SQL_SERVER, echo=settings.VERBOSE > 6)
 Session = scoped_session(sessionmaker(autoflush=True, transactional=True, bind=engine))
 Base = declarative_base(engine)
 
@@ -75,7 +76,7 @@ class Channel(Base):
     processdata_override = Column('processdata_override', PickleType, nullable=True)
 
 #_device_module = __import__('pyfusion.devices.%s.%s' %(DEVICE,DEVICE), globals(), locals(), [DEVICE], -1)
-_device_module = __import__('pyfusion.devices.%s.%s' %(DEVICE,DEVICE), globals(), locals(), [DEVICE])
+_device_module = __import__('pyfusion.devices.%s.%s' %(settings.DEVICE,settings.DEVICE), globals(), locals(), [settings.DEVICE])
 Base.metadata.create_all()
 
 
@@ -101,7 +102,7 @@ update_device_info(Diagnostic)
 update_device_info(Device)
 
 
-_device = session.query(Device).filter(Device.name == _device_module.__dict__[DEVICE].name).one()
+_device = session.query(Device).filter(Device.name == _device_module.__dict__[settings.DEVICE].name).one()
 
 
 session.commit()

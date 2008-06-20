@@ -40,6 +40,10 @@ DataMining Settings
         SV_GROUPING_THRESHOLD
 	---------------------
 	Threshold value of gamma_1,2 used for grouping singular values into fluctuation structures
+	ENERGY_THRESHOLD
+	----------------
+	The fraction of signal energy to represent in fluctuation structures. At present, only used instead of SV_GROUPING_THRESHOLD for the threshold-less SV grouping function. A value of 0.99 keeps 99% of signal energy.
+
 
 Optimisation
 ============
@@ -85,6 +89,7 @@ CHANNEL_NAME_STRING_LENGTH = 10
 # Data Mining
 N_SAMPLES_TIME_SEGMENT = 2**10
 SV_GROUPING_THRESHOLD = 0.7
+ENERGY_THRESHOLD = 0.99 
 
 # Device specific:
 

@@ -2,8 +2,9 @@
 helper functions for pyfusion
 """
 from numpy import fft, conjugate, array, choose
-import settings
+#import settings
 from datetime import datetime
+import pyfusion
 
 def local_import(name):
     """
@@ -47,7 +48,7 @@ def timestamp(fstr = '%y%m%d%H%M'):
 def check_same_timebase(a,b):
     if len(a.timebase) != len(b.timebase):
         return False
-    return max(abs(array(a.timebase) - array(b.timebase))) < settings.TIMEBASE_DIFFERENCE_TOLERANCE
+    return max(abs(array(a.timebase) - array(b.timebase))) < pyfusion.settings.TIMEBASE_DIFFERENCE_TOLERANCE
 
 from time import time
 timelast=time()

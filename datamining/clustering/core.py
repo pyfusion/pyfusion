@@ -104,8 +104,8 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
             seg_svd._do_svd(store_chronos=store_chronos, normalise=normalise)
             pyfusion.session.flush()
         E = seg_svd.energy
-        sv_groupings = group_svs(seg_svd, threshold=threshold)
-        #sv_groupings = _new_group_svs(seg_svd)
+        #sv_groupings = group_svs(seg_svd, threshold=threshold)
+        sv_groupings = _new_group_svs(seg_svd)
         for svg_i, sv_group in enumerate(sv_groupings):
             energy = sum([sv.value**2 for sv in sv_group])/E
             freq = peak_freq(sv_group[0].chrono, seg_svd.timebase)
@@ -170,8 +170,8 @@ def _new_group_svs(input_SVD):
     remaining_svs = [i for i in sv_query]
     for i,_sv in enumerate(remaining_svs):
         remaining_svs[i].self_cps = mean(cps(_sv.chrono,_sv.chrono))
-
-    while len(remaining_svs) > 1:
+    E = input_SVD.energy
+    while len(remaining_svs) > 1 and (sum([i.value**2 for i in remaining_svs])/E) > 1.0-pyfusion.settings.ENERGY_THRESHOLD:
         tmp_cp = [mean(abs(cps(remaining_svs[0].chrono, sv.chrono)))/(remaining_svs[0].self_cps*sv.self_cps) for sv in remaining_svs]
         tmp_cp_argsort = array(tmp_cp).argsort()[::-1]
         sort_cp = take(tmp_cp,tmp_cp_argsort)
@@ -181,7 +181,7 @@ def _new_group_svs(input_SVD):
 
         # remove the newly assigned SV from the remaining SV list so they don't get assigned again
         for i in output_fs_list[-1]: remaining_svs.remove(i)
-    if len(remaining_svs) == 1:
+    if len(remaining_svs) == 1 and (sum([i.value**2 for i in remaining_svs])/E) > 1.0-pyfusion.settings.ENERGY_THRESHOLD:
         output_fs_list.append(remaining_svs)
 
     return output_fs_list

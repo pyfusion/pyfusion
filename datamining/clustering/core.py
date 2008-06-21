@@ -146,7 +146,7 @@ def group_svs(input_SVD, threshold = pyfusion.settings.SV_GROUPING_THRESHOLD):
         remaining_svs[i].self_cps = mean(cps(_sv.chrono,_sv.chrono))
 
     while len(remaining_svs) > 0:
-        tmp_cp = [mean(abs(cps(remaining_svs[0].chrono, sv.chrono)))/(remaining_svs[0].self_cps*sv.self_cps) for sv in remaining_svs]
+        tmp_cp = [mean(abs(cps(remaining_svs[0].chrono, sv.chrono)))**2/(remaining_svs[0].self_cps*sv.self_cps) for sv in remaining_svs]
         # elements of tmp_cp which pass the threshold values
         filtered_elements = [i for [i,val] in enumerate(tmp_cp) if val > threshold]
         
@@ -172,7 +172,7 @@ def _new_group_svs(input_SVD):
         remaining_svs[i].self_cps = mean(cps(_sv.chrono,_sv.chrono))
     E = input_SVD.energy
     while len(remaining_svs) > 1 and (sum([i.value**2 for i in remaining_svs])/E) > 1.0-pyfusion.settings.ENERGY_THRESHOLD:
-        tmp_cp = [mean(abs(cps(remaining_svs[0].chrono, sv.chrono)))/(remaining_svs[0].self_cps*sv.self_cps) for sv in remaining_svs]
+        tmp_cp = [mean(abs(cps(remaining_svs[0].chrono, sv.chrono)))**2/(remaining_svs[0].self_cps*sv.self_cps) for sv in remaining_svs]
         tmp_cp_argsort = array(tmp_cp).argsort()[::-1]
         sort_cp = take(tmp_cp,tmp_cp_argsort)
         delta_cp = sort_cp[1:]-sort_cp[:-1]

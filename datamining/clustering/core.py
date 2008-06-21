@@ -170,12 +170,10 @@ def _new_group_svs(input_SVD):
     remaining_svs = [i for i in sv_query]
     E = input_SVD.energy
     remaining_svs_norm_energy = array([i.value**2 for i in remaining_svs])/E
-    print len(remaining_svs)
     if pyfusion.settings.ENERGY_THRESHOLD < 1:
         max_element = searchsorted(cumsum(remaining_svs_norm_energy),pyfusion.settings.ENERGY_THRESHOLD)
         remaining_svs = remaining_svs[:max_element]
         remaining_svs_norm_energy = remaining_svs_norm_energy[:max_element]        
-    print len(remaining_svs)
     for i,_sv in enumerate(remaining_svs):
         remaining_svs[i].self_cps = mean(cps(_sv.chrono,_sv.chrono))
     while len(remaining_svs) > 1:

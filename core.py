@@ -392,11 +392,11 @@ def new_timesegment(shot_instance, primary_diagnostic_name, t0, t1):
     ts._load_data()
     return ts
 
-def new_svd(timesegment_instance, diagnostic_id = -1, normalise=False):
+def new_svd(timesegment_instance, diagnostic_id = -1, normalise=False, remove_baseline=True):
     if diagnostic_id < 0:
         diagnostic_id = timesegment_instance.primary_diagnostic_id
     new_svd = pyfusion.MultiChannelSVD(timesegment_id=timesegment_instance.id, diagnostic_id = diagnostic_id)
     pyfusion.session.save(new_svd)
     pyfusion.session.flush()
-    new_svd._do_svd(normalise=normalise)
+    new_svd._do_svd(normalise=normalise, remove_baseline=remove_baseline)
     return new_svd

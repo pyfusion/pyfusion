@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, Strin
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
 import pylab as pl
-from numpy import mean, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin
+from numpy import mean, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum
 
 
 ordered_channels=[]
@@ -168,10 +168,17 @@ def _new_group_svs(input_SVD):
     sv_query = pyfusion.session.query(pyfusion.SingularValue).filter_by(svd = input_SVD).order_by(pyfusion.SingularValue.number)
 
     remaining_svs = [i for i in sv_query]
+    E = input_SVD.energy
+    remaining_svs_norm_energy = array([i.value**2 for i in remaining_svs])/E
+    print len(remaining_svs)
+    if pyfusion.settings.ENERGY_THRESHOLD < 1:
+        max_element = searchsorted(cumsum(remaining_svs_norm_energy),pyfusion.settings.ENERGY_THRESHOLD)
+        remaining_svs = remaining_svs[:max_element]
+        remaining_svs_norm_energy = remaining_svs_norm_energy[:max_element]        
+    print len(remaining_svs)
     for i,_sv in enumerate(remaining_svs):
         remaining_svs[i].self_cps = mean(cps(_sv.chrono,_sv.chrono))
-    E = input_SVD.energy
-    while len(remaining_svs) > 1 and (sum([i.value**2 for i in remaining_svs])/E) > 1.0-pyfusion.settings.ENERGY_THRESHOLD:
+    while len(remaining_svs) > 1:
         tmp_cp = [mean(abs(cps(remaining_svs[0].chrono, sv.chrono)))**2/(remaining_svs[0].self_cps*sv.self_cps) for sv in remaining_svs]
         tmp_cp_argsort = array(tmp_cp).argsort()[::-1]
         sort_cp = take(tmp_cp,tmp_cp_argsort)
@@ -181,7 +188,7 @@ def _new_group_svs(input_SVD):
 
         # remove the newly assigned SV from the remaining SV list so they don't get assigned again
         for i in output_fs_list[-1]: remaining_svs.remove(i)
-    if len(remaining_svs) == 1 and (sum([i.value**2 for i in remaining_svs])/E) > 1.0-pyfusion.settings.ENERGY_THRESHOLD:
+    if len(remaining_svs) == 1:
         output_fs_list.append(remaining_svs)
 
     return output_fs_list

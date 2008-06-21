@@ -7,8 +7,16 @@ from pyfusion.data_acq.MDSPlus.MDSPlus import MDSPlusChannel
 #from pyfusion.settings import H1_MDS_SERVER
 from h1data_dtacq_shot_offset import h1data_dtacq_mapping
 from numpy import searchsorted
+from sqlalchemy import Column, Float, Integer, ForeignKey
+from pyfusion.core import Shot
 
 H1_MDS_SERVER = pyfusion.settings.H1_MDS_SERVER
+
+class H1Shot(Shot):
+    __tablename__ = 'h1_customshot'
+    __mapper_args__ = {'polymorphic_identity':'H1'}
+    id = Column('id', Integer, ForeignKey('shots.id'), primary_key=True)
+    kappa_h = Column('kappa_h',Float)
 
 class ProcessData:
     def __init__(self, data_acq_type = '', processdata_override = ''):

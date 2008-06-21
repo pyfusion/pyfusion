@@ -9,24 +9,13 @@ sqlalchemy version >= 0.4.4 (version 0.4.4 is required for the declarative exten
 
 from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted
 from numpy.dual import svd
-from utils import local_import, get_conditional_select, check_same_timebase
-#import settings, utils
-import utils
+from utils import local_import, get_conditional_select, check_same_timebase, delta_t
 
-from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean
+from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean, String
 from sqlalchemy.orm import relation, synonym
-#from sqlalchemy.ext.declarative import declared_synonym
 import pyfusion
 
 
-def get_shot(shot_number):    
-    try:
-        existing_shot = pyfusion.session.query(Shot).filter(Shot.device_id == pyfusion._device.id).filter(Shot.shot == shot_number).one()
-        return existing_shot
-    except:
-        print "Creating shot %s:%d" %(pyfusion._device.name, shot_number)    
-        s = Shot(shot_number)
-        return s
     
 
 class Shot(pyfusion.Base):
@@ -38,6 +27,8 @@ class Shot(pyfusion.Base):
     shot = Column('shot', Integer)
     device_id = Column('device_id', Integer, ForeignKey('devices.id'))
     device = relation(pyfusion.Device, primaryjoin=device_id==pyfusion.Device.id, backref="shots")    
+    shot_type = Column('shot_type', String(50)) ## want something to map...
+    __mapper_args__ = {'polymorphic_on':shot_type}
     data = {}
     def __init__(self, sn):
         """
@@ -115,6 +106,17 @@ class Shot(pyfusion.Base):
         else:
             [t0,t1] = [self.time_segments[1][segment_number], self.time_segments[1][segment_number+1]]
             return self.data[diag].timesegment(t0,t1-t0, use_samples=[False, False])
+
+
+
+def get_shot(shot_number,shot_class = Shot):    
+    try:
+        existing_shot = pyfusion.session.query(shot_class).filter(shot_class.device_id == pyfusion._device.id).filter(shot_class.shot == shot_number).one()
+        return existing_shot
+    except:
+        print "Creating shot %s:%d" %(pyfusion._device.name, shot_number)    
+        s = shot_class(shot_number)
+        return s
 
 
 class MultiChannelTimeseries(object):
@@ -304,7 +306,7 @@ class MultiChannelSVD(pyfusion.Base):
         
         [tmp,svs,chronos] = svd(data,0)
         topos = transpose(tmp)
-        if pyfusion.settings.VERBOSE >= 3: print 'done svd seg %s, %s' %(str(self.id), utils.delta_t("svd"))
+        if pyfusion.settings.VERBOSE >= 3: print 'done svd seg %s, %s' %(str(self.id), delta_t("svd"))
         for svi,sv in enumerate(svs):
             if store_chronos:
                 tmp1 = SingularValue(svd_id = self.id, number=svi, value=sv, chrono=chronos[svi].tolist(), topo=topos[svi].tolist())

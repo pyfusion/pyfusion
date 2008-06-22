@@ -65,12 +65,7 @@ flucstruc_svs = Table('flucstruc_svs', pyfusion.Base.metadata,
 class FluctuationStructureSet(pyfusion.Base):
     __tablename__ = 'dm_fs_set'
     id = Column('id', Integer, primary_key=True)
-# david originally specified a unique name:
-#  advantage is that a given name assures the same parameters in processing
-#  disadvantage is that data cannot be appended.
-#  Making it non-unique allows us to select one or all of the same-named sets
-# dgp: will make this unique again when functionality is added for appending fluctstrucs to a set (including checking parameters...)
-    name = Column("name", String(100), unique=False)
+    name = Column("name", String(100), unique=True)
     flucstrucs = relation("FluctuationStructure", backref='set')
 
 
@@ -118,11 +113,14 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
 
 
 def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
-    # register the fs_set name
-    fs_set = FluctuationStructureSet(name = fs_set_name)
-    # get id for fs_set    
-    pyfusion.session.save(fs_set)
-    pyfusion.session.commit()
+    # get fs_set or register a new one
+    try:
+        fs_set = pyfusion.session.query(FluctuationStructureSet).filter_by(name=fs_set_name).one()
+    except:
+        fs_set = FluctuationStructureSet(name = fs_set_name)
+        # get id for fs_set    
+        pyfusion.session.save(fs_set)
+        pyfusion.session.commit()
     segs = pyfusion.get_time_segments(shot, diag_name)
     diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == diag_name).one()
     for seg_i, seg in enumerate(segs[::-1]):

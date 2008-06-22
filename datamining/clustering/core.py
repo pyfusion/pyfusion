@@ -312,11 +312,14 @@ def get_fs_in_set(fs_set_name):
 
 def get_clusters_for_fs_set(fs_set_name):
     fs_list = get_fs_in_set(fs_set_name)
+    get_clusters_for_fs_list(fs_list, fs_set_name + '_clusters')
+
+def get_clusters_for_fs_list(fs_list, cluster_dataset_name):
     # BAD... should ensure that all used_channels are the same - not just grab them from one FS in the set!
     # do we need to do a query here? probably not
     chs = [pyfusion.session.query(pyfusion.Channel).filter_by(name=i).one() for i in fs_list[0].svd.used_channels]
     # default channel pairs - use pairs from used_channels - assumed to be ordered - at the moment it's taken from ordeed_channel_list
     ch_pairs = [[chs[i],chs[i+1]] for i in range(len(chs)-1)]
-    cluster_dataset_name = fs_set_name + '_clusters'
+    #cluster_dataset_name = fs_set_name + '_clusters'
     get_clusters(fs_list, ch_pairs, cluster_dataset_name)
-
+    

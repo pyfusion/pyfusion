@@ -60,6 +60,9 @@ class Diagnostic(Base):
         self.ordered_channel_list.append(channel.name)
         self.channels.append(channel)
     def ordered_channels(self):
+#bdb
+        if len(self.channels) != len(self.ordered_channel_list): 
+            print('******** Inconsistency in ordered channels %d != %d') % (len(self.channels), len(self.ordered_channel_list))
         outlist = []
         for oc in self.ordered_channel_list:
             outlist.append(session.query(Channel).filter_by(name=oc, diagnostic_id=self.id).one())
@@ -103,7 +106,8 @@ update_device_info(Device)
 
 
 _device = session.query(Device).filter(Device.name == _device_module.__dict__[settings.DEVICE].name).one()
-
+if settings.VERBOSE>0:
+    for ds in session.query(Diagnostic): print (" %s: list=%d, channels=%d ") % (ds.name,len(ds.ordered_channel_list),len(ds.channels))
 
 session.commit()
 

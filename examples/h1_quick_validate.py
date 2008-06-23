@@ -17,8 +17,10 @@ import pyfusion
 # about the minimum data that will cluster, maybe not enough to make sense
 diag_name = 'mirnov_small'
 shot_number = 58123
-pyfusion.settings.SHOT_T_MIN=0.04
+pyfusion.settings.SHOT_T_MIN=0.02
 pyfusion.settings.SHOT_T_MAX=0.06
+
+# Note - as of r124, needed 20-60ms instead of 40-60ms to get >4 clusters
 
 # tweak parameters according to command line args
 execfile('process_cmd_line_args.py')

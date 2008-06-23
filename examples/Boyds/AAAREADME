@@ -6,6 +6,23 @@ that directory to be reserved for simple or illustrative scripts.
 
 Below is a log of which example files worked under which version.
 
+r 124:
+python examples/h1_quick_validate
+#OK, needed to increase time range to 20-40 ms to get 10 clusters.
+
+# Runs from raw to clusters in about 15 seconds:  
+# this is very similar to quick_validate
+# problem with mismatch between channels and ordered_channel_list is
+# suppressed by running it one, in ipython - needs proper fix
+export DN="'mirnov_small'"
+ipython examples/Boyds/test_pyfusion.py "diag_name='mirnov_small'" shot_number=58123 pyfusion.settings.SHOT_T_MIN=0.03 pyfusion.settings.SHOT_T_MAX=0.06
+run examples/Boyds/test_clusters0.py diag_name="'mirnov_small'"
+
+
+r123: 
+Lots of problems due to forced partial update, fixed in 125
+
+
 #version 115: 
 test_pyfusion.py "diag_name='mirnov_all'" shot_number=58123 pyfusion.settings.SHOT_T_MIN=0.04 pyfusion.settings.SHOT_T_MAX=0.06
 #*OK*
@@ -32,4 +49,14 @@ Out[3]: ['mirnov_1_4', 'mirnov_1_7', 'mirnov_1_8', 'mirnov_1_9']
 diag.ordered_channels()
 No rows returned for one()
 
-Problem is due to assumption that there is more than one toroidal angle.
+looks like it may be due to assumption that there is more than one toroidal angle - BUT
+
+There is a discrepancy between these two - shoudl be same length - 
+seems like assignment in H1.py is stealing channels!
+Yes, I can see that if the pointer is changed, rather than a new object made!
+see below
+In [2]: len(diag.ordered_channel_list)
+Out[2]: 4
+
+In [3]: len(diag.channels)
+Out[3]: 0

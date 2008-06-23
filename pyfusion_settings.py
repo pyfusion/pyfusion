@@ -96,6 +96,15 @@ ENERGY_THRESHOLD = 0.99
 # H1
 H1_MDS_SERVER = 'h1data.anu.edu.au'
 
+# TJ-II
+RPCLIB = "$HOME/libs/libRpcC.a.linux.3.1"
+COMPILE_COMMAND = "gcc  -g -I/usr/include/python2.5 -c tjiidata.c -o tjiidata.o"
+LINKING_COMMAND = "ld -shared -o tjiidata.so  tjiidata.o %s" %RPCLIB
+def compile_tjiidata(current_dir, comp_command = COMPILE_COMMAND, link_command = LINKING_COMMAND):
+	import commands
+	tmp = commands.getstatusoutput("cd %s; %s; %s" %(current_dir,comp_command,link_command))
+	return tmp
+
 #Optimisation
 OPT=5
 

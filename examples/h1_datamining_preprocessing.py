@@ -7,8 +7,8 @@ DEVICE='H1'
 """
 
 import pyfusion
-diag_name = 'mirnovbeans'
 
+diag_name = 'mirnovbeans'
 shot_number = 58048
 
 s = pyfusion.get_shot(shot_number)

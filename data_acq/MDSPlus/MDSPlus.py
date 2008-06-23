@@ -31,6 +31,8 @@ class ProcessData:
     def load_channel(self, mdsch, shot, invert=False):        
         [dim_data,data] = _loadmds(mdsch,shot,invert=invert)
         t_lim = searchsorted(dim_data,[pyfusion.settings.SHOT_T_MIN, pyfusion.settings.SHOT_T_MAX])
+        if pyfusion.settings.VERBOSE>4: 
+            print('choosing data indices %d to %d') % (t_lim[0],t_lim[1])
         output_MCT = pyfusion.MultiChannelTimeseries(dim_data[t_lim[0]:t_lim[1]])
         output_MCT.add_channel(data[t_lim[0]:t_lim[1]], mdsch.name)
         return output_MCT

@@ -2,3 +2,34 @@ These are examples adapted or created by Boyd.
 Some are simple tests, others are more complicated scripts to do actual 
 analysis.  Their separation from the parent directory ../examples allows
 that directory to be reserved for simple or illustrative scripts.
+
+
+Below is a log of which example files worked under which version.
+
+#version 115: 
+test_pyfusion.py "diag_name='mirnov_all'" shot_number=58123 pyfusion.settings.SHOT_T_MIN=0.04 pyfusion.settings.SHOT_T_MAX=0.06
+#*OK*
+
+python examples/Boyds/test_clusters0.py diag_name="'mirnov_all'"
+# works - data looks OK, but only one shot...hard to judge properly
+
+python examples/Boyds/test_clusters.py diag_name="'mirnov_all'"
+# fails - chpair[0].id  - chpairs are strings ?
+
+# this illustrates ordered channels error for diag_name
+python examples/Boyds/test_pyfusion.py "diag_name='mirnov_small'" shot_number=58123 pyfusion.settings.SHOT_T_MIN=0.04 pyfusion.settings.SHOT_T_MAX=0.06
+ipython examples/Boyds/test_clusters0.py diag_name="'mirnov_small'"
+
+# use ENV var to illustrate ordered_channel_list bug
+export DN="'mirnov_small'"
+python examples/Boyds/test_pyfusion.py diag_name=$DN shot_number=58123 pyfusion.settings.SHOT_T_MIN=0.04 pyfusion.settings.SHOT_T_MAX=0.06
+ipython examples/Boyds/test_clusters0.py diag_name=$DN
+
+
+diag.ordered_channel_list
+Out[3]: ['mirnov_1_4', 'mirnov_1_7', 'mirnov_1_8', 'mirnov_1_9']
+ 
+diag.ordered_channels()
+No rows returned for one()
+
+Problem is due to assumption that there is more than one toroidal angle.

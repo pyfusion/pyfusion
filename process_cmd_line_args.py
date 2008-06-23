@@ -7,6 +7,7 @@ This is code to be "inlined" to allow python statments to be passed
 """
 import sys
 # override the defaults set before execfile'ing' this code
+if pyfusion.settings.VERBOSE>2: print ('%d args found') % (len(sys.argv))
 for i in range(1,len(sys.argv)):
     print('executing %s') % sys.argv[i]
     exec(sys.argv[i])

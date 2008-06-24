@@ -157,15 +157,19 @@ class MultiChannelTimeseries(object):
         else:
             print "Signal '%s' not same length as timebase. Not adding to multichannel data" %channel_name
 
-    def add_multichannel(self, multichanneldata):
+    def add_multichannel(self, multichanneldata, skip_timebase_check = False):
         """
         join another MultiChannelTimeseries object to this one
         """
-        if check_same_timebase(self, multichanneldata):
+        if skip_timebase_check or check_same_timebase(self, multichanneldata):
+            allow_add = True
+        else:
+            allow_add = False
+        if allow_add:
             for channel_name in multichanneldata.ordered_channel_list:
                 self.add_channel(multichanneldata.signals[channel_name], channel_name)
         else:
-            print "Timebase not the same. Not joining multichannel data"
+            print "Timebase not the same. Not joining multichannel data!"
     
     def export(self, filename, compression = 'bzip2', filetype = 'csv'):
         if compression != 'bzip2':

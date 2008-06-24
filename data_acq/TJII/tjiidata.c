@@ -18,7 +18,7 @@ tjiidata_dimens(PyObject *self, PyObject *args)
 
   status=dimens_(&ndes, senal, &ndat, &nvent, &ierr);
   if (ierr) {
-    printf("dimens returned error. No exception handling (or garbage collection) yet...");
+    PyErr_SetString(PyExc_ValueError, "dimens returned error... ");
     return NULL;
   }
   return Py_BuildValue("(l,l)", ndat,nvent);
@@ -49,8 +49,9 @@ tjiidata_lectur(PyObject *self, PyObject *args)
   status = lectur_(&ndes, senal, &ndimx, &ndimy, &ndimv, x, y, &ndat, &nvent, mv, per, tini, &nbits, &offset, &ymax, &ymin, &factor, &vpp, &code0, unidad, &ierr);
 
   if (ierr) {
-    printf("dimens returned error. No exception handling (or garbage collection) yet...");
+    PyErr_SetString(PyExc_ValueError, "lectur returned error... ");
     return NULL;
+
   }
 
   /* hack: there are  more efficient ways to return an array... */

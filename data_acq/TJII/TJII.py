@@ -29,7 +29,10 @@ class ProcessData:
         if pyfusion.settings.VERBOSE>4: 
             print('choosing data indices %d to %d') % (t_lim[0],t_lim[1])
         output_MCT = pyfusion.MultiChannelTimeseries(array(data_dict['x'][t_lim[0]:t_lim[1]]))
-        output_MCT.add_channel(data_dict['y'][t_lim[0]:t_lim[1]], tjiich.senal)
+        if invert:
+            output_MCT.add_channel(-array(data_dict['y'][t_lim[0]:t_lim[1]]), tjiich.senal)
+        else:
+            output_MCT.add_channel(array(data_dict['y'][t_lim[0]:t_lim[1]]), tjiich.senal)
         return output_MCT
 
 class TJIIChannel(pyfusion.Channel):

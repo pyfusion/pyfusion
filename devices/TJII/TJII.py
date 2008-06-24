@@ -6,6 +6,25 @@ import pyfusion
 from pyfusion.data_acq.TJII.TJII import TJIIChannel
 
 
+
+class ProcessData:
+    def __init__(self, data_acq_type = '', processdata_override = ''):
+        self.data_acq_type = data_acq_type
+        self.processdata_override = processdata_override
+
+
+    def load_channel(self, tjiich, shot):
+        if self.data_acq_type == 'TJII':
+            if 'INVERT' in self.processdata_override:
+                invert_signal = True
+            else:
+                invert_signal = False
+            from pyfusion.data_acq.TJII.TJII import ProcessData as _ProcessData
+            pd = _ProcessData()
+            return pd.load_channel(tjiich, shot, invert=invert_signal)
+
+
+
 mirnov_5p_105 = TJIIChannel(senal='MID5P_05',name = 'mirnov_5p_105')
 mirnov_5p_104 = TJIIChannel(senal='MID5P_04',name = 'mirnov_5p_104')
 mirnov_5p_103 = TJIIChannel(senal='MID5P_03',name = 'mirnov_5p_103')

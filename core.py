@@ -41,7 +41,7 @@ class Shot(pyfusion.Base):
         pyfusion.session.commit()
 
 
-    def load_diag(self, diagnostic, ignore_channels=[]):
+    def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False):
         print "Only MultiChannel Timeseries data works for now" 
         diag = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name==diagnostic)[0]
         channel_list = []
@@ -75,7 +75,7 @@ class Shot(pyfusion.Base):
             if chi==0:
                 channel_MCT = _tmp
             else:
-                channel_MCT.add_multichannel(_tmp)
+                channel_MCT.add_multichannel(_tmp,skip_timebase_check=skip_timebase_check)
         self.data[diagnostic] = channel_MCT
         
 

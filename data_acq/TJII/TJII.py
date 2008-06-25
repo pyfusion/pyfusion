@@ -35,6 +35,7 @@ class ProcessData:
             output_MCT.add_channel(array(data_dict['y'][t_lim[0]:t_lim[1]]), tjiich.name)
         return output_MCT
 
+
 class TJIIChannel(pyfusion.Channel):
     __tablename__ = 'tjiichannels'
     __mapper_args__ = {'polymorphic_identity':'TJII'}

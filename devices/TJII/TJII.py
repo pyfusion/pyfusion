@@ -4,8 +4,10 @@ Device class for the TJ-II heliac
 
 import pyfusion
 from pyfusion.data_acq.TJII.TJII import TJIIChannel
+from pyfusion.data_acq.TJII import tjiidata
 
-
+def last_shot():
+    return tjiidata.last_shot()
 
 class ProcessData:
     def __init__(self, data_acq_type = '', processdata_override = ''):

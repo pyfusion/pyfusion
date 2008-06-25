@@ -1,6 +1,6 @@
 #include <Python.h>
 
-
+extern int lastshot_(int *, int *);
 extern int lectur_(int *, char *, int *, int *,int *, float *, float*, int *, int *, int *, float *, float *, int *, float *, float *,float *, float *,float *, int *, char *, int *);
 extern int dimens_(int *, char *, int *, int *, int *);
 extern int ertxt_(int *);
@@ -24,6 +24,22 @@ tjiidata_dimens(PyObject *self, PyObject *args)
   return Py_BuildValue("(l,l)", ndat,nvent);
   
 }
+
+
+static PyObject *
+tjiidata_lastshot(PyObject *self, PyObject *args)
+{
+  int ierr,ndes,status;
+
+  status=lastshot_(&ndes, &ierr);
+  if (ierr) {
+    PyErr_SetString(PyExc_ValueError, "lastshot returned error... ");
+    return NULL;
+  }
+  return Py_BuildValue("l", ndes);
+  
+}
+
 
 static PyObject * 
 tjiidata_lectur(PyObject *self, PyObject *args)
@@ -119,6 +135,8 @@ static PyMethodDef tjiidata_methods[] = {
      "Load data...."},
     {"dimens", (PyCFunction)tjiidata_dimens, METH_VARARGS | METH_KEYWORDS,
      "Get data dimens...."},
+    {"last_shot", (PyCFunction)tjiidata_lastshot, METH_VARARGS | METH_KEYWORDS,
+     "Get last shot..."},
     {NULL, NULL, 0, NULL}   /* sentinel */
 };
 

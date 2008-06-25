@@ -130,6 +130,9 @@ def get_shot(shot_number,shot_class = Shot):
         s = shot_class(shot_number)
         return s
 
+def last_shot():
+    return pyfusion._device_module.last_shot()
+
 def load_channel(shot_number,channel_name):
     ch = pyfusion.session.query(pyfusion.Channel).filter(pyfusion.Channel.name==channel_name)[0]
     if ch.processdata_override:

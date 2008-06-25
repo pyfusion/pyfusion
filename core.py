@@ -52,24 +52,7 @@ class Shot(pyfusion.Base):
             if ch not in ignore_channels:
                 channel_list.append(ch)
         for chi, chn in enumerate(channel_list):
-            ch = pyfusion.session.query(pyfusion.Channel).filter(pyfusion.Channel.name==chn)[0]
-            if ch.processdata_override:
-                _ProcessData = pyfusion._device_module.ProcessData(data_acq_type = ch.data_acq_type, processdata_override = ch.processdata_override)
-            else:
-                _ProcessData = __import__('pyfusion.data_acq.%s.%s' %(ch.data_acq_type,ch.data_acq_type), globals(), locals(), ['ProcessData']).ProcessData()
-# We trap data item not found exceptions at this level
-# -  advantage is it catches all data systems,
-# -  but the problem is that specific info like MDS stuff (tree, etc) 
-#    can't be easily accessed, and other errors are not traced -  bdb
-#  - Solution - for mid-high VERBOSE levels, try again without handling by "try"
-            try:
-                _tmp = _ProcessData.load_channel(ch, self.shot)
-            except:
-                msg=str('Failed to retrieve data from %s, shot %d') % (ch.name, self.shot)
-                if pyfusion.settings.VERBOSE>3:
-                    print (msg + ': Trying again without catching exception')
-                    _tmp = _ProcessData.load_channel(ch, self.shot)
-                raise LookupError, msg
+            _tmp = load_channel(self.shot,chn)
             if chi==0:
                 channel_MCT = _tmp
             else:
@@ -147,7 +130,27 @@ def get_shot(shot_number,shot_class = Shot):
         s = shot_class(shot_number)
         return s
 
-
+def load_channel(shot_number,channel_name):
+    ch = pyfusion.session.query(pyfusion.Channel).filter(pyfusion.Channel.name==channel_name)[0]
+    if ch.processdata_override:
+        _ProcessData = pyfusion._device_module.ProcessData(data_acq_type = ch.data_acq_type, processdata_override = ch.processdata_override)
+    else:
+        _ProcessData = __import__('pyfusion.data_acq.%s.%s' %(ch.data_acq_type,ch.data_acq_type), globals(), locals(), ['ProcessData']).ProcessData()
+    # We trap data item not found exceptions at this level
+    # -  advantage is it catches all data systems,
+    # -  but the problem is that specific info like MDS stuff (tree, etc) 
+    #    can't be easily accessed, and other errors are not traced -  bdb
+    #  - Solution - for mid-high VERBOSE levels, try again without handling by "try"
+    try:
+        _tmp = _ProcessData.load_channel(ch, shot_number)
+        return _tmp
+    except:
+        msg=str('Failed to retrieve data from %s, shot %d') % (ch.name, shot_number)
+        if pyfusion.settings.VERBOSE>3:
+            print (msg + ': Trying again without catching exception')
+            _tmp = _ProcessData.load_channel(ch, shot_number)
+            raise LookupError, msg
+        
 class MultiChannelTimeseries(object):
     """
     A class to hold multichannel data. 

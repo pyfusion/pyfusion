@@ -242,15 +242,21 @@ class MultiChannelTimeseries(object):
             new_mc_data.add_channel(self.signals[ch][e0:e1],ch)
         return new_mc_data
 
-    def plot(self):
+    def plot(self, title="",saveas=""):
         import pylab as pl
         for ch_i, ch in enumerate(self.ordered_channel_list):
             pl.subplot(len(self.ordered_channel_list),1,ch_i+1)
             pl.plot(self.timebase,self.signals[ch])
             pl.ylabel(ch)
-        pl.show()
+        if title:
+            pl.title(title)
+        if saveas:
+            pl.savefig(saveas)
+        else:
+            pl.show()
 
-    def spectrogram(self, max_freq = -1, noverlap=0, NFFT=1024):
+
+    def spectrogram(self, max_freq = -1, noverlap=0, NFFT=1024, title="",saveas=""):
         import pylab as pl
         for ch_i, ch in enumerate(self.ordered_channel_list):
             pl.subplot(len(self.ordered_channel_list),1,ch_i+1)
@@ -258,7 +264,12 @@ class MultiChannelTimeseries(object):
             pl.ylabel(ch)
             if max_freq> 0:
                 pl.ylim(0,max_freq)
-        pl.show()
+        if title:
+            pl.title(title)
+        if saveas:
+            pl.savefig(saveas)
+        else:
+            pl.show()
             
 class TimeSegment(pyfusion.Base):    
     __tablename__ = 'timesegments'

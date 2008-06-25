@@ -15,9 +15,7 @@ from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Floa
 from sqlalchemy.orm import relation, synonym
 import pyfusion
 
-
     
-
 class Shot(pyfusion.Base):
     """
     The class to represent any shot-specific data.    
@@ -79,14 +77,40 @@ class Shot(pyfusion.Base):
         self.data[diagnostic] = channel_MCT
         
 
-    def define_time_segments(self, diag, n_samples = pyfusion.settings.N_SAMPLES_TIME_SEGMENT):
+    def define_time_segments(self, diag, n_samples = False, overlap=False):
         """
         Create a list of time segments defined with width n_samples for primary_diag. 
-        gives self.time_segments = [elements, times]. elements[:-1] and elements[1:] respectively provide lists for t0 and t1 elements for segements. Likewise, times[:-1] and times[1:] give t0 and t1 time lists
+        gives self.time_segments = [elements, times]. elements[:-1] and 
+        elements[1:] respectively provide lists for t0 and t1 elements for 
+        segments. Likewise, times[:-1] and times[1:] give t0 and t1 time lists
+        bdb: Not implemented in exactly this way - in fact n_samples is fixed
+        and the interval starts from t0 and is n_samples long.  Due to Dave's 
+        foresight, this makes it easy to implement overlap.  If the sample 
+        segment length is fixed, then the frequency resolution is fixed, so
+        this is a good choice.  
+        overlap=0 means no overlap, and overlap=1 means that the entire segment
+        is overlapped with its neighbours, half to the preceding segment and 
+        half to the succeeding segment thus:
+        ================
+               =================
+                        ================
+        overlap=2 is the limit when the segments do not advance in time.
+        Takes approx 2/(2-overlap) as long as no overlap.
+        @param overlap: 0 (default) for contiguous segments, 1 50% each end, <2 max
         @param n_samples: width of time segment (using sample rate of primary_diag)
         """
+# see note about N_SAMPLES_TIME_SEGMENT in get_time_segments        
+        if n_samples == False: n_samples=pyfusion.settings.N_SAMPLES_TIME_SEGMENT
+        if overlap == False: overlap=pyfusion.settings.SEGMENT_OVERLAP
+        if overlap > 1.99: raise Exception, str('overlap (%.4g) must be < 2, advise < 1.8') % overlap
         len_timebase = len(self.data[diag].timebase)
-        element_list = range(0,len_timebase,n_samples)
+        overlapped_samples = int((overlap*n_samples)/2)
+        if pyfusion.settings.VERBOSE >0: 
+            print ("%d samples, %d overlapped") % (n_samples, overlapped_samples)
+#        element_list = range(0,len_timebase,n_samples)
+# should check the routine that uses the following list (get_time_segment)
+# and make sure index error not possible on the last segment
+        element_list = range(0,len_timebase-overlapped_samples,n_samples-overlapped_samples)
         times_list = take(self.data[diag].timebase, element_list).tolist()
         #if (len_timebase%n_samples != 0) and zeropad:
         #    element_list.append(len_timebase)
@@ -378,7 +402,10 @@ class SingularValue(pyfusion.Base):
     chrono = synonym('_chrono', descriptor=property(_get_chrono, _set_chrono))
 
 
-def get_time_segments(shot, primary_diag, n_samples = pyfusion.settings.N_SAMPLES_TIME_SEGMENT):
+def get_time_segments(shot, primary_diag, n_samples = False):
+    # Note: using a default in the arglist uses the value at instantation - 
+    # so process_cmd_line_args fails to update that value of the setting
+    if n_samples==False: n_samples=pyfusion.settings.N_SAMPLES_TIME_SEGMENT
     shot.define_time_segments(primary_diag, n_samples = n_samples)
     output_list = []
     diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter_by(name = primary_diag).one()

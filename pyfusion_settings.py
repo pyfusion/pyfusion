@@ -36,6 +36,17 @@ DataMining Settings
 	----------------------
 	Number of samples for a short-time segment. Used for:
 	 	- generating fluctuation structures (pyfusion.datamining.clustering)
+        SEGMENT_OVERLAP
+	--------------
+	Allows time segments to overlap.  0 means no overlap, time segments 
+	are contiguous.  1 means that the time segment will just completely
+	overlap with its neighbours, half with the preceding segment and 
+	half with the next thus:
+        ================
+               =================
+                        ================
+        overlap=2 is the limit when the segments do not advance in time.
+        Takes approx 2/(2-overlap) as long as no overlap.
 
         SV_GROUPING_THRESHOLD
 	---------------------
@@ -88,6 +99,7 @@ CHANNEL_NAME_STRING_LENGTH = 10
 
 # Data Mining
 N_SAMPLES_TIME_SEGMENT = 2**10
+SEGMENT_OVERLAP = 0
 SV_GROUPING_THRESHOLD = 0.7
 ENERGY_THRESHOLD = 0.99 
 
@@ -118,3 +130,19 @@ try:
 
 except:
 	print "Local settings not found (looking for pyfusion_local_settings.py in python path)"
+
+
+## Finally, allow for overriding the SERVER variable for test purposes
+## export PYFUSION_SETTINGS_SQL_SERVER="sqlite:///:memory:"
+## export PYFUSION_SETTINGS_SQL_SERVER="sqlite:///temp.dat"
+import os
+envsvr=os.getenv('PYFUSION_SETTINGS_SQL_SERVER')
+if (envsvr): SQL_SERVER=envsvr
+if VERBOSE>0: print("Using SQL_SERVER %s") % SQL_SERVER
+
+envdev=os.getenv('PYFUSION_SETTINGS_DEVICE')
+if (envdev): DEVICE=envdev
+if VERBOSE>0: print("Using DEVICE %s") % DEVICE
+
+
+

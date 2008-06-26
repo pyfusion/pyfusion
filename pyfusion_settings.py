@@ -86,12 +86,22 @@ waste time.
 
 """
 
+from tempfile import gettempdir
+
 # General:
 DEVICE = ''
 TIMEBASE_DIFFERENCE_TOLERANCE = 1.e-16
 
 SHOT_T_MIN = -1.e10
 SHOT_T_MAX = 1.e10
+
+LOCAL_SAVEFILE_DIR = gettempdir()
+
+def getlocalfilename(shot_number, channel_name):
+	"""
+	At present, we assume the numpy savez method is used - other save options may be added later
+	"""
+	return LOCAL_SAVEFILE_DIR+'/%d_%s.npz' %(shot_number, channel_name)
 
 # SQL
 SQL_SERVER = 'sqlite:///pyfusion_database.txt'

@@ -7,7 +7,7 @@ numpy
 sqlalchemy version >= 0.4.4 (version 0.4.4 is required for the declarative extension)
 """
 
-from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted
+from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted, savez, load
 from numpy.dual import svd
 from utils import local_import, get_conditional_select, check_same_timebase, delta_t
 
@@ -39,7 +39,7 @@ class Shot(pyfusion.Base):
         pyfusion.session.commit()
 
 
-    def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False):
+    def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False):
         print "Only MultiChannel Timeseries data works for now" 
         diag = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name==diagnostic)[0]
         channel_list = []
@@ -52,7 +52,7 @@ class Shot(pyfusion.Base):
             if ch not in ignore_channels:
                 channel_list.append(ch)
         for chi, chn in enumerate(channel_list):
-            _tmp = load_channel(self.shot,chn)
+            _tmp = load_channel(self.shot,chn,savelocal=savelocal)
             if chi==0:
                 channel_MCT = _tmp
             else:
@@ -133,8 +133,16 @@ def get_shot(shot_number,shot_class = Shot):
 def last_shot():
     return pyfusion._device_module.last_shot()
 
-def load_channel(shot_number,channel_name):
+def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False):
+    from os.path import exists
     ch = pyfusion.session.query(pyfusion.Channel).filter(pyfusion.Channel.name==channel_name)[0]
+    localfilename = pyfusion.settings.getlocalfilename(shot_number, channel_name)
+    if exists(localfilename) and not ignorelocal:
+        localdata = load(localfilename)
+        loaded_MCT = MultiChannelTimeseries(localdata['timebase'],parent_element=int(localdata['parent_element']))
+        loaded_MCT.add_channel(localdata['signal'],channel_name)
+        return loaded_MCT
+
     if ch.processdata_override:
         _ProcessData = pyfusion._device_module.ProcessData(data_acq_type = ch.data_acq_type, processdata_override = ch.processdata_override)
     else:
@@ -146,6 +154,8 @@ def load_channel(shot_number,channel_name):
     #  - Solution - for mid-high VERBOSE levels, try again without handling by "try"
     try:
         _tmp = _ProcessData.load_channel(ch, shot_number)
+        if savelocal:
+            savez(localfilename,timebase=_tmp.timebase,signal=_tmp.signals[channel_name],parent_element=_tmp.parent_element)
         return _tmp
     except:
         msg=str('Failed to retrieve data from %s, shot %d') % (ch.name, shot_number)

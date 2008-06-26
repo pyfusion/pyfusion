@@ -18,10 +18,6 @@
 	========
 	Local settings can be specified in a file called pyfusion_local_settings.py, which can be anywhere in your python path.
 	
-	Documentation
-	=============
-	We use epydoc U{http://epydoc.sourceforge.net} to generate documentation from the source code.
-	
 	Contributing to the code
 	========================
 	We use Git U{http://git.or.cz/}, U{http://en.wikipedia.org/wiki/Git_(software)}, a distributed revision control system. A distributed system allows easy branching and merging of the code - it should be trivial for groups to work on their own branch.

@@ -269,11 +269,15 @@ class MultiChannelTimeseries(object):
             pl.show()
 
 
-    def spectrogram(self, max_freq = -1, noverlap=0, NFFT=1024, title="",saveas=""):
+    def spectrogram(self, max_freq = -1, noverlap=0, NFFT=1024, title="",
+                    saveas="", figure=None, **kwargs):
         import pylab as pl
+        if (figure): figure(figure.number)
         for ch_i, ch in enumerate(self.ordered_channel_list):
             pl.subplot(len(self.ordered_channel_list),1,ch_i+1)
-            Pxx, freqs, bins, im = pl.specgram(self.signals[ch], NFFT=NFFT, Fs=2.*self.nyquist,noverlap=noverlap)
+            Pxx, freqs, bins, im = pl.specgram(self.signals[ch], NFFT=NFFT,
+                                               Fs=2.*self.nyquist,
+                                               noverlap=noverlap, **kwargs)
             pl.ylabel(ch)
             if max_freq> 0:
                 pl.ylim(0,max_freq)

@@ -1,5 +1,16 @@
 """
-Code to develop show incrementing widget-like interface
+Code to develop shot incrementing widget-like interface
+Primarily looks at spectrograms, but has built in test function and crude window inspector.
+
+David suggests Qt is better for interactive use
+Advantage of this simple version is it is toolkit independent.
+
+Notes:
+Need to include channel selector - hardwired to mirnov 8 at the moment.  
+Initially will use radio button channel selector - one at a time.
+Ultimate plan is to include an SQL query box to narrow range of shots
+Should really try to modularise this
+Display updates are 90% right now - still one step behind in adjusting FFT params
 """
 from matplotlib.widgets import RadioButtons, Button
 from pylab import *
@@ -59,7 +70,7 @@ def call_spec():
         shot=callback.get_shot()
         print("shot=%d") % shot
         data = pyfusion.load_channel(shot,'mirnov_1_8')
-        data.spectrogram(NFFT=NFFT,noverlap=foverlap*NFFT,hold=False)
+        data.spectrogram(NFFT=NFFT,noverlap=foverlap*NFFT)
 #        colorbar() # comes up on a separate page
 
     elif _type == 'T':
@@ -80,10 +91,10 @@ axcolor = 'lightgoldenrodyellow'
 
 #define the box where the buttons live
 rax = axes([0.05, 0.75, 0.15, 0.2], axisbg=axcolor)
-radio = RadioButtons(rax, ('128', '256', '512', '1024','2048','4096'))
+radio = RadioButtons(rax, ('win 128', '256', '512', '1024','2048','4096'))
 def hzfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
-    hzdict = {'128':128, '256':256, '512':512, '1024':1024,
+    hzdict = {'win 128':128, '256':256, '512':512, '1024':1024,
               '2048':2048, '4096':4096}
     NFFT = hzdict[label]
     call_spec()
@@ -91,10 +102,10 @@ def hzfunc(label):
 radio.on_clicked(hzfunc)
 
 rax = axes([0.05, 0.5, 0.15, 0.2], axisbg=axcolor)
-radio = RadioButtons(rax, ('0', '1/4', '1/2', '3/4','7/8','15/16'))
+radio = RadioButtons(rax, ('overlap 0', '1/4', '1/2', '3/4','7/8','15/16'))
 def ovlfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
-    ovldict = {'0':0, '1/4':0.25, '1/2':0.5, '3/4':0.75, '7/8':0.875,
+    ovldict = {'overlap 0':0, '1/4':0.25, '1/2':0.5, '3/4':0.75, '7/8':0.875,
                '15/16':0.9375}
     foverlap = ovldict[label]
     call_spec()
@@ -102,11 +113,11 @@ def ovlfunc(label):
 radio.on_clicked(ovlfunc)
 
 rax = axes([0.05, 0.25, 0.15, 0.2], axisbg=axcolor)
-radio = RadioButtons(rax, ('none',  'Bartlett', 'Hanning', 'Hamming',
+radio = RadioButtons(rax, ('no window',  'Bartlett', 'Hanning', 'Hamming',
                            'Blackman', 'Kaiser3','Flat-top-F'))
 def winfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
-    windict = {'none':local_none, 'Hanning':local_hanning, 
+    windict = {'no window':local_none, 'Hanning':local_hanning, 
                'Hamming':local_hamming, 'Blackman':local_blackman, 
                'Bartlett':local_bartlett, 'Kaiser3':local_kaiser3,
                'Flat-top-F':local_flat_top_freq}
@@ -116,10 +127,10 @@ def winfunc(label):
 radio.on_clicked(winfunc)
 
 rax = axes([0.05, 0.1, 0.15, 0.1], axisbg=axcolor)
-radio = RadioButtons(rax, ('f-t', 'test', 'log-spect', 'window'))
+radio = RadioButtons(rax, ('f-t plot ', 'test data', 'log-spect', 'window'))
 def typfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
-    typdict = {'f-t':'F', 'test':'T', 'log-spect':'L', 'window':'W'}
+    typdict = {'f-t plot':'F', 'test data':'T', 'log-spect':'L', 'window':'W'}
     _type = typdict[label]
     call_spec()
 
@@ -150,6 +161,7 @@ class IntegerCtl():
     def redraw(self):
         bshot.label.set_text(str(self.shot))
         call_spec()
+        draw()
 
     def frew(self, event):
         self.shot -= 10
@@ -192,5 +204,6 @@ bfwd.on_clicked(callback.fwd)
 bffwd=Button(axffwd,'>>')
 bffwd.on_clicked(callback.ffwd)
 
+callback.redraw()
 show()
 

@@ -142,10 +142,16 @@ except:
 	print "Local settings not found (looking for pyfusion_local_settings.py in python path)"
 
 
-## Finally, allow for overriding the SERVER variable for test purposes
+## Finally, allow for overriding various settings for test purposes
+## essential for variables that have effect during the initialisation of pyfusion
+## e.g.
 ## export PYFUSION_SETTINGS_SQL_SERVER="sqlite:///:memory:"
 ## export PYFUSION_SETTINGS_SQL_SERVER="sqlite:///temp.dat"
 import os
+enverb=os.getenv('PYFUSION_SETTINGS_VERBOSE')
+if (enverb): VERBOSE=enverb
+if VERBOSE>0: print("Verbosity level %s") % VERBOSE
+
 envsvr=os.getenv('PYFUSION_SETTINGS_SQL_SERVER')
 if (envsvr): SQL_SERVER=envsvr
 if VERBOSE>0: print("Using SQL_SERVER %s") % SQL_SERVER

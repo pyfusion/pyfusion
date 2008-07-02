@@ -6,6 +6,16 @@ that directory to be reserved for simple or illustrative scripts.
 
 Below is a log of which example files worked under which version.
 
+r146:
+ipython examples/Boyds/wid_specgram.py 
+# example to show all the SQL commands used
+export PYFUSION_SETTINGS_VERBOSE=5
+export PYFUSION_SETTINGS_SQL_SERVER="sqlite:///:memory:"
+export PYFS='pyfusion.settings'
+export DN="'mirnov_small'"
+ipython examples/Boyds/test_pyfusion.py diag_name=$DN shot_number=66017 $PYFS.SHOT_T_MIN=0.076 $PYFS.SHOT_T_MAX=0.08 $PYFS.N_SAMPLES_TIME_SEGMENT="2**11" > sql.log
+
+
 r131:
 #Argon svd 
 ipython examples/Boyds/h1_svd.py diag_name="'mirnovbean1'" shot_number=66017 t0=0.07 t1=0.08 pyfusion.settings.SHOT_T_MAX=0.1
@@ -17,10 +27,10 @@ run examples/Boyds/test_clusters0.py diag_name="'mirnov_small'"
 
 r126:
 As per r125, but add
-ipython examples/datamining_test_signals.py 
 # OK, but fails at plot line.
 # note: need to change device to "TestDevice" in local_settings
 export PYFUSION_SETTINGS_DEVICE="TestDevice"
+ipython examples/datamining_test_signals.py 
 
 r125:
 python examples/h1_quick_validate

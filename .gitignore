@@ -5,3 +5,5 @@
 # other binaries
 *.so
 *.o
+# emacs hash filenames
+\#*

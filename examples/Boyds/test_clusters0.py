@@ -10,7 +10,7 @@ fs_set = pyfusion.session.query(FluctuationStructureSet)
 fs_list = fs_set[0].flucstrucs
 
 diag_set = pyfusion.session.query(pyfusion.Diagnostic)
-# the above is no use - the first defined daig shows up,
+# the above is no use - the first defined diag shows up, which may have no data
 diag_set = pyfusion.session.query(pyfusion.Diagnostic).filter_by(name=diag_name)
 
 diag=diag_set[0]

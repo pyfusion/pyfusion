@@ -16,12 +16,16 @@ def plot_flucstrucs_for_set(set_name, size_factor = 30.0, colour_factor = 30.0, 
     
 
 def plot_flucstrucs_for_shot(shot, diag_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):
-    #TO DO: need to be able to separate flucstrucs from different runs, etc...
-# quick fix to allow multiple shots
+    """
+    TO DO: need to be able to separate flucstrucs from different runs, etc...
+    quick fix to allow multiple shots
+    allow "like" matches (still works like == if you use no % signs)
+    """
     if len(shape(shot)) == 0:
         shot=[shot]        
+        if len(diag_name) == 0: diag_name="%"    # null name returns all.....
 #    fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot == shot).filter(pyfusion.Diagnostic.name == diag_name).all()
-    fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot.in_(shot)).filter(pyfusion.Diagnostic.name == diag_name).all()
+    fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot.in_(shot)).filter(pyfusion.Diagnostic.name.like(diag_name)).all()
     plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile)
 
 def plot_flucstrucs(fs_list, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):

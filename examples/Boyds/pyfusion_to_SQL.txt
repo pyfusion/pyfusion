@@ -34,9 +34,8 @@ svd.entropy
 svd.channel_norms
 # Out[75]:  [0.25374734747961331, 1.5066500120733466, 1.914500595092681, 1.5544744757774267]
 
-
 fs0.svs
-SELECT svs.number AS svs_number, svs.value AS svs_value, svs.store_chrono AS svs_store_chrono, svs.topo AS svs_topo, svs._chrono AS svs__chrono, svs.svd_id AS svs_svd_id, svs.id AS svs_id 
-FROM svs, flucstruc_svs 
-WHERE %s[1L] = flucstruc_svs.flucstruc_id AND svs.id = flucstruc_svs.sv_id
-??
+#   SELECT svs.number AS svs_number, svs.value AS svs_value, svs.store_chrono AS svs_store_chrono, svs.topo AS svs_topo, svs._chrono AS svs__chrono, svs.svd_id AS svs_svd_id, svs.id AS svs_id 
+#   FROM svs, flucstruc_svs 
+#   WHERE %s[1L] = flucstruc_svs.flucstruc_id AND svs.id = flucstruc_svs.sv_id
+

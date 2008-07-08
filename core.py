@@ -139,8 +139,11 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False):
     localfilename = pyfusion.settings.getlocalfilename(shot_number, channel_name)
     if exists(localfilename) and not ignorelocal:
         localdata = load(localfilename)
-        loaded_MCT = MultiChannelTimeseries(localdata['timebase'],parent_element=int(localdata['parent_element']))
-        loaded_MCT.add_channel(localdata['signal'],channel_name)
+        if pyfusion.settings.SHOT_T_MIN < localdata['timebase'][0] or pyfusion.settings.SHOT_T_MAX > localdata['timebase'][-1]:
+            raise ValueError, "SHOT_T_MIN/MAX lie outside the timebase of locally saved data. Either use ignorelocal=True or change pyfusion.settings.SHOT_T_MIN / MAX. While you decide what to do, I'm going to raise an exception and find myself some sangria..."
+        t_lim = searchsorted(localdata['timebase'],[pyfusion.settings.SHOT_T_MIN,pyfusion.settings.SHOT_T_MAX])            
+        loaded_MCT = MultiChannelTimeseries(localdata['timebase'][t_lim[0]:t_lim[1]],parent_element=int(localdata['parent_element']+t_lim[0]))
+        loaded_MCT.add_channel(localdata['signal'][t_lim[0]:t_lim[1]],channel_name)
         return loaded_MCT
 
     if ch.processdata_override:

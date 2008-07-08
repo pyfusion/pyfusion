@@ -3,7 +3,10 @@ from numpy import average, min, max, array
 # Ideally, would pull all flucsets out for a check button selection
 
 from pyfusion.datamining.clustering.core import FluctuationStructure
-fs_list = pyfusion.session.query(FluctuationStructure).all()
+#fs_list = pyfusion.session.query(FluctuationStructure).all()
+shots=[58123]
+# this join syntax says that svd points to timesegment which points to shot - shot is seveal tables away
+fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).filter(pyfusion.Shot.shot.in_(shots)).all()
 
 import pylab as pl
 entropy=array([fs.svd.entropy for fs in fs_list])

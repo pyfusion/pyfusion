@@ -279,7 +279,7 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
     from rpy import r
     from numpy import unique  #bdb added
     
-    r_lib('mclust')
+    r_lib(r,'mclust')
     
     if input_data:
         data_array = input_data

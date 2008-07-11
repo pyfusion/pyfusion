@@ -275,13 +275,17 @@ def get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
             used_fs.append(fs)
     return [data_array, used_fs]
 
-def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11)):
+def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11), input_data = None):
     from rpy import r
     from numpy import unique  #bdb added
     
     r_lib('mclust')
-
-    [data_array, used_fs] = get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs)
+    
+    if input_data:
+        data_array = input_data
+        used_fs = fs_list
+    else:
+        [data_array, used_fs] = get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs)
 
     clusterdataset = ClusterDataSet(name=clusterdatasetname)
     pyfusion.session.save(clusterdataset)
@@ -327,7 +331,7 @@ def use_clustvarsel(fs_list, channel_pairs, clusterdatasetname,  max_clusters = 
     
     new_channel_pairs = [channel_pairs[i] for i in new_channel_args]
 
-    return [new_channel_pairs, MX['sel.var'], MX['steps.info']]
+    return [new_channel_pairs, used_fs, MX['sel.var'], MX['steps.info']]
 
 def get_fs_in_set(fs_set_name,min_energy = 0.0):
     # min_energy is a hack - should have a general filter string which can be passed to a session query

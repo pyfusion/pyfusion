@@ -9,7 +9,7 @@ from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
 import pylab as pl
 from numpy import mean, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum
-
+from pyfusion.utils import r_lib
 
 ordered_channels=[]
 
@@ -260,17 +260,7 @@ Cluster.flucstrucs = relation(FluctuationStructure, secondary=cluster_flucstrucs
 
 
 
-def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11)):
-    from rpy import *
-    from numpy import unique  #bdb added
-
-    try:
-        r.library('mclust')
-    except:
-        raw_input("\nR library 'mclust' not found: press Enter to install...\n")
-        r("install.packages('mclust')")
-        r.library('mclust')
-    
+def get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
     data_array = []
     used_fs = []
     for fs in fs_list:
@@ -283,6 +273,16 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
         if len(tmp_data) == 2*len(channel_pairs):
             data_array.append(tmp_data)
             used_fs.append(fs)
+    return [data_array, used_fs]
+
+def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11)):
+    from rpy import r
+    from numpy import unique  #bdb added
+    
+    r_lib('mclust')
+
+    [data_array, used_fs] = get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs)
+
     clusterdataset = ClusterDataSet(name=clusterdatasetname)
     pyfusion.session.save(clusterdataset)
     pyfusion.session.flush()
@@ -305,6 +305,29 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
         for cl in clusters:
             pyfusion.session.save(cl)
     pyfusion.session.flush()
+
+
+
+def use_clustvarsel(fs_list, channel_pairs, clusterdatasetname,  max_clusters = 10,max_iterations=100):
+    """
+    returns new set of channel_pairs as determined by clustvarsel
+    """
+    from rpy import r
+    r_lib(r, 'clustvarsel')
+
+    [data_array, used_fs] = get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs)
+
+    MX = r.clustvarsel(array(data_array), G=max_clusters,itermax=max_iterations)
+
+    # would be nice not to have to go through hoops to get back the variables...
+    da0_as = argsort(data_array[0])
+    da0_sorted = take(data_array[0],da0_as)
+    new_var_da0_as = searchsorted(da0_sorted,MX['sel.var'][0])
+    new_channel_args = take(da0_as,new_var_da0_as)
+    
+    new_channel_pairs = [channel_pairs[i] for i in new_channel_args]
+
+    return [new_channel_pairs, MX['sel.var'], MX['steps.info']]
 
 def get_fs_in_set(fs_set_name,min_energy = 0.0):
     # min_energy is a hack - should have a general filter string which can be passed to a session query

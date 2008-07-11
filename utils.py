@@ -6,6 +6,18 @@ from numpy import fft, conjugate, array, choose
 from datetime import datetime
 import pyfusion
 
+def r_lib(r_inst, libname):
+    """
+    If R fails to import library, give user option to install and try again.
+    r_inst is an RPy instance (from rpy import r)
+    """
+    try:
+        r_inst.library(libname)
+    except:
+        raw_input("\nR library %s not found: press Enter to install...\n" %libname)
+        r_inst("install.packages('%s')" %libname)
+        r_inst.library(libname)
+
 def local_import(name):
     """
     Taken from http://docs.python.org/lib/built-in-funcs.html

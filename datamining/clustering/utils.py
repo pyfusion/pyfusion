@@ -52,7 +52,7 @@ def test_clustvarsel_for_shot(shot_number, diag_name, max_clusters, clusterdatas
     from pyfusion.datamining.clustering.core import generate_flucstrucs
     generate_flucstrucs(s, diag_name, fs_set_name, store_chronos=False)
 
-    from pyfusion.datamining.clustering.core import get_fs_in_set:
+    from pyfusion.datamining.clustering.core import get_fs_in_set
     fs_list = get_fs_in_set(fs_set_name, min_energy = min_energy)
     
     test_clustvarsel(fs_list, max_clusters, clusterdataset_prefix)

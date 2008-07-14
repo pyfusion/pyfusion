@@ -42,5 +42,21 @@ def test_clustvarsel(fs_list, max_clusters, clusterdataset_prefix):
 
     print t1-t0, t2-t1,t3-t2
 
+
+def test_clustvarsel_for_shot(shot_number, diag_name, max_clusters, clusterdataset_prefix, min_energy=0.2):
+    from pyfusion.utils import timestamp
+    fs_set_name = '%d_%s_%s' %(shot_number, diag_name, timestamp())
+    s = pyfusion.get_shot(shot_number)
+    s.load_diag(diag_name)
+
+    from pyfusion.datamining.clustering.core import generate_flucstrucs
+    generate_flucstrucs(s, diag_name, fs_set_name, store_chronos=False)
+
+    from pyfusion.datamining.clustering.core import get_fs_in_set:
+    fs_list = get_fs_in_set(fs_set_name, min_energy = min_energy)
+    
+    test_clustvarsel(fs_list, max_clusters, clusterdataset_prefix)
+
+
 def compare_clustersets():
     pass

@@ -312,7 +312,7 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
 
 
 
-def use_clustvarsel(fs_list, channel_pairs, clusterdatasetname,  max_clusters = 10,max_iterations=100):
+def use_clustvarsel(fs_list, channel_pairs,  max_clusters = 10,max_iterations=100):
     """
     returns new set of channel_pairs as determined by clustvarsel
     """
@@ -328,7 +328,12 @@ def use_clustvarsel(fs_list, channel_pairs, clusterdatasetname,  max_clusters = 
     da0_sorted = take(data_array[0],da0_as)
     new_var_da0_as = searchsorted(da0_sorted,MX['sel.var'][0])
     new_channel_args = take(da0_as,new_var_da0_as)
-    
+
+    if pyfusion.settings.VERBOSE>0:
+        print 'new_channel_args:', new_channel_args
+        print 'len(channel_pairs): ',len(channel_pairs)
+        print 'len(da0)', len(da0_as)
+
     new_channel_pairs = [channel_pairs[i] for i in new_channel_args]
 
     return [new_channel_pairs, used_fs, MX['sel.var'], MX['steps.info']]

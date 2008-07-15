@@ -25,7 +25,6 @@
 
 """
 
-#from settings import *
 import pyfusion_settings as settings
 from sqlalchemy import create_engine, Column, Integer, String, exceptions, ForeignKey, PickleType
 from sqlalchemy.ext.declarative import declarative_base
@@ -47,14 +46,17 @@ class Diagnostic(Base):
     id = Column('id', Integer, primary_key=True)
     name = Column('name', String(50), nullable=False, unique=True)
     ordered_channel_list = Column('ordered_channel_list', PickleType)
+
     def __init__(self, name):
         self.name= name
         self.ordered_channel_list = []
         if settings.VERBOSE>2:
             print('Class Diagnostic __init__ %s') % self.name
+
     def add_channel(self, channel):
         self.ordered_channel_list.append(channel.name)
         self.channels.append(channel)
+
     def ordered_channels(self):
 #bdb
         if len(self.channels) != len(self.ordered_channel_list): 
@@ -108,4 +110,3 @@ if settings.VERBOSE>0:
 session.commit()
 
 from core import *
-

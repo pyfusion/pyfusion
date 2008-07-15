@@ -54,7 +54,7 @@ def test_clustvarsel_for_shot(shot_number, diag_name, max_clusters, clusterdatas
 
     from pyfusion.datamining.clustering.core import get_fs_in_set
     fs_list = get_fs_in_set(fs_set_name, min_energy = min_energy)
-    
+    print 'len fs_list: %d' %len(fs_list)
     test_clustvarsel(fs_list, max_clusters, clusterdataset_prefix)
 
 

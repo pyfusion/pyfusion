@@ -292,22 +292,25 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
     pyfusion.session.flush()
     
     for n_clusters in n_cluster_list:
-        print 'n_clusters = %d' %n_clusters
-        MX = r.Mclust(array(data_array),G=n_clusters, header='FALSE')
-        clusterset = ClusterSet(modelname=MX['modelName'], bic=MX['bic'], loglik=MX['loglik'], n_clusters=n_clusters, n_flucstrucs=MX['n'])
-        pyfusion.session.save(clusterset)
-        clusterdataset.clustersets.append(clusterset)
-        # to get id...
-        pyfusion.session.flush()
-        clusters = [Cluster(clusterset_id=clusterset.id) for i in range(n_clusters)]
-        cluster_labels = unique(MX['classification']).tolist()
-        if len(cluster_labels) != n_clusters:
-            raise ValueError, 'Clustering returned wrong number of clusters...'
-        for fsi, fs in enumerate(used_fs):
-            cluster_el = cluster_labels.index(MX['classification'][fsi])
-            clusters[cluster_el].flucstrucs.append(fs)
-        for cl in clusters:
-            pyfusion.session.save(cl)
+        try:
+            print 'n_clusters = %d' %n_clusters
+            MX = r.Mclust(array(data_array),G=n_clusters, header='FALSE')
+            clusterset = ClusterSet(modelname=MX['modelName'], bic=MX['bic'], loglik=MX['loglik'], n_clusters=n_clusters, n_flucstrucs=MX['n'])
+            pyfusion.session.save(clusterset)
+            clusterdataset.clustersets.append(clusterset)
+            # to get id...
+            pyfusion.session.flush()
+            clusters = [Cluster(clusterset_id=clusterset.id) for i in range(n_clusters)]
+            cluster_labels = unique(MX['classification']).tolist()
+            if len(cluster_labels) != n_clusters:
+                raise ValueError, 'Clustering returned wrong number of clusters...'
+            for fsi, fs in enumerate(used_fs):
+                cluster_el = cluster_labels.index(MX['classification'][fsi])
+                clusters[cluster_el].flucstrucs.append(fs)
+            for cl in clusters:
+                pyfusion.session.save(cl)
+        except:
+            print "Failed for n_clusters = %d" %n_clusters
     pyfusion.session.flush()
 
 
@@ -339,9 +342,9 @@ def use_clustvarsel(fs_list, channel_pairs,  max_clusters = 10,max_iterations=10
     return [new_channel_pairs, used_fs, MX['sel.var'], MX['steps.info']]
 
 def get_fs_in_set(fs_set_name,min_energy = 0.0):
-    # min_energy is a hack - should have a general filter string which can be passed to a session query
     fs_set = pyfusion.session.query(FluctuationStructureSet).filter_by(name=fs_set_name).one()
-    return [i for i in fs_set.flucstrucs if i.energy>min_energy]
+    fs_query = pyfusion.session.query(FluctuationStructure).filter_by(set=fs_set)
+    return fs_query.filter(FluctuationStructure.energy > min_energy).all()
 
 def get_clusters_for_fs_set(fs_set_name,min_energy = 0.0,n_cluster_list = range(2,11)):
     # min energy is a temporary hack - see get_fs_in_set

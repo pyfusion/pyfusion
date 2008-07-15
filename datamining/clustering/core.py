@@ -261,9 +261,32 @@ Cluster.flucstrucs = relation(FluctuationStructure, secondary=cluster_flucstrucs
 
 
 def get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
+    print "Warning:  not checking channel_pairs!!"
+    import time
     data_array = []
     used_fs = []
-    for fs in fs_list:
+    t0 = time.time()
+    for fsi,fs in enumerate(fs_list):
+        print "getting phases: %d of %d. %.2f secs" %(fsi+1, len(fs_list), time.time()-t0)
+        tmp_data = []
+        tmp = pyfusion.session.query(DeltaPhase).filter_by(flucstruc_id=fs.id).group_by(DeltaPhase.channel_1_id, DeltaPhase.channel_2_id).all()
+        for ii in tmp:
+            tmp_data.append(sin(ii.d_phase))
+            tmp_data.append(cos(ii.d_phase))
+        if len(tmp_data) == 2*len(channel_pairs):
+            data_array.append(tmp_data)
+            used_fs.append(fs)
+        else:
+            print "error..."
+    return [data_array, used_fs]
+
+def _old_get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
+    import time
+    data_array = []
+    used_fs = []
+    t0 = time.time()
+    for fsi,fs in enumerate(fs_list):
+        print "getting phases: %d of %d. %.2f secs" %(fsi+1, len(fs_list), time.time()-t0)
         tmp_data = []
         for chpair in channel_pairs:
             tmp = pyfusion.session.query(DeltaPhase).filter_by(flucstruc_id=fs.id, channel_1_id=chpair[0].id, channel_2_id = chpair[1].id).all()

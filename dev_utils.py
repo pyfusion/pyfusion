@@ -1,3 +1,5 @@
+import pyfusion
+
 def ftplot(signal, shot, yrange=[False, False], xrange=[False, False], ytype=1, window=False, time_segment=0.001):
     pass
 
@@ -12,6 +14,11 @@ def show_db(db="pyfusion", extra = "", page_width=80):
     from numpy import transpose
     from sqlalchemy import create_engine
 
+# could be an independent module if this line was removed....
+# but then how would we do the test?
+# maybe default to the db name parsed from SQL_SERVER
+# This would require a pyfusion.show_db, that called the general show_db - nice!
+    if pyfusion.settings.SQL_SERVER.upper().find('MYSQL') < 0: raise Exception, ' only for mysql databases'
     
     engine = create_engine('mysql://localhost/information_schema')
     conn = engine.connect()

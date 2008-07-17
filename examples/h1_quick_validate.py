@@ -4,11 +4,15 @@ Initially just the simpler routines:
 
 See examples/Boyds for a more complete script to check functionality
 
+Timing: Ath64X2,2GHz
+flucstruc     5.3
+total         8.0
+Notes: 58123, 20-60ms, 1024, 10 clusts
 a file called 'pyfusion_local_settings.py' exists in the python path, with contents:
 DEVICE='H1'
-
 """
 
+from utils import delta_t
 import pyfusion
 
 #nice idea, but databse is already open by the time we get here.....
@@ -31,7 +35,7 @@ s.load_diag(diag_name)
 from pyfusion.datamining.clustering.core import generate_flucstrucs
 
 generate_flucstrucs(s, diag_name, 'test_flucstrucs', store_chronos=True)
-
+print "flucstrucs -> "+ delta_t("flucstrucs", total=True)
 
 from pyfusion.datamining.clustering.core import get_clusters_for_fs_set
 
@@ -43,4 +47,6 @@ from pyfusion.datamining.clustering.core import ClusterDataSet
 clusterdataset = pyfusion.session.query(ClusterDataSet).filter_by(name='test_flucstrucs_clusters').one()
 
 #clusterdataset.plot_BIC()
+
+print delta_t("total", total=True)
 clusterdataset.plot_N_clusters(4)

@@ -64,14 +64,19 @@ def check_same_timebase(a,b):
 
 from time import time
 timelast=time()
+timestart=time()
 
-def delta_t(categ):
-# simple function is to return a convenient string delta_t in ms since last
-# has the potential to accumulate delta_t in different categories
-    global timelast
+def delta_t(categ, total=False):
+    """ returns a convenient string delta_t (wall) in ms since last
+    Has the potential to accumulate delta_t in different categories
+    Can also return the total wall time since initialization
+    """
+    global timelast, timestart
     timenow=time()
-    dt=timenow-timelast
+    if total: dt=timenow-timestart
+    else: dt=timenow-timelast
     retval=str('%.3g s') % (1*dt)
+    if total: retval = retval + ' total'
     timelast=time()
     return retval
 

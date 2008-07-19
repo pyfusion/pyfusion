@@ -13,6 +13,9 @@ Contents:
 .. automodule:: pyfusion
 .. automodule:: pyfusion.core
 .. autoclass:: Shot()
+.. automodule:: pyfusion.utils
+.. automodule:: pyfusion.datamining
+
 
 Indices and tables
 ==================

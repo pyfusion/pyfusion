@@ -18,17 +18,13 @@
 	========
 	Local settings can be specified in a file called pyfusion_local_settings.py, which can be anywhere in your python path.
 	
-	Contributing to the code
-	========================
-	We use Git U{http://git.or.cz/}, U{http://en.wikipedia.org/wiki/Git_(software)}, a distributed revision control system. A distributed system allows easy branching and merging of the code - it should be trivial for groups to work on their own branch.
-	
-
 """
 
-import pyfusion_settings as settings
 from sqlalchemy import create_engine, Column, Integer, String, exceptions, ForeignKey, PickleType
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relation, sessionmaker, scoped_session
+
+import pyfusion_settings as settings
 
 engine = create_engine(settings.SQL_SERVER, echo=settings.VERBOSE > 6)
 Session = scoped_session(sessionmaker(autoflush=True, transactional=True, bind=engine))

@@ -20,9 +20,9 @@
 	
 """
 
-from sqlalchemy import create_engine, Column, Integer, String, exceptions, ForeignKey, PickleType
+from sqlalchemy import create_engine, Column, Integer, String, exceptions, ForeignKey, PickleType, Float
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relation, sessionmaker, scoped_session
+from sqlalchemy.orm import relation, sessionmaker, scoped_session, synonym
 
 import pyfusion_settings as settings
 
@@ -62,6 +62,64 @@ class Diagnostic(Base):
             outlist.append(session.query(Channel).filter_by(name=oc, diagnostic_id=self.id).one())
         return outlist
 
+
+class Coordinates(Base):
+    __tablename__ = "coords"
+    id = Column('id', Integer, primary_key=True)
+    coord_system = Column('coord_system', String(50))
+    __mapper_args__ = {'polymorphic_on':coord_system}
+    A = Column('A', Float)
+    B = Column('B', Float)
+    C = Column('C', Float)
+    def transform(self,func):
+        """
+        transform coordinate systems.
+        should this just return values? or a new Coordinates object with different coord_system?
+        """
+        raise NotImplementedError
+    
+
+class ToroidalCoordinates(Coordinates):
+    __tablename__ = 'coords_toroidal'
+    __mapper_args__ = {'polymorphic_identity':'toroidal'}
+    id = Column('id', Integer, ForeignKey('coords.id'), primary_key=True)
+    def _get_attr_A(self):
+        return self.A
+    def _set_attr_A(self, attr):
+        self.A = attr
+    def _get_attr_B(self):
+        return self.B
+    def _set_attr_B(self, attr):
+        self.B = attr
+    def _get_attr_C(self):
+        return self.C
+    def _set_attr_C(self, attr):
+        self.C = attr
+    r = synonym('A', descriptor=property(_get_attr_A, _set_attr_A))
+    phi = synonym('B', descriptor=property(_get_attr_B, _set_attr_B))
+    theta = synonym('C', descriptor=property(_get_attr_C, _set_attr_C))
+
+class CylindricalCoordinates(Coordinates):
+    __tablename__ = 'coords_cylindrical'
+    __mapper_args__ = {'polymorphic_identity':'cylindrical'}
+    id = Column('id', Integer, ForeignKey('coords.id'), primary_key=True)
+    def _get_attr_A(self):
+        return self.A
+    def _set_attr_A(self, attr):
+        self.A = attr
+    def _get_attr_B(self):
+        return self.B
+    def _set_attr_B(self, attr):
+        self.B = attr
+    def _get_attr_C(self):
+        return self.C
+    def _set_attr_C(self, attr):
+        self.C = attr
+    r = synonym('A', descriptor=property(_get_attr_A, _set_attr_A))
+    phi = synonym('B', descriptor=property(_get_attr_B, _set_attr_B))
+    z = synonym('C', descriptor=property(_get_attr_C, _set_attr_C))
+
+
 class Channel(Base):
     __tablename__ = "channels"
     id = Column('id', Integer, primary_key=True)
@@ -71,6 +129,8 @@ class Channel(Base):
     diagnostic_id = Column('diagnostic_id', Integer, ForeignKey('diagnostics.id'))
     diagnostic = relation(Diagnostic, primaryjoin=diagnostic_id==Diagnostic.id, backref="channels")
     processdata_override = Column('processdata_override', PickleType, nullable=True)
+    coord_id = Column('coord_id', Integer, ForeignKey('coords.id'))
+    coords = relation(Coordinates, primaryjoin=coord_id==Coordinates.id)    
 
 #_device_module = __import__('pyfusion.devices.%s.%s' %(DEVICE,DEVICE), globals(), locals(), [DEVICE], -1)
 _device_module = __import__('pyfusion.devices.%s.%s' %(settings.DEVICE,settings.DEVICE), globals(), locals(), [settings.DEVICE])

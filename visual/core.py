@@ -158,6 +158,7 @@ def interactive_svd_plot(input_svd):
     pl.figtext(0.75,0.81,'H = %.2f' %(entropy),fontsize=12, color='b')
     energy_list = [i*i/input_svd.energy for i in sv_sv]
     energy = Energy(energy_list,button_setting_list)
+    # this is done in two places - potential for inconsistency - wish I knew better
     energy_label = pl.figtext(0.75,0.78,'E = %.2f %%' %(100.*energy.value),fontsize=12, color='b')
     # grid('True')
     for sv_i, sv in enumerate(sv_list):
@@ -218,7 +219,7 @@ def interactive_svd_plot(input_svd):
             energy.sub(int(label))
 	else:
             energy.add(int(label))
-	energy_label._text='E = %.2f %%' %(energy.value)
+	energy_label._text='E = %.2f %%' %(100.*energy.value)
 	pl.draw()
 
     # action when button is clicked

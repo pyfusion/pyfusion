@@ -15,17 +15,17 @@ def plot_flucstrucs_for_set(set_name, size_factor = 30.0, colour_factor = 30.0, 
     plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile)
     
 
-def plot_flucstrucs_for_shot(shot, diag_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):
+def plot_flucstrucs_for_shot(shot_number, diag_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):
     """
     TO DO: need to be able to separate flucstrucs from different runs, etc...
-    quick fix to allow multiple shots
+    quick fix to allow multiple shot_numbers
     allow "like" matches (still works like == if you use no % signs)
     """
-    if len(shape(shot)) == 0:
-        shot=[shot]        
+    if len(shape(shot_number)) == 0:
+        shot_number=[shot_number]        
         if len(diag_name) == 0: diag_name="%"    # null name returns all.....
 #    fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot == shot).filter(pyfusion.Diagnostic.name == diag_name).all()
-    fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot.in_(shot)).filter(pyfusion.Diagnostic.name.like(diag_name)).all()
+    fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot.in_(shot_number)).filter(pyfusion.Diagnostic.name.like(diag_name)).all()
     plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile)
 
 def plot_flucstrucs(fs_list, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):
@@ -65,14 +65,19 @@ def simple_cluster_plot(clusterdatasetname, xlims = [False,False], ylims =[False
     from pyfusion.datamining.clustering.core import ClusterDataSet
     cluster_dataset = pyfusion.session.query(ClusterDataSet).filter_by(name=clusterdatasetname).one()
     cluster_sets =  cluster_dataset.clustersets
+# next several lines is to prepare a nxm subplot area and order plots within it.
     cluster_sets_n_clusters = [i.n_clusters for i in cluster_sets]
+# sort into sets of increasing n_clusters (normally like this within one clustering)
     cluster_sets_n_clusters_argsort = argsort(cluster_sets_n_clusters)
+# allow for horizontal places for the highest n_clusters
     n_plots_horizontal = cluster_sets_n_clusters[cluster_sets_n_clusters_argsort[-1]]
+# and vertical as the number of different n_clusters (often max(n_clusters)-1)
     n_plots_vertical = len(cluster_sets_n_clusters_argsort)
     for cs_i, cs_el in enumerate(cluster_sets_n_clusters_argsort):
         for cli, cl in enumerate(cluster_sets[cs_el].clusters):
             plot_line_number = cs_i*n_plots_horizontal + cli + 1
             pl.subplot(n_plots_vertical, n_plots_horizontal, plot_line_number)
+# this line is the first to refer to clustered data
             data = transpose(array([[i.svd.timebase[0], i.frequency, i.energy] for i in cl.flucstrucs]))
             pl.plot(data[0],data[1],'.')
             if xlims[0] == False: 
@@ -84,6 +89,34 @@ def simple_cluster_plot(clusterdatasetname, xlims = [False,False], ylims =[False
                 ylims[1] = pyfusion.utils.bigger(1.1*max(data[1]),2*average(data[1]))
             pl.xlim(xlims[0], xlims[1])
             pl.ylim(ylims[0], ylims[1])
+            if cs_i != len(cluster_sets_n_clusters_argsort)-1:
+                pl.setp(pl.gca(), xticklabels=[])
+            if cli != 0:
+                pl.setp(pl.gca(), yticklabels=[])
+            else:
+                pl.ylabel('$N_{Cl} = %d$' %(cluster_sets_n_clusters[cluster_sets_n_clusters_argsort[cs_i]]))
+    if figurename == "":
+        pl.show()
+    else:
+        pl.savefig(figurename)
+            
+def cluster_phase_plot(clusterdatasetname, xlims = [False,False], ylims =[-8, 8],  figurename = 'cluster_phase_plot.png'):
+    from pyfusion.datamining.clustering.core import ClusterDataSet, Cluster, DeltaPhase
+    cluster_dataset = pyfusion.session.query(ClusterDataSet).filter_by(name=clusterdatasetname).one()
+    cluster_sets =  cluster_dataset.clustersets
+    cluster_sets_n_clusters = [i.n_clusters for i in cluster_sets]
+    cluster_sets_n_clusters_argsort = argsort(cluster_sets_n_clusters)
+    n_plots_horizontal = cluster_sets_n_clusters[cluster_sets_n_clusters_argsort[-1]]
+    n_plots_vertical = len(cluster_sets_n_clusters_argsort)
+    for cs_i, cs_el in enumerate(cluster_sets_n_clusters_argsort):
+        for cli, cl in enumerate(cluster_sets[cs_el].clusters):
+            plot_line_number = cs_i*n_plots_horizontal + cli + 1
+            pl.subplot(n_plots_vertical, n_plots_horizontal, plot_line_number)
+#            data = transpose(array([[i.svd.timebase[0], i.frequency, i.energy] for i in cl.flucstrucs]))
+            phases = [i.phases[0].d_phase for i in cl.flucstrucs]
+            pl.plot(phases,'.')
+            pl.ylim(ylims[0], ylims[1])
+            print phases
             if cs_i != len(cluster_sets_n_clusters_argsort)-1:
                 pl.setp(pl.gca(), xticklabels=[])
             if cli != 0:

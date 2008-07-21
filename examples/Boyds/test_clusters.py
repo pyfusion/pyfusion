@@ -32,18 +32,22 @@ for oc_i, i in enumerate(diag_ordered_channels[:-1]):
 
 cluster_dataset_name = 'testclusters1'
 
-get_clusters(fs_list, channel_pairs, cluster_dataset_name, n_cluster_list=[2,3,4,5])
+get_clusters(fs_list, channel_pairs, cluster_dataset_name, n_cluster_list=[2,3,4])
 
 ## save the file as test_clusters.py and run it from the terminal:
 ## python test_clusters.py
 
 ## This will generate clusters for n_clusters=2,3,4,5. Now we'll make a simple plot showing the clusters:
 
-from pyfusion.datamining.clustering.plots import simple_cluster_plot
+from pyfusion.datamining.clustering.plots import simple_cluster_plot, cluster_phase_plot
 
 clusteringdatasetname = 'testclusters1'
 
+
+cluster_phase_plot(clusteringdatasetname) ##, figurename='mytestclusters.png')
+# data seems to "hang over" from simple_cluster_plot - maybe need a new figure?
 simple_cluster_plot(clusteringdatasetname) ##, figurename='mytestclusters.png')
+
 
 #simple_cluster_plot(clusteringdatasetname, xlims=[150,320], ylims = [0,500]) ##, figurename='mytestclusters.png')
 

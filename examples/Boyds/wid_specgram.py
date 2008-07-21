@@ -69,9 +69,16 @@ def call_spec():
     if _type=='F': 
         shot=callback.get_shot()
         print("shot=%d") % shot
-        data = pyfusion.load_channel(shot,'mirnov_1_8')
-        data.spectrogram(NFFT=NFFT,noverlap=foverlap*NFFT)
-#        colorbar() # comes up on a separate page
+        try:
+            ch=pyfusion.Session.query(pyfusion.Channel)
+            name=ch[0].name
+        except:
+            print "Failed to open channel database - try mirnov_1_8"
+            name='mirnov_1_8'
+        
+        data = pyfusion.load_channel(shot,name)
+        data.spectrogram(NFFT=NFFT,noverlap=foverlap*NFFT,colorbar=True)
+#        colorbar() # comes up on a separate page, leave for now
 
     elif _type == 'T':
 # some matplotlib versions don't know about Fc
@@ -127,7 +134,7 @@ def winfunc(label):
 radio.on_clicked(winfunc)
 
 rax = axes([0.05, 0.1, 0.15, 0.1], axisbg=axcolor)
-radio = RadioButtons(rax, ('f-t plot ', 'test data', 'log-spect', 'window'))
+radio = RadioButtons(rax, ('f-t plot', 'test data', 'log-spect', 'window'))
 def typfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
     typdict = {'f-t plot':'F', 'test data':'T', 'log-spect':'L', 'window':'W'}

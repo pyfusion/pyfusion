@@ -9,11 +9,11 @@ Below is a log of which example files worked under which version.
 r146:
 ipython examples/Boyds/wid_specgram.py 
 # example to show all the SQL commands used
-export PYFUSION_SETTINGS_VERBOSE=5
+export PYFUSION_SETTINGS_VERBOSE=7
 export PYFUSION_SETTINGS_SQL_SERVER="sqlite:///:memory:"
 export PYFS='pyfusion.settings'
 export DN="'mirnov_small'"
-ipython examples/Boyds/test_pyfusion.py diag_name=$DN shot_number=66017 $PYFS.SHOT_T_MIN=0.076 $PYFS.SHOT_T_MAX=0.08 $PYFS.N_SAMPLES_TIME_SEGMENT="2**11" > sql.log
+python examples/Boyds/test_pyfusion.py diag_name=$DN shot_number=66017 $PYFS.SHOT_T_MIN=0.076 $PYFS.SHOT_T_MAX=0.08 $PYFS.N_SAMPLES_TIME_SEGMENT="2**11" > sql.log ; ls -l sql.log
 
 
 r131:

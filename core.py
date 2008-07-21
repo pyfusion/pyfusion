@@ -162,7 +162,7 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False):
         return _tmp
     except:
         msg=str('Failed to retrieve data from %s, shot %d') % (ch.name, shot_number)
-        if pyfusion.settings.VERBOSE>3:
+        if pyfusion.settings.VERBOSE>2:
             print (msg + ': Trying again without catching exception')
             _tmp = _ProcessData.load_channel(ch, shot_number)
             raise LookupError, msg
@@ -273,19 +273,25 @@ class MultiChannelTimeseries(object):
 
 
     def spectrogram(self, max_freq = -1, noverlap=0, NFFT=1024, title="",
-                    saveas="", figure=None, **kwargs):
+                    saveas="", funits='kHz', colorbar=False, figure=None, **kwargs):
         import pylab as pl
+        if funits == 'kHz': ffact=1e-3; tunits='ms'
+        elif funits == 'MHz': ffact=1e-6; tunits='us'
+        else: ffact=1; tunits='sec'
         if (figure): figure(figure.number)
         for ch_i, ch in enumerate(self.ordered_channel_list):
             pl.subplot(len(self.ordered_channel_list),1,ch_i+1)
             Pxx, freqs, bins, im = pl.specgram(self.signals[ch], NFFT=NFFT,
-                                               Fs=2.*self.nyquist,
+                                               Fs=2.*self.nyquist*ffact,
                                                noverlap=noverlap, **kwargs)
-            pl.ylabel(ch)
+            pl.ylabel(ch+' ('+funits+')')
             if max_freq> 0:
                 pl.ylim(0,max_freq)
+            pl.xlabel('('+tunits+')')
         if title:
             pl.title(title)
+        if colorbar:
+            pl.colorbar()
         if saveas:
             pl.savefig(saveas)
         else:

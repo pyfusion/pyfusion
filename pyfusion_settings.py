@@ -149,7 +149,8 @@ except:
 ## export PYFUSION_SETTINGS_SQL_SERVER="sqlite:///temp.dat"
 import os
 enverb=os.getenv('PYFUSION_SETTINGS_VERBOSE')
-if (enverb): VERBOSE=enverb
+# unless we convert to int, comparisons can be very strange
+if (enverb): VERBOSE=int(enverb)
 if VERBOSE>0: print("Verbosity level %s") % VERBOSE
 
 envsvr=os.getenv('PYFUSION_SETTINGS_SQL_SERVER')

@@ -29,6 +29,12 @@ class FluctuationStructure(pyfusion.Base):
     svd = relation(pyfusion.MultiChannelSVD, primaryjoin=svd_id==pyfusion.MultiChannelSVD.id, backref="flucstruc")    
     frequency = Column('frequency', Float)
     energy = Column('energy', Float)
+    raw_energy = Column('raw_energy', Float)
+    a1 = Column('a1', Float)
+# maybe one day there will be a description field, even though not all SQLs implement it
+    a12 = Column('a12', Float,info={'comment':'ratio of first two SVs'})
+    a13 = Column('a13', Float)
+    dt12 = Column('dt12', Float)
     gamma_threshold = Column('gamma_threshold', Numeric)
     phases = relation("DeltaPhase", backref='flucstruc')
     set_id = Column('set_id', Integer, ForeignKey('dm_fs_set.id'))
@@ -103,8 +109,21 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
         sv_groupings = _new_group_svs(seg_svd)
         for svg_i, sv_group in enumerate(sv_groupings):
             energy = sum([sv.value**2 for sv in sv_group])/E
+            raw_energy=0 # not sure how yet
             freq = peak_freq(sv_group[0].chrono, seg_svd.timebase)
-            fs = FluctuationStructure(svd_id=seg_svd.id, frequency=freq, energy=energy, gamma_threshold=threshold, set_id = fs_set.id)
+            a1=sv_group[0].value
+            if len(sv_group)>1: a12 = sv_group[1].value/sv_group[0].value
+            else:               a12=0
+            if len(sv_group)>2: a13 = sv_group[2].value/sv_group[0].value
+            else:               a13=0
+            if pyfusion.settings.VERBOSE>2: 
+                print 'svg_i %d, len=%d, fr=%.3gkHz, t0=%.3gms,' % (
+                   svg_i, len(sv_group), freq/1000, 1000*seg_svd.timebase[0]),
+                print 'SV=[%s]'%','.join([str("%.3g") % sv.value for sv in sv_group])
+            fs = FluctuationStructure(svd_id=seg_svd.id, frequency=freq, 
+                                      energy=energy, gamma_threshold=threshold, 
+                                      raw_energy=0, a1=a1, a12=a12, a13=a13,
+                                      set_id = fs_set.id)
             pyfusion.session.save(fs)
             for sv in sv_group:
                 fs.svs.append(sv)
@@ -228,7 +247,21 @@ class ClusterDataSet(pyfusion.Base):
         pl.ylabel('Bayesian Information Classifier (BIC)')
         pl.title('Cluster Dataset: %s' %self.name)
         pl.show()
+
     def plot_N_clusters(self,N_clusters):
+        """ Simple f-t plot of this ClusterDataSet for a given N_clusters
+        """
+        clusterset = pyfusion.session.query(ClusterSet).filter_by(clusterdataset_id=self.id).filter_by(n_clusters=N_clusters).one()
+        for cl in clusterset.clusters:
+            t0_freq_list = [[i.svd.timebase[0],i.frequency] for i in cl.flucstrucs]
+            pl.plot([i[0] for i in t0_freq_list], [i[1] for i in t0_freq_list],'o')
+        pl.show()
+
+    def plot_N_cumu_phase(self,N_clusters):
+        """ Show mean phases and sds like fig 5.X in Dave Pretty thesis
+        note done
+        """
+        pass
         clusterset = pyfusion.session.query(ClusterSet).filter_by(clusterdataset_id=self.id).filter_by(n_clusters=N_clusters).one()
         for cl in clusterset.clusters:
             t0_freq_list = [[i.svd.timebase[0],i.frequency] for i in cl.flucstrucs]
@@ -277,7 +310,7 @@ def get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
             data_array.append(tmp_data)
             used_fs.append(fs)
         else:
-            print "error..."
+            print "error...", len(tmp_data), len(channel_pairs),'fs.id=',fs.id
     return [data_array, used_fs]
 
 def _old_get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
@@ -313,7 +346,11 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
     clusterdataset = ClusterDataSet(name=clusterdatasetname)
     pyfusion.session.save(clusterdataset)
     pyfusion.session.flush()
-    
+
+# may need this in 2.4 bdb?
+#    from rpy import *
+#    r.library('mclust')
+
     for n_clusters in n_cluster_list:
         try:
             print 'n_clusters = %d' %n_clusters
@@ -334,6 +371,7 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
                 pyfusion.session.save(cl)
         except:
             print "Failed for n_clusters = %d" %n_clusters
+            raise
     pyfusion.session.flush()
 
 

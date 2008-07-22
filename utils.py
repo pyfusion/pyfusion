@@ -128,3 +128,20 @@ def show_db(partial_name='', page_width=80):
             next_col += len(strg)+2
         print 
 
+
+def remap_angle_0_2pi(angle,avoid_zero=False):
+    """
+    surely there's a better way?
+    avoid_zero is useful if you want to guarantee against div by 0....
+    """
+    if avoid_zero:
+        while angle > 2*pi:
+            angle -= 2*pi
+        while angle <= 0:
+            angle += 2*pi        
+    else:
+        while angle >= 2*pi:
+            angle -= 2*pi
+        while angle < 0:
+            angle += 2*pi
+    return angle

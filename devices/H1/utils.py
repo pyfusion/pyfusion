@@ -2,6 +2,7 @@
 H-1 specific utility code...
 """
 from numpy import poly1d,polyval
+from pyfusion.utils import remap_angle_0_2pi
 
 # coefficients for 6th order polynomial mapping kappa_h to LCFS magnetic angle for each Mirnov coil
 
@@ -74,6 +75,25 @@ coil_coef_mapping = {'mirnov_1_1':c1,
                      'mirnov_linear_4':clin4,
                      'mirnov_linear_5':clin5}
 
+kh_mean_mag_angles = {}
+kh_avg_limits = [0.0,1.2]
+for ch in coil_coef_mapping.keys():
+    lims = polyval(poly1d(coil_coef_mapping[ch]).integ(),kh_avg_limits)
+    kh_mean_mag_angles[ch] = (lims[1]-lims[0])/(kh_avg_limits[1] - kh_avg_limits[0])
+
+
 def map_kappa_h_mag_angle(kappa_h, coil_name):
     kh_angle_poly = poly1d(coil_coef_mapping[coil_name])
     return polyval(kh_angle_poly, kappa_h)
+
+
+def map_phase_kh_avg(input_phase, kh, channel_1, channel_2):
+    """
+    take the phase between two channels and map it to the phase between the 
+    corresponding kappa_h-averaged 'virtual' channels
+    """
+    c1_mag_angle = map_kappa_h_mag_angle(kh, channel_1)
+    c2_mag_angle = map_kappa_h_mag_angle(kh, channel_2)
+    scale_factor = (kh_mean_mag_angles[channel_2] - kh_mean_mag_angles[channel_1])/(c2_mag_angle - c1_mag_angle)
+    return scale_factor*input_phase
+

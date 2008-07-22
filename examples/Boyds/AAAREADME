@@ -3,8 +3,45 @@ Some are simple tests, others are more complicated scripts to do actual
 analysis.  Their separation from the parent directory ../examples allows
 that directory to be reserved for simple or illustrative scripts.
 
+PLEASE ALWAYS confirm examples/always_validate_test_signals.py completes before committing!
+
+Note that the script form of these means that, provided unnecessary code, variables
+or imports are avoided, these scripts can usually be run on earlier datasets.
+This aids in tracing when analysis changed or bugs were introduced, as the newer
+scripts can be more revealing.
+
+We also need a site-independent validation suite.
+The beginning of this is examples/always_validate_test_signals.py
 
 Below is a log of which example files worked under which version.
+
+
+r170: python examples/always_validate_test_signals.py (first version)
+works with some warnings:
+    importing pyfusion_local_settings
+    Creating shot TestDevice:1000
+    Only MultiChannel Timeseries data works for now
+    RHOME= /usr/lib/R
+    RVERSION= 2.4.1
+    RVER= 2041
+    RUSER= /home/bdb112
+    Loading Rpy version 2041 .. Done.
+    Creating the R object 'r' ..  Done
+    use of mclust requires a license agreement
+    see http://www.stat.washington.edu/mclust/license.txt
+    Warning:  not checking channel_pairs!!
+    maybe error... 0 4 fs.id= 3
+    maybe error... 0 4 fs.id= 6
+    maybe error... 0 4 fs.id= 9
+    maybe error... 0 4 fs.id= 12
+    maybe error... 0 4 fs.id= 15
+    maybe error... 0 4 fs.id= 18
+    maybe error... 0 4 fs.id= 21
+    maybe error... 0 4 fs.id= 24
+    maybe error... 0 4 fs.id= 27
+and sometimes: clustering/core.py:338: SyntaxWarning: import * only allowed at module level
+
+examples/h1_quick_validate.py  complettes with similar warnings.  I am not comvinced about the phase  - there are too many 0 and pis!
 
 r146:
 ipython examples/Boyds/wid_specgram.py 

@@ -329,6 +329,7 @@ class MultiChannelSVD(pyfusion.Base):
     svs = relation("SingularValue", backref='svd')
     entropy = Column('entropy', Float)
     energy = Column('energy', Float)
+    raw_energy = Column('raw_energy', Float) # Dave wants this - not sure how to calc
     timebase = Column('timebase', PickleType)
     channel_norms = Column('channel_norms', PickleType)
     used_channels = Column('used_channels', PickleType)
@@ -392,6 +393,8 @@ class MultiChannelSVD(pyfusion.Base):
         
         ### total energy of singular values
         self.energy = sum(sv_sq)
+
+        self.raw_energy = 0  # dont know how to calc yet.
         
         ### normalised energy of singular values
         p = sv_sq/self.energy

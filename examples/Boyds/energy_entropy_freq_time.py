@@ -5,6 +5,7 @@ from numpy import average, min, max, array
 from pyfusion.datamining.clustering.core import FluctuationStructure
 #fs_list = pyfusion.session.query(FluctuationStructure).all()
 shots=[58123]
+execfile('process_cmd_line_args.py')
 # this join syntax says that svd points to timesegment which points to shot - shot is seveal tables away
 fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).filter(pyfusion.Shot.shot.in_(shots)).all()
 

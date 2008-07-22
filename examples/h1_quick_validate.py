@@ -1,8 +1,11 @@
 """
 Test several routines on a minimal data set: do this before committing changes
 Initially just the simpler routines:
+This one is specific to H1, includes timing on real data.
 
 See examples/Boyds for a more complete script to check functionality
+Can see phases afterwards if in ipython:
+    run examples/Boyds/freq_phase_time_energy.py shots=[58122]
 
 Timing: Ath64X2,2GHz
 flucstruc     5.3
@@ -20,7 +23,7 @@ import pyfusion
 
 # about the minimum data that will cluster, maybe not enough to make sense
 diag_name = 'mirnov_small'
-shot_number = 58123
+shot_number = 58122  # shot in CPC paper
 pyfusion.settings.SHOT_T_MIN=0.02
 pyfusion.settings.SHOT_T_MAX=0.06
 

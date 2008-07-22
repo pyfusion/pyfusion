@@ -300,7 +300,9 @@ def get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
     used_fs = []
     t0 = time.time()
     for fsi,fs in enumerate(fs_list):
-        print "getting phases: %d of %d. %.2f secs" %(fsi+1, len(fs_list), time.time()-t0)
+        if pyfusion.settings.VERBOSE>2: 
+            print "getting phases: %d of %d. %.2f secs" % (
+                fsi+1, len(fs_list), time.time()-t0)
         tmp_data = []
         tmp = pyfusion.session.query(DeltaPhase).filter_by(flucstruc_id=fs.id).group_by(DeltaPhase.channel_1_id, DeltaPhase.channel_2_id).all()
         for ii in tmp:
@@ -310,7 +312,7 @@ def get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
             data_array.append(tmp_data)
             used_fs.append(fs)
         else:
-            print "error...", len(tmp_data), len(channel_pairs),'fs.id=',fs.id
+            print "maybe error...", len(tmp_data), len(channel_pairs),'fs.id=',fs.id
     return [data_array, used_fs]
 
 def _old_get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
@@ -319,7 +321,9 @@ def _old_get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
     used_fs = []
     t0 = time.time()
     for fsi,fs in enumerate(fs_list):
-        print "getting phases: %d of %d. %.2f secs" %(fsi+1, len(fs_list), time.time()-t0)
+        if pyfusion.settings.VERBOSE>2: 
+            print "getting phases: %d of %d. %.2f secs" % (
+                fsi+1, len(fs_list), time.time()-t0)
         tmp_data = []
         for chpair in channel_pairs:
             tmp = pyfusion.session.query(DeltaPhase).filter_by(flucstruc_id=fs.id, channel_1_id=chpair[0].id, channel_2_id = chpair[1].id).all()
@@ -348,12 +352,14 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
     pyfusion.session.flush()
 
 # may need this in 2.4 bdb?
+# but generates warning:
+#   clustering/core.py:338: SyntaxWarning: import * only allowed at module level
 #    from rpy import *
 #    r.library('mclust')
 
     for n_clusters in n_cluster_list:
         try:
-            print 'n_clusters = %d' %n_clusters
+            if pyfusion.settings.VERBOSE>0: print 'n_clusters = %d' %n_clusters
             MX = r.Mclust(array(data_array),G=n_clusters, header='FALSE')
             clusterset = ClusterSet(modelname=MX['modelName'], bic=MX['bic'], loglik=MX['loglik'], n_clusters=n_clusters, n_flucstrucs=MX['n'])
             pyfusion.session.save(clusterset)

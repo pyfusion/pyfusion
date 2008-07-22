@@ -92,3 +92,39 @@ def smaller(x,y):
     more like the IDL < - note - different to numpy.lesser
     """
     return choose(x > y, (x,y))
+
+def show_db(partial_name='', page_width=80):
+    """ first native SQLAlchemy version
+    Works on all databases, f.metadata.tables is probably a very indirect way to
+    access data
+    Early version and pyfusion-independent version (but for mysql only) in dev_utils.py
+    """
+    tmp = pyfusion.session.query(pyfusion.Device)
+    f=tmp.first()
+    table_list = f.metadata.tables.values()
+    counts=[] ; table_names=[]
+    for (i,table) in enumerate(table_list):    
+        table_name=str(table)
+        countqry=table.count()
+        count=countqry.execute().fetchone()[0]
+        counts.append(count) ; table_names.append(table_name)
+
+    len_wid = max([len(str(st)) for st in counts])
+    tabl_wid = max([len(st) for st in table_names])
+    for (i,table) in enumerate(table_list):    
+        # print str(table), count, str(table._columns)
+        col_list_long =  str(table._columns)
+        col_list= [ss.strip("' ") for ss in col_list_long.strip("[]").split(",")]
+        col_list_short= [ss.replace(table_names[i]+'.','') for ss in col_list]
+        print ('%*s:[%*s] ') % ( tabl_wid,table_names[i],len_wid,counts[i]),
+        start_col=len_wid+tabl_wid+6
+        next_col=start_col
+        for (i,strg) in enumerate(col_list_short): 
+            if (next_col+len(strg)+2 > page_width): 
+                print 
+                print('%*s') % (start_col,""),
+                next_col=start_col
+            print ('%s,') % (strg),
+            next_col += len(strg)+2
+        print 
+

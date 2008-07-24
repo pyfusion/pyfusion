@@ -8,7 +8,7 @@ sqlalchemy version >= 0.4.4 (version 0.4.4 is required for the declarative exten
 """
 
 from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted, load, version as numpy_version
-if int(numpy_version.version.replace('.','')) >= 100: from numpy import savez
+if int(numpy_version.version.replace('.','')) >= 110: from numpy import savez
 
 from numpy.dual import svd
 from utils import local_import, get_conditional_select, check_same_timebase, delta_t
@@ -128,7 +128,9 @@ def get_shot(shot_number,shot_class = Shot):
         existing_shot = pyfusion.session.query(shot_class).filter(shot_class.device_id == pyfusion._device.id).filter(shot_class.shot == shot_number).one()
         return existing_shot
     except:
-        print "Creating shot %s:%d" %(pyfusion._device.name, shot_number)    
+        print "Creating shot %s:%d, %s" %(
+            pyfusion._device.name, shot_number,
+            pyfusion.utils.delta_t('next_shot'))    
         s = shot_class(shot_number)
         return s
 

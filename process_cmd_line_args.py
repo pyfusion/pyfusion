@@ -18,12 +18,12 @@ for _i in range(1,len(_sys.argv)):
         exec(_lhs)
         exec(_expr)
     except Exception, inst:
-        print("*****Target %s non-existent!***") % _lhs 
+        print("##########Target %s non-existent!#########") % _lhs 
         _user_locals=[]
         _loc_dict=locals().copy() # need to save, as the size changes
         for v in _loc_dict:
             if v.find('_')!=0: _user_locals.append(v)
-        print 'use one of ', _user_locals
+        print '#########use one of ', _user_locals
         if pyfusion.settings.VERBOSE>0:
             print inst
             raise inst

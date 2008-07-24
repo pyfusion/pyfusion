@@ -46,7 +46,10 @@ def plot_flucstrucs(fs_list, size_factor = 30.0, colour_factor = 30.0, frequency
 # need to write a function str_shot_range to compress long sequences of 
 #  shot numbers....  --> [58123-26,39-45], but could do [58123...58245] 
 # as a short-cut
-    pl.title(' %d Fluctuation structures.... ...what, you want more info?'  %len(fs_list))
+    pl.title(str(
+        ' %d Fluctuation structures, %s') % (
+        len(fs_list), ' '))  #pyfusion.utils.shotrange(shot_numbers))
+    # shot_numbers not defined here
     pl.xlabel('Time')
     pl.ylabel('Frequency')
     if savefile != '':

@@ -24,7 +24,10 @@ time=array([average(fs.svd.timebase) for fs in fs_list])
 print("%d phases, %d freqs") % (len(phases), len(freq))
 # lots of SQL calls - one per sv - consider another form of query - e.g. join
 # however this runs pretty fast on a small data set
-pl.suptitle(pyfusion.utils.shotrange(shots))
+try:
+    pl.suptitle(pyfusion.utils.shotrange(shots))
+except AttributeError:
+    pl.title(pyfusion.utils.shotrange(shots))
 ax1=pl.subplot(221)
 pl.scatter(time,freq,30*energy/max(energy),200*freq/max(freq))
 pl.xlabel('time (size->fs.energy, colour->fs.freq)')

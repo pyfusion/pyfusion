@@ -1,7 +1,7 @@
 """
 helper functions for pyfusion
 """
-from numpy import fft, conjugate, array, choose
+from numpy import fft, conjugate, array, choose, min, max
 #import settings
 from datetime import datetime
 import pyfusion
@@ -98,6 +98,8 @@ def show_db(partial_name='', page_width=80):
     Works on all databases, f.metadata.tables is probably a very indirect way to
     access data
     Early version and pyfusion-independent version (but for mysql only) in dev_utils.py
+    Usage: utils.show_db()   shows all tables in the current pyfusion db
+        formatted according to page_width
     """
     tmp = pyfusion.session.query(pyfusion.Device)
     f=tmp.first()
@@ -128,6 +130,49 @@ def show_db(partial_name='', page_width=80):
             next_col += len(strg)+2
         print 
 
+    print "\nSummary:"
+    stmp = pyfusion.session.query(pyfusion.Shot)
+    print '%d shot%s ' % (int(stmp.count()), ['','s'][stmp.count()!=1]),
+    if stmp.count():
+        shots = [shot.shot for shot in stmp]
+        if len(shots) < 6: 
+            print (str(shots)),
+        else:
+            print('from %d to %d') % (min(shots),max(shots)),
+
+    dtmp = pyfusion.session.query(pyfusion.Device)
+    print ', %d device%s ' % (int(dtmp.count()), ['','s'][dtmp.count()!=1]),
+    if dtmp.count():
+        devices = [d.name for d in dtmp]
+        if len(devices) < 6: 
+            print (devices)
+        else:
+            print('%s ... etc') % str(devices[0:6])
+
+    dgtmp = pyfusion.session.query(pyfusion.Diagnostic)
+    print '%d diagnostic%s' % (int(dgtmp.count()), ['','s'][dgtmp.count()!=1]),
+    if dgtmp.count():
+        diags = [d.name for d in dgtmp]
+        if len(diags) < 6: 
+            print (diags)
+        else:
+            print('%s ... etc') % str(diags[0:6])
+
+def shotrange(shot_numbers, max_width=30):
+    """ Return a concise string representation of a numer of shots
+    limiting the character width to max_width
+    """
+    shots=array(shot_numbers) # to be brief!
+    sstr =str('shot%s ') % (['','s'][len(shots)!=1])
+    if len(shots):
+        if len(str(shots)+sstr) < max_width: 
+            sstr += str("%s") % ','.join([str(s) for s in shots])
+        elif (max(shots)-min(shots)) == (len(shots)-1):
+            sstr +=('%d-%d') % (min(shots),max(shots))
+        else:
+            sstr = str("%d ") % int(len(shots)) + sstr.rstrip() + ', ' + (
+                       '[%d,...,%d]') % (min(shots),max(shots))
+    return sstr
 
 def remap_angle_0_2pi(angle,avoid_zero=False):
     """

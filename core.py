@@ -7,7 +7,9 @@ numpy
 sqlalchemy version >= 0.4.4 (version 0.4.4 is required for the declarative extension)
 """
 
-from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted, savez, load
+from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted, load, version as numpy_version
+if int(numpy_version.version.replace('.','')) >= 100: from numpy import savez
+
 from numpy.dual import svd
 from utils import local_import, get_conditional_select, check_same_timebase, delta_t
 
@@ -158,7 +160,11 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False):
     try:
         _tmp = _ProcessData.load_channel(ch, shot_number)
         if savelocal:
-            savez(localfilename,timebase=_tmp.timebase,signal=_tmp.signals[channel_name],parent_element=_tmp.parent_element)
+            if int(numpy.__version__.replace('.','')):
+                savez(localfilename,timebase=_tmp.timebase,
+                      signal=_tmp.signals[channel_name],
+                      parent_element=_tmp.parent_element)
+            else: print("**Warning - not saving - need numpy 1.1.0 or higher")
         return _tmp
     except:
         msg=str('Failed to retrieve data from %s, shot %d') % (ch.name, shot_number)
@@ -258,14 +264,17 @@ class MultiChannelTimeseries(object):
             new_mc_data.add_channel(self.signals[ch][e0:e1],ch)
         return new_mc_data
 
-    def plot(self, title="",saveas=""):
+    def plot(self, title="",saveas="", xlim=[None, None], 
+             ylim=[None, None]):
         import pylab as pl
         for ch_i, ch in enumerate(self.ordered_channel_list):
             pl.subplot(len(self.ordered_channel_list),1,ch_i+1)
             pl.plot(self.timebase,self.signals[ch])
             pl.ylabel(ch)
+            if xlim[1]!=None : pl.xlim(xlim)    
+            if ylim[1]!=None : pl.ylim(ylim)    
         if title:
-            pl.title(title)
+            pl.suptitle(title)
         if saveas:
             pl.savefig(saveas)
         else:

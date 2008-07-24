@@ -64,7 +64,8 @@ Optimisation
 	-1: test some assertions
 	0: conservative
 	1: pretty safe
-	2..: etc
+	2: faster
+	3..: etc
  
 Console Output
 ==============

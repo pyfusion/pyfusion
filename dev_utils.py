@@ -5,7 +5,7 @@ def ftplot(signal, shot, yrange=[False, False], xrange=[False, False], ytype=1, 
 
 
 def new_show_db(partial_name='', page_width=80):
-    """ beginning of native SQLAlchemy version
+    """ frozen native SQLAlchemy version - see utils.py for latest
     Works on all databases, f.metadata.tables is probably a very indirect way to
     access data
     """
@@ -38,7 +38,7 @@ def new_show_db(partial_name='', page_width=80):
             next_col += len(strg)+2
         print 
 
-def show_db(db="pyfusion", extra = "", page_width=80):
+def show_db(db="", extra = "", page_width=80):
     """
     Brief description of database, only  works in mysql - maybe there is a fancy sqlalchemy version
     Note that the database does NOT default to the one defined in pyfusion.settings
@@ -52,7 +52,9 @@ def show_db(db="pyfusion", extra = "", page_width=80):
 # but then how would we do the test?
 # maybe default to the db name parsed from SQL_SERVER
 # This would require a pyfusion.show_db, that called the general show_db - nice!
-    if pyfusion.settings.SQL_SERVER.upper().find('MYSQL') < 0: raise Exception, ' only for mysql databases'
+    # 
+    if (db=="") and (pyfusion.settings.SQL_SERVER.upper().find('MYSQL') < 0): 
+        raise Exception, ' only for mysql databases'
     
     engine = create_engine('mysql://localhost/information_schema')
     conn = engine.connect()

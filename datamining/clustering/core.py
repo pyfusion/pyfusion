@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, Strin
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
 import pylab as pl
-from numpy import mean, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum
+from numpy import mean, average, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum
 from pyfusion.utils import r_lib
 
 ordered_channels=[]
@@ -34,6 +34,7 @@ class FluctuationStructure(pyfusion.Base):
 # maybe one day there will be a description field, even though not all SQLs implement it
     a12 = Column('a12', Float,info={'comment':'ratio of first two SVs'})
     a13 = Column('a13', Float)
+    tmid = Column('tmid',Float) # need if we access data other than from python
     dt12 = Column('dt12', Float)
     gamma_threshold = Column('gamma_threshold', Numeric)
     phases = relation("DeltaPhase", backref='flucstruc')
@@ -111,6 +112,7 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
             energy = sum([sv.value**2 for sv in sv_group])/E
             raw_energy=0 # not sure how yet
             freq = peak_freq(sv_group[0].chrono, seg_svd.timebase)
+            tmid = average(seg_svd.timebase)
             a1=sv_group[0].value
             if len(sv_group)>1: a12 = sv_group[1].value/sv_group[0].value
             else:               a12=0
@@ -122,7 +124,7 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
                 print 'SV=[%s]'%','.join([str("%.3g") % sv.value for sv in sv_group])
             fs = FluctuationStructure(svd_id=seg_svd.id, frequency=freq, 
                                       energy=energy, gamma_threshold=threshold, 
-                                      raw_energy=0, a1=a1, a12=a12, a13=a13,
+                                      raw_energy=0, a1=a1, a12=a12, tmid=tmid, a13=a13,
                                       set_id = fs_set.id)
             pyfusion.session.save(fs)
             for sv in sv_group:
@@ -188,17 +190,37 @@ def _new_group_svs(input_SVD):
     E = input_SVD.energy
     remaining_svs_norm_energy = array([i.value**2 for i in remaining_svs])/E
     if pyfusion.settings.ENERGY_THRESHOLD < 1:
-        max_element = searchsorted(cumsum(remaining_svs_norm_energy),pyfusion.settings.ENERGY_THRESHOLD)
-        remaining_svs = remaining_svs[:max_element]
-        remaining_svs_norm_energy = remaining_svs_norm_energy[:max_element]        
+        max_element = searchsorted(cumsum(remaining_svs_norm_energy),
+                                          pyfusion.settings.ENERGY_THRESHOLD)
+        if (pyfusion.settings.VERBOSE>5):
+            if max_element < (len(remaining_svs_norm_energy)-1):
+                print "Cut: remaining_svs_norm_energy %s || %s" % (
+                    str(remaining_svs_norm_energy[:max_element+1]), 
+                    str(remaining_svs_norm_energy[max_element+1:]))
+            else:   print "Remaining_svs_norm_energy", remaining_svs_norm_energy
+
+        remaining_svs = remaining_svs[:max_element+1]
+        remaining_svs_norm_energy = remaining_svs_norm_energy[:max_element+1]   
+
     for i,_sv in enumerate(remaining_svs):
         remaining_svs[i].self_cps = mean(cps(_sv.chrono,_sv.chrono))
+    if pyfusion.settings.VERBOSE>6: 
+        print "ENERGY_THRESHOLD = %.3g"% pyfusion.settings.ENERGY_THRESHOLD,
+        print "svs.selfcps=%s" % ','.join(
+            [str("%.3g") % (rs.self_cps) for rs in remaining_svs])
     while len(remaining_svs) > 1:
         tmp_cp = [mean(abs(cps(remaining_svs[0].chrono, sv.chrono)))**2/(remaining_svs[0].self_cps*sv.self_cps) for sv in remaining_svs]
         tmp_cp_argsort = array(tmp_cp).argsort()[::-1]
         sort_cp = take(tmp_cp,tmp_cp_argsort)
         delta_cp = sort_cp[1:]-sort_cp[:-1]
-
+        if pyfusion.settings.VERBOSE>5: 
+            print "svs.cross_cps=%s" % ','.join(
+                [str("%.3g") % (cp) for cp in tmp_cp])
+            print "svs.cross_sort_cps=%s" % ','.join(
+                [str("%.3g") % (cp) for cp in sort_cp])
+            print "svs.cross_delta_cps=%s" % ','.join(
+                [str("%.3g") % (cp) for cp in delta_cp])
+            print "indices to be appended", tmp_cp_argsort[:argmin(delta_cp)+1]
         output_fs_list.append([remaining_svs[i] for i in tmp_cp_argsort[:argmin(delta_cp)+1]])
 
         # remove the newly assigned SV from the remaining SV list so they don't get assigned again
@@ -248,18 +270,20 @@ class ClusterDataSet(pyfusion.Base):
         pl.title('Cluster Dataset: %s' %self.name)
         pl.show()
 
-    def plot_N_clusters(self,N_clusters):
+    def plot_N_clusters(self,N_clusters,title=""):
         """ Simple f-t plot of this ClusterDataSet for a given N_clusters
         """
         clusterset = pyfusion.session.query(ClusterSet).filter_by(clusterdataset_id=self.id).filter_by(n_clusters=N_clusters).one()
         for cl in clusterset.clusters:
             t0_freq_list = [[i.svd.timebase[0],i.frequency] for i in cl.flucstrucs]
             pl.plot([i[0] for i in t0_freq_list], [i[1] for i in t0_freq_list],'o')
+            pl.title(title+' coloured according to cluster, id=['+
+                     str(self.id)+"]")
         pl.show()
 
     def plot_N_cumu_phase(self,N_clusters):
         """ Show mean phases and sds like fig 5.X in Dave Pretty thesis
-        note done
+        not finished...
         """
         pass
         clusterset = pyfusion.session.query(ClusterSet).filter_by(clusterdataset_id=self.id).filter_by(n_clusters=N_clusters).one()
@@ -336,7 +360,7 @@ def _old_get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
     return [data_array, used_fs]
 
 def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11), input_data = None):
-    from rpy import r
+    from rpy import r, RVER
     from numpy import unique  #bdb added
     
     r_lib(r,'mclust')
@@ -351,11 +375,12 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
     pyfusion.session.save(clusterdataset)
     pyfusion.session.flush()
 
-# may need this in 2.4 bdb?
-# but generates warning:
+# may need this in 2.4.1 bdb - strange behaviour otherwise?
+# but occasionally generates warning:
 #   clustering/core.py:338: SyntaxWarning: import * only allowed at module level
-#    from rpy import *
-#    r.library('mclust')
+    if int(RVER) <= 2041:
+        from rpy import *
+        r.library('mclust')
 
     for n_clusters in n_cluster_list:
         try:

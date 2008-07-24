@@ -6,8 +6,9 @@ import pyfusion
 if pyfusion.settings.DEVICE != 'TestDevice': 
     raise ValueError, "Must have pyfusion.settings.DEVICE='TestDevice' PRIOR to import pyfusion"
 diag_name = 'testdiag2'
-
 shot_number = 1000
+
+execfile('process_cmd_line_args.py')
 print 'shot_number = ', shot_number, ': 0NNN noisy, 1NNN less so 9NNN quiet'
 
 s = pyfusion.get_shot(shot_number)

@@ -5,10 +5,13 @@ Note that correct operation is only guaranteed on an empty database:
    or better still use SQL_SERVER = 'sqlite://'
 """
 import os
+# try the nicer putenv first - but probably only affects child processes
 os.putenv("PYFUSION_SETTINGS_DEVICE","TestDevice")
+# check to see if it worked
 if os.getenv("PYFUSION_SETTINGS_DEVICE") != "TestDevice":
     print "***Warning - being heavy handed with os.environ to correct DEVICE"
     os.environ.__setitem__("PYFUSION_SETTINGS_DEVICE","TestDevice")
+    # The worry is that directly operating on os.environ can cause memory leaks
 if os.getenv("PYFUSION_SETTINGS_DEVICE") != "TestDevice":
     raise ValueError, 'PYFUSION_SETTINGS_DEVICE must be "TestDevice"'
 
@@ -17,7 +20,11 @@ import pyfusion
      # won't work here - too late!  pyfusion.settings.DEVICE="TestDevice"
 diag_name = 'testdiag1'
 
-s = pyfusion.get_shot(1000)
+shot_number=1000
+
+execfile('process_cmd_line_args.py')
+
+s = pyfusion.get_shot(shot_number)
 s.load_diag(diag_name)
 
 from pyfusion.datamining.clustering.core import generate_flucstrucs

@@ -1,8 +1,10 @@
 """
 H-1 specific utility code...
 """
-from numpy import poly1d,polyval
+from numpy import poly1d,polyval,array
+import pyfusion
 from pyfusion.utils import remap_angle_0_2pi
+from pyfusion.datamining.clustering.core import get_sin_cos_phase_for_channel_pairs
 
 # coefficients for 6th order polynomial mapping kappa_h to LCFS magnetic angle for each Mirnov coil
 
@@ -97,3 +99,31 @@ def map_phase_kh_avg(input_phase, kh, channel_1, channel_2):
     scale_factor = (kh_mean_mag_angles[channel_2] - kh_mean_mag_angles[channel_1])/(c2_mag_angle - c1_mag_angle)
     return scale_factor*input_phase
 
+
+def h1_khavg_fs_phases(fs_list, channel_pairs = None):
+    """
+    for a h-1 flucstrus, get the kh-avg delta_phases 
+    if channel_pairs not supplied, will take neighbour coils 
+    from diag ordered channels
+    """
+    if channel_pairs:
+        raise NotImplementedError
+    
+    # this is a temporary hack: will be removed when dphase class is changed to use relations rather than id columns (which require further lookup)
+    channels = pyfusion.session.query(pyfusion.Channel).all()
+    ch_id_name_map = {}
+    for ch in channels:
+        ch_id_name_map[str(ch.id)] = ch.name
+    output_phases = []
+    for fs in fs_list:
+        fs_dphases = []
+        kh = fs.svd.timesegment.shot.kappa_h
+        if len(fs.phases) == 0:
+            print '...getting phases for flucstruc %d' %(fs.id)
+            fs.get_phases()
+        for dp in fs.phases:
+            fs_dphases.append(map_phase_kh_avg(dp.d_phase, kh, ch_id_name_map[str(dp.channel_1_id)], ch_id_name_map[str(dp.channel_2_id)]))
+        output_phases.append(fs_dphases)
+        print len(fs_dphases)
+    return array(output_phases)
+    

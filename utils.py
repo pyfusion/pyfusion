@@ -1,7 +1,7 @@
 """
 helper functions for pyfusion
 """
-from numpy import fft, conjugate, array, choose, min, max
+from numpy import fft, conjugate, array, choose, min, max, pi
 #import settings
 from datetime import datetime
 import pyfusion
@@ -189,4 +189,15 @@ def remap_angle_0_2pi(angle,avoid_zero=False):
             angle -= 2*pi
         while angle < 0:
             angle += 2*pi
+    return angle
+
+
+def remap_angle_negpi_pi(angle):
+    """
+    surely there's a better way?
+    """
+    while angle >= pi:
+        angle -= 2*pi
+    while angle < -pi:
+        angle += 2*pi
     return angle

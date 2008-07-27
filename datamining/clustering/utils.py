@@ -1,6 +1,7 @@
 """
 utilities for datamining/clustering
 """
+from numpy import sin,cos
 
 import pyfusion
 
@@ -60,3 +61,28 @@ def test_clustvarsel_for_shot(shot_number, diag_name, max_clusters, clusterdatas
 
 def compare_clustersets():
     pass
+
+def fs_to_arff(fs_list, filename=None):
+    """
+    output flucstruc data (including phase data) to arff format http://www.cs.waikato.ac.nz/~ml/weka/arff.html
+    for use with WEKA http://www.cs.waikato.ac.nz/ml/weka/
+    """
+
+    if not filename:
+        filename = "pyfusion_fs_arff_"+pyfusion.utils.timestamp()+'.arff'
+    f = open(filename,'w')
+    f.write('@relation %s\n\n' %(filename[:-5]))
+  
+    # todo: put a check here so we don't assume...
+    print 'Warning: assuming phases list is the same for each flucstruc...'
+    for i in fs_list[0].phases:
+        f.write('@attribute sin_%d_%d numeric\n' %(i.channel_1_id, i.channel_2_id))
+        f.write('@attribute cos_%d_%d numeric\n' %(i.channel_1_id, i.channel_2_id))
+    
+    f.write('\n@data\n')
+    for fs in fs_list:
+        outstr = ""
+        for ph in fs.phases:
+            outstr = outstr+"%f, %f ," %(sin(ph.d_phase),cos(ph.d_phase))
+        f.write(outstr[:-2]+'\n')
+    f.close()

@@ -1,7 +1,7 @@
 """
 helper functions for pyfusion
 """
-from numpy import fft, conjugate, array, choose, min, max, pi
+from numpy import fft, conjugate, array, choose, min, max, pi,random,take,argsort
 #import settings
 from datetime import datetime
 import pyfusion
@@ -201,3 +201,11 @@ def remap_angle_negpi_pi(angle):
     while angle < -pi:
         angle += 2*pi
     return angle
+
+def random_sample(input_arr, out_length):
+    if out_length >= len(input_arr):
+        return input_arr
+    rand_list = random.rand(len(input_arr))
+    rand_args = argsort(rand_list)[:out_length]
+    return take(input_arr, rand_args)
+    

@@ -16,8 +16,51 @@ from utils import local_import, get_conditional_select, check_same_timebase, del
 from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean, String
 from sqlalchemy.orm import relation, synonym
 import pyfusion
+from pyfusion.coords import Coordinates
 
-    
+class Device(pyfusion.Base):
+    __tablename__ = "devices"
+    id = Column('id', Integer, primary_key=True)
+    name = Column('name', String(50), nullable=False, unique=True)
+
+class Diagnostic(pyfusion.Base):
+    __tablename__ = "diagnostics"
+    id = Column('id', Integer, primary_key=True)
+    name = Column('name', String(50), nullable=False, unique=True)
+    ordered_channel_list = Column('ordered_channel_list', PickleType)
+
+    def __init__(self, name):
+        self.name= name
+        self.ordered_channel_list = []
+        if pyfusion.settings.VERBOSE>2:
+            print('Class Diagnostic __init__ %s') % self.name
+
+    def add_channel(self, channel):
+        self.ordered_channel_list.append(channel.name)
+        self.channels.append(channel)
+
+    def ordered_channels(self):
+#bdb
+        if len(self.channels) != len(self.ordered_channel_list): 
+            print('******** Inconsistency in ordered channels %d != %d') % (len(self.channels), len(self.ordered_channel_list))
+        outlist = []
+        for oc in self.ordered_channel_list:
+            outlist.append(session.query(Channel).filter_by(name=oc, diagnostic_id=self.id).one())
+        return outlist
+
+class Channel(pyfusion.Base):
+    __tablename__ = "channels"
+    id = Column('id', Integer, primary_key=True)
+    name = Column('name', String(50), nullable=False, unique=True)
+    data_acq_type = Column('data_acq_type', String(50))
+    __mapper_args__ = {'polymorphic_on':data_acq_type}
+    diagnostic_id = Column('diagnostic_id', Integer, ForeignKey('diagnostics.id'))
+    diagnostic = relation(Diagnostic, primaryjoin=diagnostic_id==Diagnostic.id, backref="channels")
+    processdata_override = Column('processdata_override', PickleType, nullable=True)
+    coord_id = Column('coord_id', Integer, ForeignKey('coords.id'))
+    coords = relation(Coordinates, primaryjoin=coord_id==Coordinates.id)    
+
+
 class Shot(pyfusion.Base):
     """
     The class to represent any shot-specific data.    
@@ -26,7 +69,7 @@ class Shot(pyfusion.Base):
     id = Column('id', Integer, primary_key=True)
     shot = Column('shot', Integer)
     device_id = Column('device_id', Integer, ForeignKey('devices.id'))
-    device = relation(pyfusion.Device, primaryjoin=device_id==pyfusion.Device.id, backref="shots")    
+    device = relation(Device, primaryjoin=device_id==Device.id, backref="shots")    
     shot_type = Column('shot_type', String(50)) ## want something to map...
     __mapper_args__ = {'polymorphic_on':shot_type}
     data = {}
@@ -43,7 +86,7 @@ class Shot(pyfusion.Base):
 
     def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False):
         print "Only MultiChannel Timeseries data works for now" 
-        diag = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name==diagnostic)[0]
+        diag = pyfusion.session.query(Diagnostic).filter(Diagnostic.name==diagnostic)[0]
         channel_list = []
         if pyfusion.settings.VERBOSE > 0:
             print('tmin=%.4g, tmax=%.4g') % (pyfusion.settings.SHOT_T_MIN, pyfusion.settings.SHOT_T_MAX)
@@ -139,7 +182,7 @@ def last_shot():
 
 def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False):
     from os.path import exists
-    ch = pyfusion.session.query(pyfusion.Channel).filter(pyfusion.Channel.name==channel_name)[0]
+    ch = pyfusion.session.query(Channel).filter(Channel.name==channel_name)[0]
     localfilename = pyfusion.settings.getlocalfilename(shot_number, channel_name)
     if exists(localfilename) and not ignorelocal:
         localdata = load(localfilename)
@@ -325,7 +368,7 @@ class TimeSegment(pyfusion.Base):
             if diag:
                 self.shot.load_diag(diag)
             else:
-                pd = pyfusion.session.query(pyfusion.Diagnostic).filter_by(id = self.primary_diagnostic_id).one()
+                pd = pyfusion.session.query(Diagnostic).filter_by(id = self.primary_diagnostic_id).one()
                 self.shot.load_diag(pd.name)
         for diag_i in self.shot.data.keys():
             self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, self.n_samples, use_samples=[True, True])
@@ -336,7 +379,7 @@ class MultiChannelSVD(pyfusion.Base):
     timesegment_id = Column('timesegment_id', Integer, ForeignKey('timesegments.id'))
     timesegment = relation(TimeSegment, primaryjoin=timesegment_id==TimeSegment.id, backref='svd')
     diagnostic_id = Column('diagnostic_id', Integer, ForeignKey('diagnostics.id'))
-    diagnostic = relation(pyfusion.Diagnostic, primaryjoin=diagnostic_id==pyfusion.Diagnostic.id)
+    diagnostic = relation(Diagnostic, primaryjoin=diagnostic_id==Diagnostic.id)
     svs = relation("SingularValue", backref='svd')
     entropy = Column('entropy', Float)
     energy = Column('energy', Float)
@@ -462,7 +505,7 @@ def get_time_segments(shot, primary_diag, n_samples = False):
     if n_samples==False: n_samples=pyfusion.settings.N_SAMPLES_TIME_SEGMENT
     shot.define_time_segments(primary_diag, n_samples = n_samples)
     output_list = []
-    diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter_by(name = primary_diag).one()
+    diag_inst = pyfusion.session.query(Diagnostic).filter_by(name = primary_diag).one()
     for seg_i, seg_min in enumerate(shot.time_segments):
         try:
             seg = pyfusion.session.query(TimeSegment).filter_by(shot = shot, primary_diagnostic_id=diag_inst.id, parent_min_sample=seg_min[0], n_samples=n_samples).one()
@@ -476,9 +519,9 @@ def get_time_segments(shot, primary_diag, n_samples = False):
 
 
 def new_timesegment(shot_instance, primary_diagnostic_name, t0, t1):
-    diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == primary_diagnostic_name).one()
+    diag_inst = pyfusion.session.query(Diagnostic).filter(Diagnostic.name == primary_diagnostic_name).one()
     t_els = shot_instance.data[primary_diagnostic_name].t_to_element([t0,t1])
-    ts = pyfusion.TimeSegment(shot_id=shot_instance.id, primary_diagnostic_id=diag_inst.id, parent_min_sample = t_els[0],n_samples = t_els[1]-t_els[0])
+    ts = TimeSegment(shot_id=shot_instance.id, primary_diagnostic_id=diag_inst.id, parent_min_sample = t_els[0],n_samples = t_els[1]-t_els[0])
     pyfusion.session.save(ts)
     pyfusion.session.flush()
     ts._load_data()
@@ -487,7 +530,7 @@ def new_timesegment(shot_instance, primary_diagnostic_name, t0, t1):
 def new_svd(timesegment_instance, diagnostic_id = -1, normalise=False, remove_baseline=True):
     if diagnostic_id < 0:
         diagnostic_id = timesegment_instance.primary_diagnostic_id
-    new_svd = pyfusion.MultiChannelSVD(timesegment_id=timesegment_instance.id, diagnostic_id = diagnostic_id)
+    new_svd = MultiChannelSVD(timesegment_id=timesegment_instance.id, diagnostic_id = diagnostic_id)
     pyfusion.session.save(new_svd)
     pyfusion.session.flush()
     new_svd._do_svd(normalise=normalise, remove_baseline=remove_baseline)

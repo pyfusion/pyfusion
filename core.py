@@ -1,32 +1,42 @@
 """
 The core components of PyFusion. 
 The classes and functions here are imported by pyfusion/__init__.py
-
-requirements:
-numpy
-sqlalchemy version >= 0.4.4 (version 0.4.4 is required for the declarative extension)
 """
 
 from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted, load, version as numpy_version
-if int(numpy_version.version.replace('.','')) >= 110: from numpy import savez
-
 from numpy.dual import svd
-from utils import local_import, get_conditional_select, check_same_timebase, delta_t
+if int(numpy_version.version.replace('.','')) >= 110: from numpy import savez
 
 from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean, String
 from sqlalchemy.orm import relation, synonym
+
 import pyfusion
 from pyfusion.coords import Coordinates
+from pyfusion.utils import local_import, get_conditional_select, check_same_timebase, delta_t
 
 class Device(pyfusion.Base):
+    """
+    The Device class is used to represent a fusion experiment device, such as JET, LHD, etc...
+    An instance of this class, or a class which inherits this class, must reside in pyfusion/devices/DEVICE/DEVICE.py
+    where DEVICE is defined in the pyfusion settings
+    """
     __tablename__ = "devices"
     id = Column('id', Integer, primary_key=True)
     name = Column('name', String(50), nullable=False, unique=True)
 
 class Diagnostic(pyfusion.Base):
+    """
+    The Diagnostic class is basically just a collection of channels. 
+    Diagnostic.channels is defined through a back-reference in the Channel class definition
+    """
     __tablename__ = "diagnostics"
     id = Column('id', Integer, primary_key=True)
     name = Column('name', String(50), nullable=False, unique=True)
+    # this ordered_channel_list guarantees a specific ordering of the channels (defined by
+    # the order in which they are added to the diagnostic). This is used for
+    # determining the default nearest neighbour channels, etc. This may be 
+    # replaced with a numeric value on the channel which would give more
+    # rigour to the channel ordering process.
     ordered_channel_list = Column('ordered_channel_list', PickleType)
 
     def __init__(self, name):
@@ -40,7 +50,10 @@ class Diagnostic(pyfusion.Base):
         self.channels.append(channel)
 
     def ordered_channels(self):
-#bdb
+        """
+        return a list of channel instances corresponding to the names
+        in ordered_channel_list
+        """
         if len(self.channels) != len(self.ordered_channel_list): 
             print('******** Inconsistency in ordered channels %d != %d') % (len(self.channels), len(self.ordered_channel_list))
         outlist = []

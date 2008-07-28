@@ -9,8 +9,8 @@ def update_device_info(pyf_class):
     existing = pyfusion.session.query(pyf_class).all()
     for devmod_object_str in pyfusion._device_module.__dict__.keys():
         if hasattr(pyfusion._device_module.__dict__[devmod_object_str], '__class__'):        
-            devmod_inst_bases = pyfusion._device_module.__dict__[devmod_object_str].__class__.__bases__
-            if pyf_class in devmod_inst_bases:
+            devmod_inst_class = pyfusion._device_module.__dict__[devmod_object_str].__class__
+            if pyf_class == devmod_inst_class or pyf_class in devmod_inst_class.__bases__:
                 if pyfusion._device_module.__dict__[devmod_object_str].name not in [i.name for i in existing]:
                     pyfusion.session.save_or_update(pyfusion._device_module.__dict__[devmod_object_str]) 
                     pyfusion.session.flush()

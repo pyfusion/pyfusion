@@ -80,6 +80,7 @@ mirnov_5p_20 = TJIIChannel(senal='MID5P20',name = 'mirnov_5p_20',processdata_ove
                            coords = ToroidalCoordinates(r=0.17947, theta=4.91, phi=0.7854))
 
 density2 = TJIIChannel(senal='Densidad2_', name = 'density2')
+densityIR = TJIIChannel(senal='DensidadMedia_IR_', name = 'densitymediaIR')
 
 mirnov_coils = pyfusion.Diagnostic(name='mirnov_coils')
 
@@ -98,9 +99,13 @@ for ch in mirnov_coils_channel_ordering:
 
 
 density_diag = pyfusion.Diagnostic(name='density')
+densityIR_diag = pyfusion.Diagnostic(name='densityIR')
 
 for ch in [density2]:
     density_diag.add_channel(ch)
+
+for ch in [densityIR]:
+    densityIR_diag.add_channel(ch)
 
 
 class TJII(pyfusion.Device):

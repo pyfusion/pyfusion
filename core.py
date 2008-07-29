@@ -402,6 +402,7 @@ class TimeSegment(pyfusion.Base):
                 reference_timebase = None
             else:
                 # TODO: this means that parent_min_sample must refer to the original shot timebase...
+                self.shot.load_diag(pd.name)
                 reference_timebase = self.shot.data[pd.name].timebase
             self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, 
                                                                    self.n_samples, use_samples=use_samples, reference_timebase=reference_timebase)

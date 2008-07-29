@@ -3,7 +3,7 @@ The core components of PyFusion.
 The classes and functions here are imported by pyfusion/__init__.py
 """
 
-from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted, load, version as numpy_version
+from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted, load, version as numpy_version, sqrt
 from numpy.dual import svd
 if int(numpy_version.version.replace('.','')) >= 110: from numpy import savez
 
@@ -256,7 +256,7 @@ class MultiChannelTimeseries(object):
     def t_to_element(self, time_list):
         return searchsorted(self.timebase,time_list)
 
-    def add_channel(self,signal,channel_name):
+    def add_channel(self,signal,channel_name): 
         signal = array(signal)
         if len(signal) == self.len_timebase:
             self.signals[str(channel_name)] = signal
@@ -298,13 +298,21 @@ class MultiChannelTimeseries(object):
             outfile.write(line+'\n')
         outfile.close()
 
-    def timesegment(self, t0, dt, use_samples=[False, False]):
+    def timesegment(self, t0, dt, use_samples=[False, False], reference_timebase = None):
         """
         return a reduced-time copy of the current MultiChannelTimeseries object
         @param t0: start time of segment (if use_samples[0] = True, then t0 is sample number rather than time)
         @param dt: width (t1-t0) of segment (if use_samples[1] = True, then dt is number of samples rather than length of time)
         @param use_samples: interpret t0, dt as samples instead of time.
         """
+        if reference_timebase != None:
+            # eek bad code
+            if use_samples[0]:
+                _t0 = self.timebase.searchsorted(reference_timebase[t0])
+                if use_samples[1]:
+                    dt = self.timebase.searchsorted(reference_timebase[t0+dt]) - _t0
+                t0=_t0
+
         # element for t0
         if use_samples[0]:
             e0 = t0
@@ -364,7 +372,7 @@ class MultiChannelTimeseries(object):
         else:
             pl.show()
             
-class TimeSegment(pyfusion.Base):    
+class TimeSegment(pyfusion.Base):
     __tablename__ = 'timesegments'
     id = Column('id', Integer, primary_key=True)
     shot_id = Column('shot_id', Integer, ForeignKey('shots.id'))
@@ -373,18 +381,67 @@ class TimeSegment(pyfusion.Base):
     parent_min_sample = Column('parent_min_sample', Integer)
     n_samples = Column('n_samples', Integer)
     data = {}
+    def get_primary_diagnostic(self):
+        return pyfusion.session.query(Diagnostic).filter_by(id = self.primary_diagnostic_id).one()
     def _load_data(self, diag = None):
         # if there is no data in the shot (ie - reading from previous run) then try loading the primary diagnostic
         #need to update session - we may have called the time segment from another session ...
         pyfusion.session.save_or_update(self)
+        pd = self.get_primary_diagnostic()
         if len(self.shot.data.keys()) == 0:
             if diag:
                 self.shot.load_diag(diag)
             else:
-                pd = pyfusion.session.query(Diagnostic).filter_by(id = self.primary_diagnostic_id).one()
                 self.shot.load_diag(pd.name)
+
+        use_samples = [True, True]
+
+
         for diag_i in self.shot.data.keys():
-            self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, self.n_samples, use_samples=[True, True])
+            if diag_i == pd.name:
+                reference_timebase = None
+            else:
+                # TODO: this means that parent_min_sample must refer to the original shot timebase...
+                reference_timebase = self.shot.data[pd.name].timebase
+            self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, 
+                                                                   self.n_samples, use_samples=use_samples, reference_timebase=reference_timebase)
+    def generate_data_summary(self,diag_name):
+        """
+        generate a TimeSegmentDataSummary for this timesegment and channels in diag
+        TODO: don't reload data if it's already there
+        """
+        try:
+            output = []
+            self._load_data(diag_name)
+            diag = pyfusion.session.query(Diagnostic).filter(Diagnostic.name==diag_name).one()
+            for ch in diag.channels:
+                _data = self.data[diag_name].signals[ch.name]
+                _mean = mean(_data)
+                _rms = sqrt(mean((_data-_mean)**2))
+                _var = var(_data)
+                tsds = TimeSegmentDataSummary(timesegment_id=self.id, channel_id=ch.id, mean=_mean, rms=_rms, var=_var)
+                pyfusion.session.save(tsds)
+                output.append(tsds)
+            pyfusion.session.flush()
+            return output
+        except IndexError:
+            # TODO: this exception should be handled in _load_data....
+            print 'Data is out of range for timesegment: %d, diagnostic: %s' %(self.id, diag_name)
+            return False
+
+class TimeSegmentDataSummary(pyfusion.Base):
+    __tablename__ = 'timesegment_data_summary'
+    id = Column('id',Integer,primary_key=True)
+    timesegment_id = Column('timesegment_id', Integer, ForeignKey('timesegments.id'))
+    timesegment = relation(TimeSegment, primaryjoin=timesegment_id==TimeSegment.id)
+    channel_id = Column('channel_id', Integer, ForeignKey('channels.id'))
+    channel = relation(Channel, primaryjoin=channel_id==Channel.id)
+    
+    mean = Column('mean',Float)
+    # RMS after baseline is removed
+    rms = Column('rms',Float)
+    # variance
+    var = Column('var',Float)
 
 class MultiChannelSVD(pyfusion.Base):
     __tablename__ = 'svds'

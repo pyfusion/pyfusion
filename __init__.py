@@ -38,6 +38,10 @@ if settings.VERBOSE>0:
 # permanently store everything thats been changed and added to the database
 session.commit()
 
+# shortcut - pyfusion.session.query() -> pyfusion.q()
+def q(*args,**kwargs):
+    return session.query(*args,**kwargs)
+
 # allow classes  pyfusion.core.xx to be referenced as pyfusion.xx
 # this might not be good design - will consider removal, or only importing selected classes
 from core import *

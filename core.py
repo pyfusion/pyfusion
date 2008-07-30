@@ -383,27 +383,35 @@ class TimeSegment(pyfusion.Base):
     data = {}
     def get_primary_diagnostic(self):
         return pyfusion.session.query(Diagnostic).filter_by(id = self.primary_diagnostic_id).one()
-    def _load_data(self, diag = None):
+    def _load_data(self, diag = None, all_diags=False):
         # if there is no data in the shot (ie - reading from previous run) then try loading the primary diagnostic
         #need to update session - we may have called the time segment from another session ...
         pyfusion.session.save_or_update(self)
         pd = self.get_primary_diagnostic()
-        if len(self.shot.data.keys()) == 0:
-            if diag:
+        loaded_diags = self.shot.data.keys()
+        if diag:
+            if not diag in loaded_diags:
                 self.shot.load_diag(diag)
-            else:
+        else:
+            if not pd.name in load_diags:
                 self.shot.load_diag(pd.name)
 
         use_samples = [True, True]
 
+        if all_diags:
+            load_list = self.shot.data.keys()
+        elif diag:
+            load_list = [diag]
+        else:
+            load_list = [pd.name]
 
-        for diag_i in self.shot.data.keys():
+        for diag_i in load_list:
             if diag_i == pd.name:
                 reference_timebase = None
             else:
                 # TODO: this means that parent_min_sample must refer to the original shot timebase...
-                self.shot.load_diag(pd.name)
-                reference_timebase = self.shot.data[pd.name].timebase
+                _tmp = load_channel(self.shot.shot,pd.ordered_channel_list[0],savelocal=True)
+                reference_timebase = _tmp.timebase
             self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, 
                                                                    self.n_samples, use_samples=use_samples, reference_timebase=reference_timebase)
     def generate_data_summary(self,diag_name):

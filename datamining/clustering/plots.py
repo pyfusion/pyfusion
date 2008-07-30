@@ -7,7 +7,26 @@ yes, it's a mess.
 import pyfusion
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet
-from numpy import array,transpose, argsort, min, max, average, shape
+from numpy import array,transpose, argsort, min, max, average, shape, mean
+from pyfusion.visual.core import ScatterPlot
+
+def dens_function(fs,dens_ch):
+    fsq = pyfusion.q(pyfusion.TimeSegmentDataSummary).filter(pyfusion.TimeSegmentDataSummary.timesegment==fs.svd.timesegment).filter(pyfusion.TimeSegmentDataSummary.channel==dens_ch)
+    if fsq.count() == 0:
+        return -1.0
+    else:
+        return mean([tsds.mean for tsds in fsq.all()])
+
+def cluster_detail_plot(clusterset, density_channel_name, tfargs={}, dfargs={}):
+    dens_ch = pyfusion.q(pyfusion.Channel).filter(pyfusion.Channel.name==density_channel_name).one()
+    for cluster in clusterset.clusters:
+        pl.subplot(221)
+        pl.cla()
+        tfplot = ScatterPlot(cluster.flucstrucs[:100], 'svd.timebase[0]', 'frequency',xlabel='Time',ylabel='Frequency',**tfargs)
+        pl.subplot(223)
+        densfreqplot = ScatterPlot(cluster.flucstrucs[:100], lambda x: dens_function(x,dens_ch), 'frequency', xlabel='Density', ylabel='Frequency', **dfargs)
+        pl.show()
+
 
 def plot_flucstrucs_for_set(set_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):
     #fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(FluctuationStructureSet.name == set_name).all()

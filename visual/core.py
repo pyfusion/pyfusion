@@ -4,6 +4,69 @@ Plots for classes, etc in pyfusion/core.py
 import pylab as pl, pyfusion
 from matplotlib.widgets import CheckButtons
 from numpy import arange, fft, resize, zeros, array
+from types import FunctionType, StringTypes
+
+class GenericPlot(object):
+    def __init__(self,*args,**kwargs):
+        """
+        arg 0 is list of datapoints
+        other non-keyword args are data mappings
+        keyword args are passed to pylab
+        """
+        self.data = args[0]
+        self.mappings = {}
+	self.kwargs = kwargs
+        for i,argi in enumerate(args[1:]):
+            self.mappings[str(i)] = datamap(self.data, argi)
+	self.setp()
+    def setp(self):
+        pl.setp(pl.gca(), **self.kwargs)
+
+
+
+def datalookup(data, var_list, element_list):
+    for i,vi in enumerate(var_list):
+        data = data.__getattribute__(vi)
+        if element_list[i] != None:
+            data = data[element_list[i]]
+    return data
+
+def datamap(data, mapper):
+    if type(mapper) == FunctionType:
+        return datamap_func(data, mapper)
+    elif type(mapper) in StringTypes:
+        return datamap_str(data, mapper)
+    else:
+        raise TypeError, 'Unknown mapper type in datamap'
+
+def datamap_func(data,mapper):
+    return map(mapper, data)
+
+def datamap_str(data, mapper):
+    output = []
+    dotstr = mapper.split('.')
+    var_list = []
+    element_list = []
+    for dst in dotstr:
+        if '[' in dst:
+            dspl = dst.split('[')
+            element_list.append(int(dspl[1][:-1]))
+            var_list.append(dspl[0])
+        else:
+            var_list.append(dst)
+            element_list.append(None)
+    for dp in data:
+        output.append(datalookup(dp,var_list, element_list))
+    return output
+
+class ScatterPlot(GenericPlot):
+    def __init__(self,*args,**kwargs):
+        super(ScatterPlot, self).__init__(*args,**kwargs)
+        pl.plot(self.mappings['0'],self.mappings['1'],'o')
+	# seems some settings don't hold after plot, redo them
+        super(ScatterPlot, self).setp()
+
+
 
 def posNegFill(x,y1,y2):
 	diff = y2 - y1

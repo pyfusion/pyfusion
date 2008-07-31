@@ -8,7 +8,7 @@ import pyfusion
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet
 from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list
-from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique
+from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt
 from pyfusion.visual.core import ScatterPlot
 
 def dens_function(fs,dens_ch):
@@ -60,26 +60,33 @@ def plot_summary_info(fs_list):
     pl.ylim(0,1)
     pl.setp(pl.gca(), xticks=[], yticks=[])
 
-def cluster_detail_plot(clusterset, density_channel_name, savefig=False, tfargs={}, dfargs={}):
-    dens_ch = pyfusion.q(pyfusion.Channel).filter(pyfusion.Channel.name==density_channel_name).one()
-    for cluster in clusterset.clusters:
-        print 'n_flucstrucs = %d' % len(cluster.flucstrucs)
-        pl.subplot(221)
-        pl.cla()
-        tfplot = ScatterPlot(cluster.flucstrucs, 'svd.timebase[0]', 'frequency',xlabel='Time',ylabel='Frequency',title='Cluster %d' %cluster.id,**tfargs)
-        pl.subplot(223)
-        pl.cla()
-        densfreqplot = ScatterPlot(cluster.flucstrucs, lambda x: dens_function(x,dens_ch), 'frequency', xlabel='Density', ylabel='Frequency', **dfargs)
-        pl.subplot(222)
-        pl.cla()
-        plot_phase_angle_for_fs_list(cluster.flucstrucs, ch_plot='theta')
-        pl.subplot(224)
-        pl.cla()
-        plot_summary_info(cluster.flucstrucs)
-        if savefig != False:
-            pl.savefig(savefig+'_cl_%d.png' %(cluster.id))
-        else:
-            pl.show()
+def safe_inv_sqrt(i):
+    if i > 0:
+        return 1./sqrt(i)
+    else:
+        return -1.0
+
+def cluster_detail_plot(cluster, d_names, savefig=False, tfargs={}, dfargs={}):
+    dens_ch = pyfusion.q(pyfusion.Channel).filter(pyfusion.Channel.name==d_names[0]).one()
+    dens_ch2 = pyfusion.q(pyfusion.Channel).filter(pyfusion.Channel.name==d_names[1]).one()
+    print 'n_flucstrucs = %d' % len(cluster.flucstrucs)
+    pl.subplot(221)
+    pl.cla()
+    tfplot = ScatterPlot(cluster.flucstrucs, ['svd.timebase[0]'], ['frequency'],xlabel='Time',ylabel='Frequency',title='Cluster %d' %cluster.id,**tfargs)
+    pl.subplot(223)
+    pl.cla()
+    #densfreqplot = ScatterPlot(cluster.flucstrucs, lambda x: dens_function(x,dens_ch), 'frequency', xlabel='Density', ylabel='Frequency', **dfargs)
+    alfvenplot = ScatterPlot(cluster.flucstrucs, [lambda x: safe_inv_sqrt(dens_function(x,dens_ch)),lambda x: safe_inv_sqrt(dens_function(x,dens_ch2))], ['frequency', 'frequency'], xlabel='Density^-1/2', ylabel='Frequency', **dfargs)
+    pl.subplot(222)
+    pl.cla()
+    plot_phase_angle_for_fs_list(cluster.flucstrucs, ch_plot='theta')
+    pl.subplot(224)
+    pl.cla()
+    plot_summary_info(cluster.flucstrucs)
+    if savefig != False:
+        pl.savefig(savefig+'_cl_%d.png' %(cluster.id))
+    else:
+        pl.show()
 
 
 def plot_flucstrucs_for_set(set_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):

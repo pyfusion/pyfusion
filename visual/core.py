@@ -17,7 +17,7 @@ class GenericPlot(object):
         self.mappings = {}
 	self.kwargs = kwargs
         for i,argi in enumerate(args[1:]):
-            self.mappings[str(i)] = datamap(self.data, argi)
+            self.mappings[str(i)] = [datamap(self.data, argi_x) for argi_x in argi]
 	self.setp()
     def setp(self):
         pl.setp(pl.gca(), **self.kwargs)
@@ -62,7 +62,9 @@ def datamap_str(data, mapper):
 class ScatterPlot(GenericPlot):
     def __init__(self,*args,**kwargs):
         super(ScatterPlot, self).__init__(*args,**kwargs)
-        pl.plot(self.mappings['0'],self.mappings['1'],'o')
+        cols = 'brgky'
+        for i in range(len(self.mappings['0'])):
+            pl.plot(self.mappings['0'][i],self.mappings['1'][i],'%so' %cols[i])
 	# seems some settings don't hold after plot, redo them
         super(ScatterPlot, self).setp()
 

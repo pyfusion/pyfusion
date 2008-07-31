@@ -1,9 +1,53 @@
 """
 utilities for datamining/clustering
 """
-from numpy import sin,cos
+from numpy import sin,cos, array, pi, mean, argmax, abs, std, transpose
 
 import pyfusion
+
+
+def get_periodic_mean(input_data, rad=True):
+    input_data = array(input_data)
+    if not rad:
+        input_data *= pi/180
+    tmp_stddev = 1.e6
+    delta_stddev = -1.
+    tmp_data = input_data
+    while delta_stddev < 0:
+        stddev_val = tmp_stddev
+        tmp_mean = mean(tmp_data)
+        furthest_el = argmax(abs(tmp_data-tmp_mean))
+        if tmp_data[furthest_el] < tmp_mean:
+            tmp_data[furthest_el] += 2.*pi
+        else:
+            tmp_data[furthest_el] -= 2.*pi
+        tmp_stddev = std(tmp_data)
+        delta_stddev = tmp_stddev - stddev_val
+    
+    if not rad:
+        output_factor = 180./pi
+    else:
+        output_factor = 1.0
+    return [output_factor*mean(tmp_data), output_factor*stddev_val]
+
+
+def get_phase_info_for_fs_list(fs_list):
+    """
+    WARNING: we assume all flustrucs have use the same ordered_channel_list
+    """
+    from pyfusion.datamining.clustering.core import DeltaPhase, FluctuationStructure
+    ordered_channel_list = fs_list[0].svd.diagnostic.ordered_channel_list
+    output_list = []
+    _phases = []
+    for i,fs in enumerate(fs_list):
+        _phases.append([i.d_phase for i in fs.phases])
+    _t_phases = transpose(array(_phases))
+    x = 0
+    for ch_pair_phases in _t_phases:
+        x+=1
+        output_list.append(get_periodic_mean(ch_pair_phases))
+    return [output_list, ordered_channel_list]
+
 
 def get_full_channel_pairs_from_fs(fs,join_ends = False):
     chs = [pyfusion.session.query(pyfusion.Channel).filter_by(name=i).one() for i in fs.svd.used_channels]

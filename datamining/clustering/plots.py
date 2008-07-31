@@ -7,7 +7,8 @@ yes, it's a mess.
 import pyfusion
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet
-from numpy import array,transpose, argsort, min, max, average, shape, mean
+from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list
+from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique
 from pyfusion.visual.core import ScatterPlot
 
 def dens_function(fs,dens_ch):
@@ -17,15 +18,68 @@ def dens_function(fs,dens_ch):
     else:
         return mean([tsds.mean for tsds in fsq.all()])
 
-def cluster_detail_plot(clusterset, density_channel_name, tfargs={}, dfargs={}):
+def plot_phase_angle_for_fs_list(fs_list,ch_plot=None):
+    phase_info = get_phase_info_for_fs_list(fs_list)
+    ch_list = []
+    for ch_name in phase_info[1]:
+        ch_list.append(pyfusion.q(pyfusion.Channel).filter_by(name=ch_name).one())
+    if ch_plot == None:
+        ch_coords = arange(len(ch_list))
+    else:
+        ch_coords = [ch.coords.__getattribute__(ch_plot) for ch in ch_list]
+    mean_phase_list = [0.0]
+    for i in phase_info[0]:
+        mean_phase_list.append(i[0])
+    std_phase_list = [0.0]
+    for i in phase_info[0]:
+        std_phase_list.append(i[1])
+    csmp = cumsum(mean_phase_list)
+    pl.plot(ch_coords, csmp, 'ko')
+    pl.plot(ch_coords, csmp, 'r')
+    for i,sd in enumerate(std_phase_list):
+        pl.plot([ch_coords[i], ch_coords[i]], [csmp[i]-sd, csmp[i]+sd],'b')
+    if ch_plot != None:
+        pl.xlabel(ch_plot)
+    else:
+        pl.xlabel('Channels')
+    pl.ylabel('Phase')
+
+def get_unique_shots_from_fs_list(fs_list):
+    shot_list = [fs.svd.timesegment.shot.shot for fs in fs_list]
+    unique_shots = unique(shot_list)
+    return unique_shots
+
+
+def plot_summary_info(fs_list):
+    shot_list = get_unique_shots_from_fs_list(fs_list)
+    pl.text(0.2,0.8, '# shots = %d' %len(shot_list))
+    pl.text(0.2,0.6, 'min shot = %d' %min(shot_list))
+    pl.text(0.2,0.4, 'max shot = %d' %max(shot_list))
+    pl.text(0.2,0.2, '# datapoints = %d' %len(fs_list))
+    pl.xlim(0,1)
+    pl.ylim(0,1)
+    pl.setp(pl.gca(), xticks=[], yticks=[])
+
+def cluster_detail_plot(clusterset, density_channel_name, savefig=False, tfargs={}, dfargs={}):
     dens_ch = pyfusion.q(pyfusion.Channel).filter(pyfusion.Channel.name==density_channel_name).one()
     for cluster in clusterset.clusters:
+        print 'n_flucstrucs = %d' % len(cluster.flucstrucs)
         pl.subplot(221)
         pl.cla()
-        tfplot = ScatterPlot(cluster.flucstrucs[:100], 'svd.timebase[0]', 'frequency',xlabel='Time',ylabel='Frequency',**tfargs)
+        tfplot = ScatterPlot(cluster.flucstrucs, 'svd.timebase[0]', 'frequency',xlabel='Time',ylabel='Frequency',title='Cluster %d' %cluster.id,**tfargs)
         pl.subplot(223)
-        densfreqplot = ScatterPlot(cluster.flucstrucs[:100], lambda x: dens_function(x,dens_ch), 'frequency', xlabel='Density', ylabel='Frequency', **dfargs)
-        pl.show()
+        pl.cla()
+        densfreqplot = ScatterPlot(cluster.flucstrucs, lambda x: dens_function(x,dens_ch), 'frequency', xlabel='Density', ylabel='Frequency', **dfargs)
+        pl.subplot(222)
+        pl.cla()
+        plot_phase_angle_for_fs_list(cluster.flucstrucs, ch_plot='theta')
+        pl.subplot(224)
+        pl.cla()
+        plot_summary_info(cluster.flucstrucs)
+        if savefig != False:
+            pl.savefig(savefig+'_cl_%d.png' %(cluster.id))
+        else:
+            pl.show()
 
 
 def plot_flucstrucs_for_set(set_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):

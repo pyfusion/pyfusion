@@ -70,6 +70,7 @@ class ScatterPlot(GenericPlot):
 
 
 
+
 def posNegFill(x,y1,y2):
 	diff = y2 - y1
 	pos = []

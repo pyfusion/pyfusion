@@ -84,6 +84,9 @@ densityIR = TJIIChannel(senal='DensidadMedia_IR_', name = 'densitymediaIR')
 
 mirnov_coils = pyfusion.Diagnostic(name='mirnov_coils')
 
+# many TJII shots have Mirnov channel MID5P_02 missing, create a diagnostic without it.
+mirnov_coils_sin_102 = pyfusion.Diagnostic(name='mirnov_coils_sin_102')
+
 mirnov_coils_channel_ordering = [mirnov_5p_105, mirnov_5p_104, mirnov_5p_103, 
                                  mirnov_5p_102, mirnov_5p_101, mirnov_5p_1,
                                  mirnov_5p_2,   mirnov_5p_3,   mirnov_5p_4,
@@ -94,8 +97,21 @@ mirnov_coils_channel_ordering = [mirnov_5p_105, mirnov_5p_104, mirnov_5p_103,
                                  mirnov_5p_17,  mirnov_5p_18,  mirnov_5p_19,
                                  mirnov_5p_20]
 
+mirnov_coils_channel_ordering_sin_102 = [mirnov_5p_105, mirnov_5p_104, mirnov_5p_103, 
+                                 mirnov_5p_101, mirnov_5p_1,
+                                 mirnov_5p_2,   mirnov_5p_3,   mirnov_5p_4,
+                                 mirnov_5p_5,   mirnov_5p_6,   mirnov_5p_7,
+                                 mirnov_5p_8,   mirnov_5p_9,   mirnov_5p_10,
+                                 mirnov_5p_11,  mirnov_5p_12,  mirnov_5p_13,
+                                 mirnov_5p_14,  mirnov_5p_15,  mirnov_5p_16,
+                                 mirnov_5p_17,  mirnov_5p_18,  mirnov_5p_19,
+                                 mirnov_5p_20]
+
 for ch in mirnov_coils_channel_ordering:
     mirnov_coils.add_channel(ch)
+
+for ch in mirnov_coils_channel_ordering_sin_102:
+    mirnov_coils_sin_102.add_channel(ch)
 
 
 density_diag = pyfusion.Diagnostic(name='density')

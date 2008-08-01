@@ -393,7 +393,7 @@ class TimeSegment(pyfusion.Base):
             if not diag in loaded_diags:
                 self.shot.load_diag(diag)
         else:
-            if not pd.name in load_diags:
+            if not pd.name in loaded_diags:
                 self.shot.load_diag(pd.name)
 
         use_samples = [True, True]

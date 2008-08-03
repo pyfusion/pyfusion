@@ -1,7 +1,7 @@
 """
 utilities for datamining/clustering
 """
-from numpy import sin,cos, array, pi, mean, argmax, abs, std, transpose
+from numpy import sin,cos, array, pi, mean, argmax, abs, std, transpose, random
 
 import pyfusion
 
@@ -106,7 +106,8 @@ def test_clustvarsel_for_shot(shot_number, diag_name, max_clusters, clusterdatas
 def compare_clustersets():
     pass
 
-def fs_to_arff(fs_list, filename=None):
+
+def fs_to_arff(fs_list, filename=None, noise_stddev = 0):
     """
     output flucstruc data (including phase data) to arff format http://www.cs.waikato.ac.nz/~ml/weka/arff.html
     for use with WEKA http://www.cs.waikato.ac.nz/ml/weka/
@@ -124,9 +125,15 @@ def fs_to_arff(fs_list, filename=None):
         f.write('@attribute cos_%d_%d numeric\n' %(i.channel_1_id, i.channel_2_id))
     
     f.write('\n@data\n')
+
     for fs in fs_list:
         outstr = ""
         for ph in fs.phases:
-            outstr = outstr+"%f, %f ," %(sin(ph.d_phase),cos(ph.d_phase))
+            dp = ph.d_phase
+            if noise_stddev > 0:
+                rn = random.normal(loc=0.0,scale=noise_stddev,size=2)
+                outstr = outstr+"%f, %f ," %(rn[0]+sin(dp),rn[1]+cos(dp))
+            else:
+                outstr = outstr+"%f, %f ," %(sin(dp),cos(dp))
         f.write(outstr[:-2]+'\n')
     f.close()

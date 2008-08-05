@@ -88,6 +88,7 @@ waste time.
 """
 
 from tempfile import gettempdir
+import os
 
 # General:
 DEVICE = ''
@@ -143,24 +144,29 @@ except:
 	print "Local settings not found (looking for pyfusion_local_settings.py in python path)"
 
 
-## Finally, allow for overriding various settings for test purposes
-## essential for variables that have effect during the initialisation of pyfusion
-## e.g.
-## export PYFUSION_SETTINGS_SQL_SERVER="sqlite:///:memory:"
-## export PYFUSION_SETTINGS_SQL_SERVER="sqlite:///temp.dat"
-import os
-enverb=os.getenv('PYFUSION_SETTINGS_VERBOSE')
-# unless we convert to int, comparisons can be very strange
-if (enverb): VERBOSE=int(enverb)
-if VERBOSE>0: print("Verbosity level %s") % VERBOSE
+# Allow overriding of these settings with environment variables.
+# Environment variable PYFUSION_XXX will override setting XXX
+# settings with prefix __ will not be overridden by environment variables
 
-envsvr=os.getenv('PYFUSION_SETTINGS_SQL_SERVER')
-if (envsvr): SQL_SERVER=envsvr
-if VERBOSE>0: print("Using SQL_SERVER %s") % SQL_SERVER
+__ENVVAR_PREFIX = 'PYFUSION_'
 
-envdev=os.getenv('PYFUSION_SETTINGS_DEVICE')
-if (envdev): DEVICE=envdev
-if VERBOSE>0: print("Using DEVICE %s") % DEVICE
+for envvar in os.environ.keys():
+	if envvar[:len(__ENVVAR_PREFIX)] == __ENVVAR_PREFIX and envvar[len(__ENVVAR_PREFIX):len(__ENVVAR_PREFIX)+2] != '__':
+		_pfvar = envvar[len(__ENVVAR_PREFIX):]
+		if not _pfvar in globals().keys():
+			if VERBOSE>0:
+				print 'Warning: pyfusion setting %s (from environment variable %s) does not already exist - it will be used as string type' %(_pfvar, envvar)
+			globals()[envvar[len(__ENVVAR_PREFIX):]] = os.environ[envvar]
+		else:
+			_pfvar_type = type(eval(_pfvar))
+			try:
+				globals()[envvar[len(__ENVVAR_PREFIX):]] = _pfvar_type(os.environ[envvar])
+				if VERBOSE > 0:
+					print 'importing environment variable %s -> %s (%s)' %(envvar, _pfvar, _pfvar_type)
+			except:
+				print "Error: Cannot cast environment variable %s to %s, not importing variable" %(envvar, _pfvar_type)
+
+
 
 
 

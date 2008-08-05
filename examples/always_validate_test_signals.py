@@ -6,14 +6,14 @@ Note that correct operation is only guaranteed on an empty database:
 """
 import os
 # try the nicer putenv first - but probably only affects child processes
-os.putenv("PYFUSION_SETTINGS_DEVICE","TestDevice")
+os.putenv("PYFUSION_DEVICE","TestDevice")
 # check to see if it worked
-if os.getenv("PYFUSION_SETTINGS_DEVICE") != "TestDevice":
+if os.getenv("PYFUSION_DEVICE") != "TestDevice":
     print "***Warning - being heavy handed with os.environ to correct DEVICE"
-    os.environ.__setitem__("PYFUSION_SETTINGS_DEVICE","TestDevice")
+    os.environ.__setitem__("PYFUSION_DEVICE","TestDevice")
     # The worry is that directly operating on os.environ can cause memory leaks
-if os.getenv("PYFUSION_SETTINGS_DEVICE") != "TestDevice":
-    raise ValueError, 'PYFUSION_SETTINGS_DEVICE must be "TestDevice"'
+if os.getenv("PYFUSION_DEVICE") != "TestDevice":
+    raise ValueError, 'PYFUSION_DEVICE must be "TestDevice"'
 
 
 import pyfusion

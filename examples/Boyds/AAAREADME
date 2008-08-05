@@ -15,6 +15,11 @@ The beginning of this is examples/always_validate_test_signals.py
 
 Below is a log of which example files worked under which version.
 
+r201: (Dave)
+I have changed the way environment variables are read into pyfusion. 
+Any environment variable PYFUSION_XXX is available under pyfusion.settings.XXX, unless XXX starts with __
+If pyfusion.settings.XXX already exists, the new environment variable is cast to type(pyfusion.settings.XXX)
+PYFUSION_SETTINGS_XXX listed here now need to be PYFUSION_XXX
 
 r170: python examples/always_validate_test_signals.py (first version)
 works with some warnings:

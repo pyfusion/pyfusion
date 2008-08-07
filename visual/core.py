@@ -6,6 +6,8 @@ from matplotlib.widgets import CheckButtons
 from numpy import arange, fft, resize, zeros, array
 from types import FunctionType, StringTypes
 
+golden_ratio = (1.0 * 5.0**0.5)/2
+
 class GenericPlot(object):
     def __init__(self,*args,**kwargs):
         """

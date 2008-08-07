@@ -6,10 +6,191 @@ yes, it's a mess.
 
 import pyfusion
 import pylab as pl
-from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet
+from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet, ClusterDataSet, Cluster, ClusterSet
 from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list
-from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt
-from pyfusion.visual.core import ScatterPlot
+from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d
+from pyfusion.visual.core import ScatterPlot, golden_ratio
+
+from sqlalchemy import Column, Integer, ForeignKey, Float
+from sqlalchemy.orm import relation
+
+
+class DendrogramLink(pyfusion.Base):
+    """
+    information about how clusters in a dendrogram are linked together
+    """
+    __tablename__ = "dm_plots_dendrogram_links"
+    id = Column('id', Integer, primary_key=True)
+    parent_id = Column('parent_id', Integer, ForeignKey('dm_clusters.id'))
+    parent = relation(Cluster, primaryjoin=parent_id==Cluster.id)
+    child_id = Column('child_id', Integer, ForeignKey('dm_clusters.id'))
+    child = relation(Cluster, primaryjoin=child_id==Cluster.id)
+    fs_intersection = Column('fs_intersection',Integer)
+    fraction = Column('fraction',Float)
+
+
+def dendro_coords(ncl, cl, max_ncl, h_sp, v_sp, aspect, margins = [1,1,1,1]):
+    # assume horizontal subplot length = 1
+    # margins = [l,r,t,b]
+    # cl starts at 1 not 0
+    pl_height = max_ncl*aspect + (max_ncl-1)*v_sp
+    delta_h = pl_height/ncl
+    x_loc = margins[0] + ncl-1 + (ncl-2)*h_sp
+    y_loc = margins[3] + pl_height - (cl-0.5)*delta_h  
+    return [x_loc, y_loc]
+
+
+
+class Dendrogram(pyfusion.Base):
+    """
+    class to produce a dendrogram for a ClusterDataSet
+    """
+    __tablename__ = "dm_plots_dendrogram"
+    id = Column('id', Integer, primary_key=True)
+    head_cluster_id = Column('head_cluster_id', Integer, ForeignKey('dm_clusters.id'))
+    head_cluster = relation(Cluster, primaryjoin=head_cluster_id==Cluster.id)
+    def __init__(self, head_cluster):
+        self.head_cluster = head_cluster
+        # get n_clusters of head_cluster
+        self.head_clusterset = self.head_cluster.clusterset
+        if self.head_clusterset.n_clusters != 1:
+            print "Warning: Not starting from n_clusters = 1, results may be strange"
+        self.cluster_dataset = self.head_clusterset.clusterdataset
+        self.max_n_clusters = max([cs.n_clusters for cs in self.cluster_dataset.clustersets])
+        
+    def get_links(self):
+        parent_clusters = [self.head_cluster]
+        for n_cl in range(self.head_clusterset.n_clusters+1, self.max_n_clusters+1):
+            child_clusterset = pyfusion.q(ClusterSet).filter_by(clusterdataset_id=self.cluster_dataset.id, n_clusters=n_cl).one()
+            child_clusters = child_clusterset.clusters
+            for parent in parent_clusters:
+                for child in child_clusters:
+                    if pyfusion.q(DendrogramLink).filter_by(parent=parent,child=child).count() == 0:
+                        fs_intersection  = len(intersect1d(parent.flucstrucs, child.flucstrucs))
+                        frac = float(fs_intersection)/len(parent.flucstrucs)
+                        _tmp = DendrogramLink(parent_id=parent.id, child_id=child.id, fraction = frac, fs_intersection=fs_intersection)
+                        pyfusion.session.save_or_update(_tmp)
+            pyfusion.session.flush()
+            pyfusion.session.commit()
+            parent_clusters = child_clusters
+    def simple_plot(self):
+        # testing code - will make variables available outside of method later...
+        # subplot with is defined as 1, everything else scaled accordingly
+        subplot_aspect = golden_ratio**-1 # ratio of height/width
+        horizontal_subplot_spacing = 0.3
+        vertical_subplot_spacing = horizontal_subplot_spacing*subplot_aspect
+        main_plot_left_margin =3*horizontal_subplot_spacing
+        main_plot_right_margin = horizontal_subplot_spacing
+        main_plot_top_margin = 3*vertical_subplot_spacing
+        main_plot_bottom_margin = vertical_subplot_spacing
+        
+        x_subplot_offset = -0.7
+        y_subplot_offset = -0.3
+
+        main_plot_height = (self.max_n_clusters-1)*vertical_subplot_spacing + self.max_n_clusters*subplot_aspect + main_plot_bottom_margin + main_plot_top_margin
+        n_cl_width = (self.max_n_clusters-self.head_clusterset.n_clusters + 1)
+        main_plot_width = n_cl_width + (n_cl_width - 1)*horizontal_subplot_spacing + main_plot_left_margin + main_plot_right_margin
+        plot_coords = {}
+        plot_coords[str(self.head_cluster.id)] = dendro_coords(1, 1, self.max_n_clusters, horizontal_subplot_spacing, vertical_subplot_spacing, subplot_aspect, [main_plot_left_margin, main_plot_right_margin, main_plot_top_margin, main_plot_bottom_margin])
+        clustersets = self.cluster_dataset.clustersets
+        clustersets_ncl = [i.n_clusters for i in clustersets]
+        
+        fig = pl.figure()
+
+        main_axes = pl.axes([0,0,1,1])
+        pl.axis([-main_plot_left_margin, main_plot_left_margin+main_plot_width, -main_plot_bottom_margin, main_plot_height - main_plot_bottom_margin],'off')
+        main_axis = pl.gca()
+        #pl.xlim(-main_plot_left_margin, main_plot_left_margin+main_plot_width)
+        #pl.ylim(-main_plot_bottom_margin, main_plot_height - main_plot_bottom_margin)
+        pl.setp(main_axis, xticks=[],yticks=[])
+
+        for ncl in range(1,self.max_n_clusters):
+            child_cl_set = clustersets[clustersets_ncl.index(ncl+1)]
+            parent_cl_set = clustersets[clustersets_ncl.index(ncl)]
+            child_cli = 1
+            _new_pcls = parent_cl_set.clusters
+            _newcls_y = [plot_coords[str(i.id)][1] for i in _new_pcls]
+            _argsort_y = argsort(_newcls_y)[::-1]
+            new_pcls = [_new_pcls[i] for i in _argsort_y]
+            child_parent_links = []
+            for ccli,ccl in enumerate(child_cl_set.clusters):
+                child_parent_links.append(pyfusion.q(DendrogramLink).filter_by(child=ccl).order_by(DendrogramLink.fs_intersection).all()[-1])
+            p_c_sets = []
+            for pcli,cpl in enumerate(new_pcls):
+                _tmp_c_links = []
+                for l in child_parent_links:
+                    if l.parent_id == cpl.id:
+                        _tmp_c_links.append(l)
+                
+                tmp_c_intersec_as = argsort([i.fs_intersection for i in _tmp_c_links])[::-1]
+                tmp_c_links = [_tmp_c_links[i] for i in tmp_c_intersec_as]
+                p_c_sets.append(tmp_c_links)
+                for li, l in enumerate(tmp_c_links):
+                    c1 = dendro_coords(child_cl_set.n_clusters, child_cli, self.max_n_clusters, horizontal_subplot_spacing, vertical_subplot_spacing, subplot_aspect, [main_plot_left_margin, main_plot_right_margin, main_plot_top_margin, main_plot_bottom_margin])
+                    plot_coords[str(l.child.id)] = c1
+                    child_cli +=1
+            all_links = []
+            for cli,cl in enumerate(new_pcls):
+                plinks = pyfusion.q(DendrogramLink).filter_by(parent=cl).order_by(DendrogramLink.fraction).all()[::-1]
+                all_links.append(plinks)
+            
+            for pcli,pcl in enumerate(new_pcls):
+                if pcli > 0:
+                    _tmp_coords = plot_coords
+                    # get fraction with previous parent
+                    pccl_fractions = []
+                    for pccli,pccl in enumerate(p_c_sets[pcli]):
+                        _q = pyfusion.q(DendrogramLink).filter_by(child_id=pccl.child_id, parent_id=new_pcls[pcli-1].id)
+                        if _q.count() == 0:
+                            pccl_fractions.append(0)
+                        else:
+                            pccl_fractions.append(_q.one().fraction)
+                    pccl_f_as = argsort(pccl_fractions)[::-1]
+                    already_swapped = []
+                    for i in range(len(pccl_f_as)):
+                        if not pccl_f_as[i] == i:
+                            print "%s <> %s" %(str(p_c_sets[pcli][i].child_id), str(p_c_sets[pcli][pccl_f_as[i]].child_id))
+                            a = plot_coords[str(p_c_sets[pcli][i].child_id)]
+                            b = plot_coords[str(p_c_sets[pcli][pccl_f_as[i]].child_id)]
+                            if not a in already_swapped and not b in already_swapped:
+                                _tmp_coords[str(p_c_sets[pcli][pccl_f_as[i]].child_id)] = a
+                                _tmp_coords[str(p_c_sets[pcli][i].child_id)] = b
+                                already_swapped.append(a)
+                                already_swapped.append(b)
+                                
+                        plot_coords = _tmp_coords
+
+                    
+                    
+            #plot_coords = minimise_crossing(plot_coords, all_links)
+            # plot all links
+            
+            for cli,cl in enumerate(new_pcls):
+                links = all_links[cli]
+                for li,l in enumerate(links):
+                    c0 = plot_coords[str(cl.id)]
+                    c1 = plot_coords[str(l.child.id)]
+                    pl.plot([c0[0],c1[0]], [c0[1],c1[1]],lw=20.*l.fs_intersection/len(self.head_cluster.flucstrucs),color='k')
+                    #pl.text(c1[0],c1[1],str(l.child_id),color='r')
+        for clidstri,clidstr in enumerate(plot_coords.keys()):
+            print "cl %d of %d" %(clidstri+1, len(plot_coords.keys()))
+            pl.axes(main_axis)
+            clco = plot_coords[clidstr]
+            #local_axes = pl.axes([clco[0],clco[1],1,subplot_aspect],transform=fig.transFigure)
+            local_axes = pl.axes([(clco[0]+main_plot_left_margin+x_subplot_offset)/main_plot_width,(clco[1]+main_plot_bottom_margin+y_subplot_offset)/main_plot_height,1./(main_plot_width-main_plot_left_margin-main_plot_right_margin),subplot_aspect/(main_plot_height-main_plot_bottom_margin-main_plot_top_margin)],transform=fig.transFigure)
+            cl = pyfusion.q(Cluster).filter_by(id=int(clidstr)).one()
+            tfplot = ScatterPlot(cl.flucstrucs, ['svd.timesegment.shot.kappa_h'], ['frequency'],xlabel='',ylabel='',title='Cl %d (%d)' %(cl.id, len(cl.flucstrucs)))
+            pl.setp(local_axes,xlim=(0,1.1),ylim=(0,120000),xticks=[0.2,0.4,0.6,0.8,1.0],xticklabels=[],yticks=[])
+
+        pl.axes(main_axis)
+
+        pl.xlim(-main_plot_left_margin, main_plot_left_margin+main_plot_width)
+        pl.ylim(-main_plot_bottom_margin, main_plot_height - main_plot_bottom_margin)
+
+        pl.show()
+            
+    
+
 
 def dens_function(fs,dens_ch):
     fsq = pyfusion.q(pyfusion.TimeSegmentDataSummary).filter(pyfusion.TimeSegmentDataSummary.timesegment==fs.svd.timesegment).filter(pyfusion.TimeSegmentDataSummary.channel==dens_ch)
@@ -141,8 +322,6 @@ def plot_flucstrucs(fs_list, size_factor = 30.0, colour_factor = 30.0, frequency
     else:
         pl.show()
 
-def dendrogram(clusterdatasetname):
-    pass
 
 def simple_cluster_plot(clusterdatasetname, xlims = [False,False], ylims =[False, False],  figurename = 'simple_cluster_plot.png'):
     from pyfusion.datamining.clustering.core import ClusterDataSet

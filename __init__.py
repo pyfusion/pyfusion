@@ -12,7 +12,6 @@ import pyfusion_settings as settings
 from pyfusion.utils import update_device_info
 engine = create_engine(settings.SQL_SERVER, echo=settings.VERBOSE > 6)
 Session = scoped_session(sessionmaker(autoflush=True, transactional=False, bind=engine))
-#Session = sessionmaker(autoflush=True, transactional=False, bind=engine)
 Base = declarative_base(engine)
 
 session = Session()

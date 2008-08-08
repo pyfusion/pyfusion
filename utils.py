@@ -13,10 +13,7 @@ def update_device_info(pyf_class):
             if pyf_class == devmod_inst_class or pyf_class in devmod_inst_class.__bases__:
                 if pyfusion._device_module.__dict__[devmod_object_str].name not in [i.name for i in existing]:
                     pyfusion.session.save_or_update(pyfusion._device_module.__dict__[devmod_object_str]) 
-                    #pyfusion.session.flush()
-    # this commit isn't needed for H1 (python 2.5), but is for heliotron (python 2.4) - why?
-    #pyfusion.session.commit()
-    #pyfusion.session.flush()
+
 
 
 def r_lib(r_inst, libname):

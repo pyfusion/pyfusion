@@ -36,10 +36,6 @@ _device = session.query(Device).filter(Device.name == _device_module.__dict__[se
 if settings.VERBOSE>0:
     for ds in session.query(Diagnostic): print (" %s: list=%d, channels=%d ") % (ds.name,len(ds.ordered_channel_list),len(ds.channels))
 
-# permanently store everything thats been changed and added to the database
-#session.commit()
-#session.flush()
-
 # shortcut - pyfusion.session.query() -> pyfusion.q()
 def q(*args,**kwargs):
     return session.query(*args,**kwargs)

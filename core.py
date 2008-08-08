@@ -94,8 +94,6 @@ class Shot(pyfusion.Base):
         self.device_id = pyfusion._device.id
         self.metadata.create_all()
         pyfusion.session.save_or_update(self)
-        #pyfusion.session.commit()
-        #pyfusion.session.flush()
 
 
     def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False):
@@ -432,7 +430,6 @@ class TimeSegment(pyfusion.Base):
                 tsds = TimeSegmentDataSummary(timesegment_id=self.id, channel_id=ch.id, mean=_mean, rms=_rms, var=_var)
                 pyfusion.session.save(tsds)
                 output.append(tsds)
-            #pyfusion.session.flush()
             return output
         except IndexError:
             # TODO: this exception should be handled in _load_data....
@@ -599,7 +596,6 @@ def get_time_segments(shot, primary_diag, n_samples = False):
             seg  = TimeSegment(shot=shot, primary_diagnostic_id = diag_inst.id, n_samples = n_samples, parent_min_sample = seg_min[0])
         pyfusion.session.save_or_update(seg)
         output_list.append(seg)
-    #pyfusion.session.flush()
     return output_list
 
 
@@ -608,7 +604,6 @@ def new_timesegment(shot_instance, primary_diagnostic_name, t0, t1):
     t_els = shot_instance.data[primary_diagnostic_name].t_to_element([t0,t1])
     ts = TimeSegment(shot_id=shot_instance.id, primary_diagnostic_id=diag_inst.id, parent_min_sample = t_els[0],n_samples = t_els[1]-t_els[0])
     pyfusion.session.save(ts)
-    #pyfusion.session.flush()
     ts._load_data()
     return ts
 
@@ -617,6 +612,5 @@ def new_svd(timesegment_instance, diagnostic_id = -1, normalise=False, remove_ba
         diagnostic_id = timesegment_instance.primary_diagnostic_id
     new_svd = MultiChannelSVD(timesegment_id=timesegment_instance.id, diagnostic_id = diagnostic_id)
     pyfusion.session.save(new_svd)
-    #pyfusion.session.flush()
     new_svd._do_svd(normalise=normalise, remove_baseline=remove_baseline)
     return new_svd

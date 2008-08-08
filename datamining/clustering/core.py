@@ -46,8 +46,6 @@ class FluctuationStructure(pyfusion.Base):
         fs_signals = dot(sv_topo_arr,dot(sv_val_arr, sv_chrono_arr))
         return fs_signals
     def get_phases(self, phase_method = 'inversion', do_ends = False):
-        # flush so we have self.svd.timebase....
-        pyfusion.session.flush()
         if do_ends:
             raise NotImplementedError            
         if not phase_method in ['inversion', 'topo']:
@@ -126,7 +124,7 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
             print 'svg_i %d, len=%d, fr=%.3gkHz, t0=%.3gms,' % (
                 svg_i, len(sv_group), freq/1000, 1000*seg_svd.timebase[0]),
             print 'SV=[%s]'%','.join([str("%.3g") % sv.value for sv in sv_group])
-        fs = FluctuationStructure(svd_id=seg_svd.id, frequency=freq, 
+        fs = FluctuationStructure(svd=seg_svd, frequency=freq, 
                                   energy=energy, gamma_threshold=threshold, 
                                   raw_energy=0, a1=a1, a12=a12, tmid=tmid, a13=a13,
                                   set_id = fs_set.id)
@@ -144,10 +142,7 @@ def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, thres
         fs_set = pyfusion.session.query(FluctuationStructureSet).filter_by(name=fs_set_name).one()
     except:
         fs_set = FluctuationStructureSet(name = fs_set_name)
-        # get id for fs_set    
         pyfusion.session.save(fs_set)
-        #pyfusion.session.flush()
-        #pyfusion.session.commit()
     segs = pyfusion.get_time_segments(shot, diag_name)
     diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == diag_name).one()
     for seg_i, seg in enumerate(segs[::-1]):
@@ -380,7 +375,6 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
 
     clusterdataset = ClusterDataSet(name=clusterdatasetname)
     pyfusion.session.save(clusterdataset)
-    #pyfusion.session.flush()
 
 # may need this in 2.4.1 bdb - strange behaviour otherwise?
 # but occasionally generates warning:
@@ -396,9 +390,7 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
             clusterset = ClusterSet(modelname=MX['modelName'], bic=MX['bic'], loglik=MX['loglik'], n_clusters=n_clusters, n_flucstrucs=MX['n'])
             pyfusion.session.save(clusterset)
             clusterdataset.clustersets.append(clusterset)
-            # to get id...
-            pyfusion.session.flush()
-            clusters = [Cluster(clusterset_id=clusterset.id) for i in range(n_clusters)]
+            clusters = [Cluster(clusterset=clusterset) for i in range(n_clusters)]
             cluster_labels = unique(MX['classification']).tolist()
             if len(cluster_labels) != n_clusters:
                 raise ValueError, 'Clustering returned wrong number of clusters...'

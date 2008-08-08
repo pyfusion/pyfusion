@@ -11,7 +11,8 @@ from sqlalchemy.ext.declarative import declarative_base
 import pyfusion_settings as settings
 from pyfusion.utils import update_device_info
 engine = create_engine(settings.SQL_SERVER, echo=settings.VERBOSE > 6)
-Session = scoped_session(sessionmaker(autoflush=True, transactional=True, bind=engine))
+Session = scoped_session(sessionmaker(autoflush=True, transactional=False, bind=engine))
+#Session = sessionmaker(autoflush=True, transactional=False, bind=engine)
 Base = declarative_base(engine)
 
 session = Session()
@@ -36,7 +37,8 @@ if settings.VERBOSE>0:
     for ds in session.query(Diagnostic): print (" %s: list=%d, channels=%d ") % (ds.name,len(ds.ordered_channel_list),len(ds.channels))
 
 # permanently store everything thats been changed and added to the database
-session.commit()
+#session.commit()
+#session.flush()
 
 # shortcut - pyfusion.session.query() -> pyfusion.q()
 def q(*args,**kwargs):

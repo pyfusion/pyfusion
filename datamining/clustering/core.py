@@ -61,7 +61,7 @@ class FluctuationStructure(pyfusion.Base):
             if (pyfusion.settings.OPT < 2) or (len(ordered_channels) == 0):
                 ordered_channels = [pyfusion.session.query(pyfusion.Channel).filter_by(name=name_i).one() for name_i in self.svd.used_channels]
             for ci,c in enumerate(ordered_channels[:-1]):
-                tmp = DeltaPhase(flucstruc_id = self.id, channel_1_id = ordered_channels[ci].id, channel_2_id = ordered_channels[ci+1].id, d_phase = individual_phases[ci+1]-individual_phases[ci])
+                tmp = DeltaPhase(flucstruc_id = self.id, channel_1_id = ordered_channels[ci].id, channel_2_id = ordered_channels[ci+1].id, d_phase = float(individual_phases[ci+1]-individual_phases[ci]))
                 self.phases.append(tmp)
             
 
@@ -94,43 +94,48 @@ def get_single_phase(data,timebase,freq):
 
 
 def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
-        # clear out session (dramatically improves performance)
-        pyfusion.session.clear()
-        seg._load_data()
-        try:
-            seg_svd = pyfusion.session.query(pyfusion.MultiChannelSVD).filter_by(timesegment_id=seg.id, diagnostic_id = diag_inst.id).one()
-        except:
-            seg_svd = pyfusion.MultiChannelSVD(timesegment_id=seg.id, diagnostic_id = diag_inst.id)
-            pyfusion.session.save(seg_svd)
-            pyfusion.session.flush()
-            seg_svd._do_svd(store_chronos=store_chronos, normalise=normalise)
-            pyfusion.session.flush()
-        E = seg_svd.energy
-        #sv_groupings = group_svs(seg_svd, threshold=threshold)
-        sv_groupings = _new_group_svs(seg_svd)
-        for svg_i, sv_group in enumerate(sv_groupings):
-            energy = sum([sv.value**2 for sv in sv_group])/E
-            raw_energy=0 # not sure how yet
-            freq = peak_freq(sv_group[0].chrono, seg_svd.timebase)
-            tmid = average(seg_svd.timebase)
-            a1=sv_group[0].value
-            if len(sv_group)>1: a12 = sv_group[1].value/sv_group[0].value
-            else:               a12=0
-            if len(sv_group)>2: a13 = sv_group[2].value/sv_group[0].value
-            else:               a13=0
-            if pyfusion.settings.VERBOSE>2: 
-                print 'svg_i %d, len=%d, fr=%.3gkHz, t0=%.3gms,' % (
-                   svg_i, len(sv_group), freq/1000, 1000*seg_svd.timebase[0]),
-                print 'SV=[%s]'%','.join([str("%.3g") % sv.value for sv in sv_group])
-            fs = FluctuationStructure(svd_id=seg_svd.id, frequency=freq, 
-                                      energy=energy, gamma_threshold=threshold, 
-                                      raw_energy=0, a1=a1, a12=a12, tmid=tmid, a13=a13,
-                                      set_id = fs_set.id)
-            pyfusion.session.save(fs)
-            for sv in sv_group:
-                fs.svs.append(sv)
-            fs.get_phases()
+    # clear out session (dramatically improves performance)
+    # pyfusion.session.clear()
+    sess = pyfusion.Session()
+    seg._load_data()
     
+    seg_svd_q = sess.query(pyfusion.MultiChannelSVD).filter_by(timesegment_id=seg.id, diagnostic_id = diag_inst.id)
+    if seg_svd_q.count() == 0:
+        seg_svd = pyfusion.MultiChannelSVD(timesegment=seg, diagnostic = diag_inst)
+        seg_svd._do_svd(store_chronos=store_chronos, normalise=normalise)
+        sess.save(seg_svd)
+    else:
+        # this will raise an exception if there is more than one svd for 
+        # theis timesegment and diagnostic, but that's healthy as there
+        # should not be more than one
+        seg_svd = seg_svd_q.one()
+    E = seg_svd.energy
+    # sv_groupings = group_svs(seg_svd, threshold=threshold)
+    sv_groupings = _new_group_svs(seg_svd)
+    for svg_i, sv_group in enumerate(sv_groupings):
+        energy = float(sum([sv.value**2 for sv in sv_group])/E)
+        raw_energy=0 # not sure how yet
+        freq = float(peak_freq(sv_group[0].chrono, seg_svd.timebase))
+        tmid = float(average(seg_svd.timebase))
+        a1=sv_group[0].value
+        if len(sv_group)>1: a12 = sv_group[1].value/sv_group[0].value
+        else:               a12=0
+        if len(sv_group)>2: a13 = sv_group[2].value/sv_group[0].value
+        else:               a13=0
+        if pyfusion.settings.VERBOSE>2: 
+            print 'svg_i %d, len=%d, fr=%.3gkHz, t0=%.3gms,' % (
+                svg_i, len(sv_group), freq/1000, 1000*seg_svd.timebase[0]),
+            print 'SV=[%s]'%','.join([str("%.3g") % sv.value for sv in sv_group])
+        fs = FluctuationStructure(svd_id=seg_svd.id, frequency=freq, 
+                                  energy=energy, gamma_threshold=threshold, 
+                                  raw_energy=0, a1=a1, a12=a12, tmid=tmid, a13=a13,
+                                  set_id = fs_set.id)
+        sess.save(fs)
+        for sv in sv_group:
+            fs.svs.append(sv)
+        fs.get_phases()
+        sess.save_or_update(fs)
+        #sess.close()
 
 
 def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
@@ -141,7 +146,8 @@ def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, thres
         fs_set = FluctuationStructureSet(name = fs_set_name)
         # get id for fs_set    
         pyfusion.session.save(fs_set)
-        pyfusion.session.commit()
+        #pyfusion.session.flush()
+        #pyfusion.session.commit()
     segs = pyfusion.get_time_segments(shot, diag_name)
     diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == diag_name).one()
     for seg_i, seg in enumerate(segs[::-1]):
@@ -274,6 +280,7 @@ class ClusterDataSet(pyfusion.Base):
         """ Simple f-t plot of this ClusterDataSet for a given N_clusters
         """
         clusterset = pyfusion.session.query(ClusterSet).filter_by(clusterdataset_id=self.id).filter_by(n_clusters=N_clusters).one()
+        print "**** clusters: ", clusterset.clusters
         for cl in clusterset.clusters:
             t0_freq_list = [[i.svd.timebase[0],i.frequency] for i in cl.flucstrucs]
             pl.plot([i[0] for i in t0_freq_list], [i[1] for i in t0_freq_list],'o')
@@ -373,7 +380,7 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
 
     clusterdataset = ClusterDataSet(name=clusterdatasetname)
     pyfusion.session.save(clusterdataset)
-    pyfusion.session.flush()
+    #pyfusion.session.flush()
 
 # may need this in 2.4.1 bdb - strange behaviour otherwise?
 # but occasionally generates warning:
@@ -400,11 +407,11 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
                 clusters[cluster_el].flucstrucs.append(fs)
             for cl in clusters:
                 pyfusion.session.save(cl)
+            pyfusion.session.save_or_update(clusterset)
         except:
             print "Failed for n_clusters = %d" %n_clusters
             raise
-    pyfusion.session.flush()
-
+        pyfusion.session.save_or_update(clusterdataset)
 
 
 def use_clustvarsel(fs_list, channel_pairs,  max_clusters = 10,max_iterations=100):

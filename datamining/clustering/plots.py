@@ -70,8 +70,8 @@ class Dendrogram(pyfusion.Base):
                         frac = float(fs_intersection)/len(parent.flucstrucs)
                         _tmp = DendrogramLink(parent_id=parent.id, child_id=child.id, fraction = frac, fs_intersection=fs_intersection)
                         pyfusion.session.save_or_update(_tmp)
-            pyfusion.session.flush()
-            pyfusion.session.commit()
+            #pyfusion.session.flush()
+            #pyfusion.session.commit()
             parent_clusters = child_clusters
     def simple_plot(self):
         # testing code - will make variables available outside of method later...

@@ -16,7 +16,7 @@ H1_MDS_SERVER = pyfusion.settings.H1_MDS_SERVER
 class H1Shot(Shot):
     __tablename__ = 'h1_customshot'
     __mapper_args__ = {'polymorphic_identity':'H1'}
-    id = Column('id', Integer, ForeignKey('shots.id'), primary_key=True)
+    id = Column('id', Integer, ForeignKey('shots.id'), primary_key=True, index=True)
     kappa_h = Column('kappa_h',Float)
 
 class ProcessData:

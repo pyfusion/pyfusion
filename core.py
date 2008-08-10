@@ -79,7 +79,7 @@ class Shot(pyfusion.Base):
     The class to represent any shot-specific data.    
     """
     __tablename__ = "shots"
-    id = Column('id', Integer, primary_key=True)
+    id = Column('id', Integer, primary_key=True, index=True)
     shot = Column('shot', Integer)
     device_id = Column('device_id', Integer, ForeignKey('devices.id'))
     device = relation(Device, primaryjoin=device_id==Device.id, backref="shots")    
@@ -373,7 +373,7 @@ class MultiChannelTimeseries(object):
             
 class TimeSegment(pyfusion.Base):
     __tablename__ = 'timesegments'
-    id = Column('id', Integer, primary_key=True)
+    id = Column('id', Integer, primary_key=True, index=True)
     shot_id = Column('shot_id', Integer, ForeignKey('shots.id'))
     shot = relation(Shot, primaryjoin=shot_id==Shot.id)    
     primary_diagnostic_id = Column('primary_diagnostic_id', Integer, ForeignKey('diagnostics.id'))
@@ -452,7 +452,7 @@ class TimeSegmentDataSummary(pyfusion.Base):
 
 class MultiChannelSVD(pyfusion.Base):
     __tablename__ = 'svds'
-    id = Column('id', Integer, primary_key=True)    
+    id = Column('id', Integer, primary_key=True, index=True)    
     timesegment_id = Column('timesegment_id', Integer, ForeignKey('timesegments.id'))
     timesegment = relation(TimeSegment, primaryjoin=timesegment_id==TimeSegment.id, backref='svd')
     diagnostic_id = Column('diagnostic_id', Integer, ForeignKey('diagnostics.id'))

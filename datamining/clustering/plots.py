@@ -28,15 +28,10 @@ class DendrogramLink(pyfusion.Base):
     fs_intersection = Column('fs_intersection',Integer)
     fraction = Column('fraction',Float)
 
-
-def dendro_coords(ncl, cl, max_ncl, h_sp, v_sp, aspect, margins = [1,1,1,1]):
-    # assume horizontal subplot length = 1
-    # margins = [l,r,t,b]
-    # cl starts at 1 not 0
-    pl_height = max_ncl*aspect + (max_ncl-1)*v_sp
-    delta_h = pl_height/ncl
-    x_loc = margins[0] + ncl-1 + (ncl-2)*h_sp
-    y_loc = margins[3] + pl_height - (cl-0.5)*delta_h  
+def dendro_coords(ncl, cl, max_ncl,xmar,ymar):
+    delta_h = (1.0-2.*ymar)/ncl
+    x_loc = xmar + (ncl-1)*(1.0-2*xmar)/(max_ncl)
+    y_loc = 1.0-ymar - (cl-0.5)*delta_h
     return [x_loc, y_loc]
 
 
@@ -71,37 +66,30 @@ class Dendrogram(pyfusion.Base):
                         _tmp = DendrogramLink(parent_id=parent.id, child_id=child.id, fraction = frac, fs_intersection=fs_intersection)
                         pyfusion.session.save_or_update(_tmp)
             parent_clusters = child_clusters
-    def simple_plot(self,x_plot='svd.timebase[0]',y_plot='frequency'):
-        # testing code - will make variables available outside of method later...
-        # subplot with is defined as 1, everything else scaled accordingly
-        subplot_aspect = golden_ratio**-1 # ratio of height/width
-        horizontal_subplot_spacing = 0.3
-        vertical_subplot_spacing = horizontal_subplot_spacing*subplot_aspect
-        main_plot_left_margin =3*horizontal_subplot_spacing
-        main_plot_right_margin = horizontal_subplot_spacing
-        main_plot_top_margin = 3*vertical_subplot_spacing
-        main_plot_bottom_margin = vertical_subplot_spacing
-        
-        x_subplot_offset = -0.7
-        y_subplot_offset = -0.3
+    def simple_plot(self,x_plot='svd.timebase[0]',y_plot='frequency',x_lims=[0,1],y_lims=[0,1],x_space=0.2,y_space=0.2):
+        """
+        x_plot, y_plot = attributes of fluctuation structures to be plotted
+        x_lim, y_lim, range ofr subplots
+        x_space. fraction of width of subplot to have as spacing
+        y_space. fraction of height of subplot to have as spacing between plots at max( n_clusters)
+        """
+        x_margin = 0.1
+        y_margin = 0.1
 
-        main_plot_height = (self.max_n_clusters-1)*vertical_subplot_spacing + self.max_n_clusters*subplot_aspect + main_plot_bottom_margin + main_plot_top_margin
-        n_cl_width = (self.max_n_clusters-self.head_clusterset.n_clusters + 1)
-        main_plot_width = n_cl_width + (n_cl_width - 1)*horizontal_subplot_spacing + main_plot_left_margin + main_plot_right_margin
+        max_subplot_width = (1.0-2*x_margin)/self.max_n_clusters
+        max_subplot_height = (1.0-2*y_margin)/self.max_n_clusters
+        subplot_height = (1.0-y_space)*max_subplot_height
+        subplot_width = (1.0-x_space)*max_subplot_width #golden_ratio*subplot_height
+
         plot_coords = {}
-        plot_coords[str(self.head_cluster.id)] = dendro_coords(1, 1, self.max_n_clusters, horizontal_subplot_spacing, vertical_subplot_spacing, subplot_aspect, [main_plot_left_margin, main_plot_right_margin, main_plot_top_margin, main_plot_bottom_margin])
+        plot_coords[str(self.head_cluster.id)] = dendro_coords(1, 1, self.max_n_clusters, x_margin, y_margin)
+
         clustersets = self.cluster_dataset.clustersets
         clustersets_ncl = [i.n_clusters for i in clustersets]
-        
-        fig = pl.figure()
 
         main_axes = pl.axes([0,0,1,1])
-        pl.axis([-main_plot_left_margin, main_plot_left_margin+main_plot_width, -main_plot_bottom_margin, main_plot_height - main_plot_bottom_margin],'off')
-        main_axis = pl.gca()
-        #pl.xlim(-main_plot_left_margin, main_plot_left_margin+main_plot_width)
-        #pl.ylim(-main_plot_bottom_margin, main_plot_height - main_plot_bottom_margin)
-        pl.setp(main_axis, xticks=[],yticks=[])
-
+        
+        # somehow, this bit is responsible for drawing the links... 
         for ncl in range(1,self.max_n_clusters):
             child_cl_set = clustersets[clustersets_ncl.index(ncl+1)]
             parent_cl_set = clustersets[clustersets_ncl.index(ncl)]
@@ -124,7 +112,7 @@ class Dendrogram(pyfusion.Base):
                 tmp_c_links = [_tmp_c_links[i] for i in tmp_c_intersec_as]
                 p_c_sets.append(tmp_c_links)
                 for li, l in enumerate(tmp_c_links):
-                    c1 = dendro_coords(child_cl_set.n_clusters, child_cli, self.max_n_clusters, horizontal_subplot_spacing, vertical_subplot_spacing, subplot_aspect, [main_plot_left_margin, main_plot_right_margin, main_plot_top_margin, main_plot_bottom_margin])
+                    c1 = dendro_coords(child_cl_set.n_clusters, child_cli, self.max_n_clusters, x_margin, y_margin)
                     plot_coords[str(l.child.id)] = c1
                     child_cli +=1
             all_links = []
@@ -158,10 +146,6 @@ class Dendrogram(pyfusion.Base):
                                 
                         plot_coords = _tmp_coords
 
-                    
-                    
-            #plot_coords = minimise_crossing(plot_coords, all_links)
-            # plot all links
             
             for cli,cl in enumerate(new_pcls):
                 links = all_links[cli]
@@ -169,7 +153,7 @@ class Dendrogram(pyfusion.Base):
                     c0 = plot_coords[str(cl.id)]
                     c1 = plot_coords[str(l.child.id)]
                     pl.plot([c0[0],c1[0]], [c0[1],c1[1]],lw=20.*l.fs_intersection/len(self.head_cluster.flucstrucs),color='k')
-                    #pl.text(c1[0],c1[1],str(l.child_id),color='r')
+
 
         # pre-load plot data for all flucstrucs, so we don't fetch it for individual plots
         print '... loading plot data'
@@ -178,22 +162,22 @@ class Dendrogram(pyfusion.Base):
         x_vals = datamap(all_fs, x_plot)
         y_vals = datamap(all_fs, y_plot)
         cl_q = pyfusion.q(Cluster)
+        pl.setp(main_axes,xlim=[0,1],ylim=[0,1])
+
+        # plot the sub-plots
         for clidstri,clidstr in enumerate(plot_coords.keys()):
             print "cl %d of %d" %(clidstri+1, len(plot_coords.keys()))
-            pl.axes(main_axis)
+            pl.axes(main_axes)
             clco = plot_coords[clidstr]
-            local_axes = pl.axes([(clco[0]+main_plot_left_margin+x_subplot_offset)/main_plot_width,(clco[1]+main_plot_bottom_margin+y_subplot_offset)/main_plot_height,1./(main_plot_width-main_plot_left_margin-main_plot_right_margin),subplot_aspect/(main_plot_height-main_plot_bottom_margin-main_plot_top_margin)],transform=fig.transFigure)
+            local_axes = pl.axes([clco[0]-0.5*subplot_width,clco[1]-0.5*subplot_height,subplot_width,subplot_height])
             cl = cl_q.get(int(clidstr))
             cl_fs = cl.flucstrucs
             _x_vals = [x_vals[all_fs_ids.index(i.id)] for i in cl_fs]
             _y_vals = [y_vals[all_fs_ids.index(i.id)] for i in cl_fs]
-            pl.plot(_x_vals,_y_vals,'ko')
-            pl.setp(local_axes,xlim=(0,1.1),ylim=(0,120000),xticks=[0.2,0.4,0.6,0.8,1.0],xticklabels=[],yticks=[])
+            pl.plot(_x_vals,_y_vals,'k.')
+            pl.setp(local_axes,xlim=x_lims,ylim=y_lims,xticks=[],yticks=[])
 
-        pl.axes(main_axis)
-
-        pl.xlim(-main_plot_left_margin, main_plot_left_margin+main_plot_width)
-        pl.ylim(-main_plot_bottom_margin, main_plot_height - main_plot_bottom_margin)
+            pl.axes(main_axes)
 
         pl.show()
 

@@ -381,7 +381,7 @@ class TimeSegment(pyfusion.Base):
     n_samples = Column('n_samples', Integer)
     data = {}
     def get_primary_diagnostic(self):
-        return pyfusion.session.query(Diagnostic).filter_by(id = self.primary_diagnostic_id).one()
+        return pyfusion.session.query(Diagnostic).get(self.primary_diagnostic_id)
     def _load_data(self, diag = None, all_diags=False,savelocal=False,ignorelocal=False):
         # if there is no data in the shot (ie - reading from previous run) then try loading the primary diagnostic
         #need to update session - we may have called the time segment from another session ...
@@ -392,6 +392,11 @@ class TimeSegment(pyfusion.Base):
         if diag:
             if not diag in loaded_diags:
                 self.shot.load_diag(diag)
+            # need pd for timebase anyway, although we need only one channel...
+            if not pd.name in loaded_diags:
+                self.shot.load_diag(pd.name,ignore_channels=pd.ordered_channel_list[1:])
+            elif pd.ordered_channel_list[0] not in self.shot.data[pd.name].signals.keys():
+                self.shot.load_diag(pd.name,ignore_channels=pd.ordered_channel_list[1:])                
         else:
             if not pd.name in loaded_diags:
                 self.shot.load_diag(pd.name)
@@ -410,8 +415,8 @@ class TimeSegment(pyfusion.Base):
                 reference_timebase = None
             else:
                 # TODO: this means that parent_min_sample must refer to the original shot timebase...
-                _tmp = load_channel(self.shot.shot,pd.ordered_channel_list[0],savelocal=savelocal, ignorelocal=ignorelocal)
-                reference_timebase = _tmp.timebase
+                #_tmp = load_channel(self.shot.shot,pd.ordered_channel_list[0],savelocal=savelocal, ignorelocal=ignorelocal)
+                reference_timebase = self.shot.data[pd.name].timebase
             self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, 
                                                                    self.n_samples, use_samples=use_samples, reference_timebase=reference_timebase)
     def generate_data_summary(self,diag_name,savelocal=False,ignorelocal=False):
@@ -555,7 +560,7 @@ class SingularValue(pyfusion.Base):
     _tmp_chrono = []
     topo = Column('topo', PickleType)
     def _reload_chrono(self):
-        parent_svd = pyfusion.session.query(MultiChannelSVD).filter_by(id=self.svd_id).one()
+        parent_svd = pyfusion.session.query(MultiChannelSVD).get(self.svd_id)
         self._tmp_chrono = parent_svd._get_chrono(self.number)
         return self._tmp_chrono
     

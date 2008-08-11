@@ -5,6 +5,64 @@ from numpy import fft, conjugate, array, choose, min, max, pi,random,take,argsor
 from datetime import datetime
 import pyfusion
 
+def add_timesegmentdatasummary_for_ts_list(input_ts_list, diag_name, exist_check='any',savelocal=False, ignorelocal=False):
+    """
+    add TimeSegmentDataSummary for each TimeSegment instance in ts_list for given diag
+    we find distinct shots to minimise number of times we need to fetch data, and close the session 
+    between shots to conserve memory... 
+    TODO - this is probably not the best implementation of SQLalchemy, check...
+
+    exist_check: 'none' or None : don't check existing TimeSegmentDataSummary instances
+                 'any' : if any channel from diag exists, don't regenerate the TSDS
+                 'all' : if all channels from diag exists, don't regenerate the TSDS
+
+    """
+    if exist_check == None:
+        exist_check = 'none'
+
+    if exist_check.lower() == 'none':
+        ts_list = input_ts_list
+    elif exist_check.lower() == 'any':
+        diag = pyfusion.q(pyfusion.Diagnostic).filter_by(name=diag_name).one()
+        chan_ids = [c.id for c in diag.channels]
+        ts_list = []
+        for tsi,ts in enumerate(input_ts_list):
+            print 'Checking TS %d of %d' %(tsi+1, len(input_ts_list))
+            add_ts = True
+            for chid in chan_ids:
+                if pyfusion.q(pyfusion.TimeSegmentDataSummary).filter_by(timesegment_id=ts.id, channel_id=chid).count()>0:
+                    add_ts = False
+            if add_ts:
+                ts_list.append(ts)
+    elif exist_check.lower() == 'all':
+        diag = pyfusion.q(pyfusion.Diagnostic).filter_by(name=diag_name).one()
+        chan_ids = [c.id for c in diag.channels]
+        ts_list = []
+        for ts in input_ts_list:
+            add_ts = False
+            for chid in chan_ids:
+                if pyfusion.q(pyfusion.TimeSegmentDataSummary).filter_by(timesegment_id=ts.id, channel_id=chid).count()==0:
+                    add_ts = True
+            if add_ts:
+                ts_list.append(ts)
+    
+    print 'Number of input Time Segments: %d' %(len(input_ts_list))
+    print 'Number of new TSDS to create: %d' %(len(ts_list))
+    shot_dict = {}
+    for ts in ts_list:
+        if str(ts.shot.shot) in shot_dict.keys():
+            shot_dict[str(ts.shot.shot)].append(ts)
+        else:
+            shot_dict[str(ts.shot.shot)] = [ts]
+    n_shots = len(shot_dict.keys())
+    print 'Number of shots: %d' %(n_shots)
+    for shi,sh_str in enumerate(shot_dict.keys()):
+        for tsi,ts in enumerate(shot_dict[sh_str]):
+            print 'Shot %s, %d of %d. Timesegment %d of %d. Diag: %s' %(sh_str, shi+1,n_shots,tsi+1,len(shot_dict[sh_str]), diag_name)
+            ts.generate_data_summary(diag_name,savelocal=savelocal,ignorelocal=ignorelocal)
+        #pyfusion.session.close()
+
+
 def update_device_info(pyf_class):
     existing = pyfusion.session.query(pyf_class).all()
     for devmod_object_str in pyfusion._device_module.__dict__.keys():

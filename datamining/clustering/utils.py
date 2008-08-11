@@ -5,6 +5,19 @@ from numpy import sin,cos, array, pi, mean, argmax, abs, std, transpose, random
 
 import pyfusion
 
+def add_timesegmentdatasummary_for_fs_list(fs_list, diag_name, ts_exist_check='any',savelocal=False, ignorelocal=False):
+    """
+    for a list of flucstrucs, add TimeSegmentDataSummary to their TimeSegments
+    """
+    from pyfusion.utils import add_timesegmentdatasummary_for_ts_list
+    ts_list = []
+    for fs in fs_list:
+        if not fs.svd.timesegment in ts_list:
+            ts_list.append(fs.svd.timesegment)
+    print 'Number of Fluctuation Structures: %d' %(len(fs_list))
+    print 'Number of Time Segments: %d' %(len(ts_list))
+
+    add_timesegmentdatasummary_for_ts_list(ts_list, diag_name, exist_check=ts_exist_check, savelocal=savelocal, ignorelocal=ignorelocal)
 
 def get_periodic_mean(input_data, rad=True):
     input_data = array(input_data)

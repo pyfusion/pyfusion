@@ -123,6 +123,11 @@ for ch in [density2]:
 for ch in [densityIR]:
     densityIR_diag.add_channel(ch)
 
+mirnov_filter_diag = pyfusion.Diagnostic('mirnov_filter')
+
+for ch in [mirnov_5p_1]:
+    mirnov_filter_diag.add_channel(ch)
+
 
 class TJII(pyfusion.Device):
     def __init__(self):

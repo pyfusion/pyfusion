@@ -7,7 +7,7 @@ from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, 
 from numpy.dual import svd
 if int(numpy_version.version.replace('.','')) >= 110: from numpy import savez
 
-from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean, String
+from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean, String, DateTime
 from sqlalchemy.orm import relation, synonym
 
 import pyfusion
@@ -84,6 +84,7 @@ class Shot(pyfusion.Base):
     device_id = Column('device_id', Integer, ForeignKey('devices.id'))
     device = relation(Device, primaryjoin=device_id==Device.id, backref="shots")    
     shot_type = Column('shot_type', String(50)) ## want something to map...
+    date = Column('date',DateTime, default=pyfusion.settings.DEFAULT_SHOT_DATE)
     __mapper_args__ = {'polymorphic_on':shot_type}
     data = {}
     def __init__(self, sn):
@@ -116,6 +117,7 @@ class Shot(pyfusion.Base):
                 channel_MCT.add_multichannel(_tmp,skip_timebase_check=skip_timebase_check)
         self.data[diagnostic] = channel_MCT
         
+
 
     def define_time_segments(self, diag, n_samples = False, overlap=False):
         """
@@ -178,9 +180,18 @@ class Shot(pyfusion.Base):
 
 
 
-def get_shot(shot_number,shot_class = Shot):    
+def get_shot(shot_number,shot_class = None):
+    if shot_class == None:
+        default_shot_class = pyfusion._device_module.DEFAULT_SHOT_CLASS
+        if default_shot_class == 'Shot':
+            shot_class = Shot
+        else:
+            try:
+                shot_class = pyfusion._device_module.__getattribute__(default_shot_class)
+            except:
+                raise ValueError,'Cannot load default shot class: %s' %default_shot_class
     try:
-        existing_shot = pyfusion.session.query(shot_class).filter(shot_class.device_id == pyfusion._device.id).filter(shot_class.shot == shot_number).one()
+        existing_shot = pyfusion.session.query(shot_class).filter_by(device_id = pyfusion._device.id, shot = shot_number).one()
         return existing_shot
     except:
         print "Creating shot %s:%d, %s" %(

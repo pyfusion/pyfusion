@@ -4,7 +4,6 @@ Device class for the H-1 heliac
 
 import pyfusion
 from pyfusion.data_acq.MDSPlus.MDSPlus import MDSPlusChannel
-#from pyfusion.settings import H1_MDS_SERVER
 from h1data_dtacq_shot_offset import h1data_dtacq_mapping
 from numpy import searchsorted
 from sqlalchemy import Column, Float, Integer, ForeignKey
@@ -12,12 +11,21 @@ from pyfusion.core import Shot
 from pyfusion.coords import CylindricalCoordinates
 
 H1_MDS_SERVER = pyfusion.settings.H1_MDS_SERVER
+DEFAULT_SHOT_CLASS = 'H1Shot'
 
 class H1Shot(Shot):
     __tablename__ = 'h1_customshot'
     __mapper_args__ = {'polymorphic_identity':'H1'}
     id = Column('id', Integer, ForeignKey('shots.id'), primary_key=True, index=True)
     kappa_h = Column('kappa_h',Float)
+
+    def __init__(self,shot_number):
+        super(H1Shot, self).__init__(shot_number)
+        self.date = self.get_shot_datetime()
+
+    def get_shot_datetime(self):
+        return pyfusion.settings.DEFAULT_SHOT_DATE
+
 
 class ProcessData:
     def __init__(self, data_acq_type = '', processdata_override = ''):
@@ -271,6 +279,5 @@ for ch in [testchannel_1, testchannel_1_inverted, testchannel_2_no_dtacq_map, te
 class H1(pyfusion.Device):
     def __init__(self):
         self.name = 'H1'
-
 H1inst = H1()
        

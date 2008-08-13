@@ -8,6 +8,8 @@ from pyfusion.devices.core import BasicLocalDataDevice
 import gzip,bz2
 from numpy import array
 
+DEFAULT_SHOT_CLASS='Shot'
+
 """
 Check check file suffix then open with normal, gzip or bzip2 command. read file and close.
 """

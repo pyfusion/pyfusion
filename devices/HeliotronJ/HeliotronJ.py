@@ -4,6 +4,7 @@ Code specific to Heliotron J
 import pyfusion
 from pyfusion.data_acq.HJ.HJ import HJChannel
 
+DEFAULT_SHOT_CLASS = 'Shot'
 
 diag_dict =  {'NBIS9I':1024,  \
               'NBIS10I':1024, \

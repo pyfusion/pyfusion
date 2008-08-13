@@ -3,6 +3,8 @@ import pyfusion
 from pyfusion.data_acq.TestSignals.TestSignals import SingleFreqChannel
 from numpy import pi, array
 
+DEFAULT_SHOT_CLASS = 'Shot'
+
 sample_freq = 1000000.
 n_samples = 10000
 

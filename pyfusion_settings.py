@@ -88,6 +88,7 @@ waste time.
 """
 
 from tempfile import gettempdir
+from datetime import datetime
 import os
 
 # General:
@@ -96,6 +97,8 @@ TIMEBASE_DIFFERENCE_TOLERANCE = 1.e-16
 
 SHOT_T_MIN = -1.e10
 SHOT_T_MAX = 1.e10
+
+DEFAULT_SHOT_DATE = datetime(1900, 1, 1, 0, 0)
 
 LOCAL_SAVEFILE_DIR = gettempdir()
 

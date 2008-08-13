@@ -7,6 +7,8 @@ from pyfusion.data_acq.TJII.TJII import TJIIChannel
 from pyfusion.data_acq.TJII import tjiidata
 from pyfusion.coords import ToroidalCoordinates
 
+DEFAULT_SHOT_CLASS = 'Shot'
+
 def last_shot():
     return tjiidata.last_shot()
 

@@ -14,6 +14,17 @@ def get_shot_datetime(shot_number):
     dlist = tjiidata.fecha(shot_number)
     return datetime(dlist[3],dlist[2],dlist[1],dlist[4],dlist[5])
 
+def get_signals_for_shot(shot_number):
+    nsignals = tjiidata.nums(shot_number)
+    signal_str = tjiidata.listas(shot_number, nsignals)[1]
+    sig_str_list = signal_str.split('\x00')
+    output = []
+    for i in sig_str_list:
+        if i != '':
+            output.append(i)
+    return output
+
+
 def last_shot():
     return tjiidata.last_shot()
 

@@ -5,6 +5,8 @@ extern int lectur_(int *, char *, int *, int *,int *, float *, float*, int *, in
 extern int dimens_(int *, char *, int *, int *, int *);
 extern int ertxt_(int *);
 extern int fecha_(int *,int *,int *,int *,int *,int *,int *);
+extern int nums_(int *, int *, int *);
+extern int listas_(int *, int *, int *, char *, int *);
 
 static PyObject *
 tjiidata_dimens(PyObject *self, PyObject *args)
@@ -56,6 +58,44 @@ tjiidata_fecha(PyObject *self, PyObject *args)
   return Py_BuildValue("(l,l,l,l,l,l)", ndes, ndia, mes, nagno, nhh, mm);
   
 }
+
+static PyObject *
+tjiidata_nums(PyObject *self, PyObject *args)
+{
+  int ndes;
+  if (!PyArg_ParseTuple(args, "i", &ndes))
+    return NULL;
+  int ierr, nsen, status;
+
+  status=nums_(&ndes, &nsen, &ierr);
+  if (ierr) {
+    PyErr_SetString(PyExc_ValueError, "nums returned error... ");
+    return NULL;
+  }
+  return Py_BuildValue("l", nsen);
+  
+}
+
+
+static PyObject *
+tjiidata_listas(PyObject *self, PyObject *args)
+{
+  int ndes, ndim;
+  if (!PyArg_ParseTuple(args, "ii", &ndes, &ndim))
+    return NULL;
+
+  int ierr, nsr, status;
+  char lista[24*ndim];
+
+    status=listas_(&ndes, &ndim, &nsr, lista, &ierr);
+  if (ierr) {
+    PyErr_SetString(PyExc_ValueError, "listas returned error... ");
+    return NULL;
+  }
+  return Py_BuildValue("(l,s#)",nsr,lista,24*ndim);
+  
+}
+
 
 
 static PyObject * 
@@ -156,6 +196,10 @@ static PyMethodDef tjiidata_methods[] = {
      "Get last shot..."},
     {"fecha", (PyCFunction)tjiidata_fecha, METH_VARARGS | METH_KEYWORDS,
      "Get shot date,time..."},
+    {"nums", (PyCFunction)tjiidata_nums, METH_VARARGS | METH_KEYWORDS,
+     "Get number of signals for a shot..."},
+    {"listas", (PyCFunction)tjiidata_listas, METH_VARARGS | METH_KEYWORDS,
+     "Get list of signals for a shot..."},
     {NULL, NULL, 0, NULL}   /* sentinel */
 };
 

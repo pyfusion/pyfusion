@@ -6,8 +6,13 @@ import pyfusion
 from pyfusion.data_acq.TJII.TJII import TJIIChannel
 from pyfusion.data_acq.TJII import tjiidata
 from pyfusion.coords import ToroidalCoordinates
-
+from datetime import datetime
 DEFAULT_SHOT_CLASS = 'Shot'
+
+
+def get_shot_datetime(shot_number):
+    dlist = tjiidata.fecha(shot_number)
+    return datetime(dlist[3],dlist[2],dlist[1],dlist[4],dlist[5])
 
 def last_shot():
     return tjiidata.last_shot()

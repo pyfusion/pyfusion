@@ -94,8 +94,14 @@ class Shot(pyfusion.Base):
         self.shot = sn
         self.device_id = pyfusion._device.id
         self.metadata.create_all()
+        self.fetch_shot_datetime()
         pyfusion.session.save_or_update(self)
 
+    def fetch_shot_datetime(self):
+        try:
+            self.date = pyfusion._device_module.get_shot_datetime(self.shot)
+        except:
+            print 'Failed to get date/time for shot using "get_shot_datetime" in device module'
 
     def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False):
         print "Only MultiChannel Timeseries data works for now" 

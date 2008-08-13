@@ -4,7 +4,7 @@ extern int lastshot_(int *, int *);
 extern int lectur_(int *, char *, int *, int *,int *, float *, float*, int *, int *, int *, float *, float *, int *, float *, float *,float *, float *,float *, int *, char *, int *);
 extern int dimens_(int *, char *, int *, int *, int *);
 extern int ertxt_(int *);
-
+extern int fecha_(int *,int *,int *,int *,int *,int *,int *);
 
 static PyObject *
 tjiidata_dimens(PyObject *self, PyObject *args)
@@ -37,6 +37,23 @@ tjiidata_lastshot(PyObject *self, PyObject *args)
     return NULL;
   }
   return Py_BuildValue("l", ndes);
+  
+}
+
+static PyObject *
+tjiidata_fecha(PyObject *self, PyObject *args)
+{
+  int ndes;
+  if (!PyArg_ParseTuple(args, "i", &ndes))
+    return NULL;
+  int ierr, mes, mm, nagno, ndia, nhh, status;
+
+  status=fecha_(&ndes, &ndia, &mes, &nagno, &nhh, &mm, &ierr);
+  if (ierr) {
+    PyErr_SetString(PyExc_ValueError, "fecha returned error... ");
+    return NULL;
+  }
+  return Py_BuildValue("(l,l,l,l,l,l)", ndes, ndia, mes, nagno, nhh, mm);
   
 }
 
@@ -137,6 +154,8 @@ static PyMethodDef tjiidata_methods[] = {
      "Get data dimens...."},
     {"last_shot", (PyCFunction)tjiidata_lastshot, METH_VARARGS | METH_KEYWORDS,
      "Get last shot..."},
+    {"fecha", (PyCFunction)tjiidata_fecha, METH_VARARGS | METH_KEYWORDS,
+     "Get shot date,time..."},
     {NULL, NULL, 0, NULL}   /* sentinel */
 };
 

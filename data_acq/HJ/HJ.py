@@ -15,7 +15,7 @@ except:
     try:
         import gethjdata
     except:
-        raise ImportError, "Can't import Heliotron J data aquisition library"
+        raise ImportError, "Can't import Heliotron J data acquisition library"
     
 
 

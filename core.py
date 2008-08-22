@@ -58,7 +58,7 @@ class Diagnostic(pyfusion.Base):
             print('******** Inconsistency in ordered channels %d != %d') % (len(self.channels), len(self.ordered_channel_list))
         outlist = []
         for oc in self.ordered_channel_list:
-            outlist.append(session.query(Channel).filter_by(name=oc, diagnostic_id=self.id).one())
+            outlist.append(pyfusion.session.query(Channel).filter_by(name=oc, diagnostic_id=self.id).one())
         return outlist
 
 class Channel(pyfusion.Base):

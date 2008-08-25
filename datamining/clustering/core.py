@@ -362,6 +362,11 @@ def _old_get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
     return [data_array, used_fs]
 
 def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11), input_data = None):
+    """
+    there are a couple of explicit flush() calls here. without them nothing gets saaved - is there
+    an alternative way to write the code so we don't need them? this isn't really a performance hit, as 
+    we only get a flush when saving a clusters, which takes much time.
+    """
     from rpy import r, RVER
     from numpy import unique  #bdb added
     
@@ -375,7 +380,7 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
 
     clusterdataset = ClusterDataSet(name=clusterdatasetname)
     pyfusion.session.save(clusterdataset)
-
+    pyfusion.session.flush()
 # may need this in 2.4.1 bdb - strange behaviour otherwise?
 # but occasionally generates warning:
 #   clustering/core.py:338: SyntaxWarning: import * only allowed at module level
@@ -390,6 +395,7 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
             clusterset = ClusterSet(modelname=MX['modelName'], bic=MX['bic'], loglik=MX['loglik'], n_clusters=n_clusters, n_flucstrucs=MX['n'])
             pyfusion.session.save(clusterset)
             clusterdataset.clustersets.append(clusterset)
+            pyfusion.session.flush()
             clusters = [Cluster(clusterset=clusterset) for i in range(n_clusters)]
             cluster_labels = unique(MX['classification']).tolist()
             if len(cluster_labels) != n_clusters:

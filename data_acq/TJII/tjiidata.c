@@ -87,7 +87,7 @@ tjiidata_listas(PyObject *self, PyObject *args)
   int ierr, nsr, status;
   char lista[24*ndim];
 
-    status=listas_(&ndes, &ndim, &nsr, lista, &ierr);
+  status=listas_(&ndes, &ndim, &nsr, lista, &ierr);
   if (ierr) {
     PyErr_SetString(PyExc_ValueError, "listas returned error... ");
     return NULL;
@@ -101,20 +101,20 @@ tjiidata_listas(PyObject *self, PyObject *args)
 static PyObject * 
 tjiidata_lectur(PyObject *self, PyObject *args)
 {
-  
-  
   int error;
 
-  char *senal, unidad[32];
+  char *senal;
+  char unidad[32];
 
-  int ndes, ndimv, ndimx, ndimy;
+  int ndes; 
+  long ndimv, ndimx, ndimy;
     
 
-  if (!PyArg_ParseTuple(args, "isiii", &ndes, &senal, &ndimx, &ndimy, &ndimv))
+  if (!PyArg_ParseTuple(args, "lslll", &ndes, &senal, &ndimx, &ndimy, &ndimv))
     return NULL;
 
 
-  int code0, ierr, mv[ndimv], nbits, ndat, nvent, status, i,j,k;
+  long code0, ierr, mv[ndimv], nbits, ndat, nvent, status, i,j,k;
   float factor, offset, per[ndimv], tini[ndimv], vpp, x[ndimx], y[ndimy], ymax, ymin;
 
 
@@ -177,8 +177,10 @@ tjiidata_lectur(PyObject *self, PyObject *args)
   } 
 
   
-  return Py_BuildValue("{s:i,s:s,s:l,s:l,s:l,s:N,s:N,s:i,s:i,s:N,s:n,s:N,s:i,s:f,s:f,s:f,s:f,s:f,s:i,s:s,s:i}", "ndes", ndes, "senal",senal,"ndimx",ndimx, "ndimy",ndimy, "ndimv",ndimv,"x",XList, "y",YList, "ndat", ndat, "nvent", nvent,"mv",MVList,"per",PERList,"tini",TINIList,"nbits",nbits,"offset",offset,"ymax",ymax,"ymin",ymin,"factor",factor,"vpp",vpp,"code0",code0,"unidad",unidad,"ierr",ierr);
-
+  /*  return Py_BuildValue("{s:i,s:s,s:l,s:l,s:l,s:N,s:N,s:i,s:i,s:N,s:n,s:N,s:i,s:f,s:f,s:f,s:f,s:f,s:i,s:s,s:i}", "ndes", ndes, "senal",senal,"ndimx",ndimx, "ndimy",ndimy, "ndimv",ndimv,"x",XList, "y",YList, "ndat", ndat, "nvent", nvent,"mv",MVList,"per",PERList,"tini",TINIList,"nbits",nbits,"offset",offset,"ymax",ymax,"ymin",ymin,"factor",factor,"vpp",vpp,"code0",code0,"unidad",unidad,"ierr",ierr);
+   */
+  return Py_BuildValue("{s:l,s:s,s:l,s:l,s:l,s:N,s:N,s:i,s:l,s:N,s:n,s:N,s:l,s:f,s:f,s:f,s:f,s:f,s:l,s:s,s:l}", "ndes", ndes, "senal",senal,"ndimx",ndimx, "ndimy",ndimy, "ndimv",ndimv,"x",XList, "y",YList, "ndat", ndat, "nvent", nvent,"mv",MVList,"per",PERList,"tini",TINIList,"nbits",nbits,"offset",offset,"ymax",ymax,"ymin",ymin,"factor",factor,"vpp",vpp,"code0",code0,"unidad",unidad,"ierr",ierr);
+  
 
 }
 

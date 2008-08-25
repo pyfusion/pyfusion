@@ -6,6 +6,8 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from numpy import searchsorted, array
 # import the python binding to the TJ-II data aquisition library
 # try to import the module, if this fails, try to compile it
+MAX_SIGNAL_LENGTH = 2**20
+
 try:
     import tjiidata
 except:
@@ -23,8 +25,10 @@ except:
 class ProcessData:
     def load_channel(self, tjiich, shot, invert=False):
         data_dim = tjiidata.dimens(shot,tjiich.senal)
-        data_dict = tjiidata.lectur(shot, tjiich.senal, data_dim[0],data_dim[0],data_dim[1])
-        
+        if data_dim[0] < MAX_SIGNAL_LENGTH:
+            data_dict = tjiidata.lectur(shot, tjiich.senal, data_dim[0],data_dim[0],data_dim[1])
+        else:
+            raise ValueError, 'Not loading data to avoid segmentation fault in tjiidata.lectur'
         t_lim = searchsorted(data_dict['x'],[pyfusion.settings.SHOT_T_MIN, pyfusion.settings.SHOT_T_MAX])
         if pyfusion.settings.VERBOSE>4: 
             print('choosing data indices %d to %d') % (t_lim[0],t_lim[1])

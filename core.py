@@ -87,6 +87,7 @@ class Shot(pyfusion.Base):
     date = Column('date',DateTime, default=pyfusion.settings.DEFAULT_SHOT_DATE)
     __mapper_args__ = {'polymorphic_on':shot_type}
     data = {}
+    channels = {}
     def __init__(self, sn):
         """
         sn: shot number (integer)
@@ -103,8 +104,9 @@ class Shot(pyfusion.Base):
         except:
             print 'Failed to get date/time for shot using "get_shot_datetime" in device module'
 
-    def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False):
-        print "Only MultiChannel Timeseries data works for now" 
+    def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False,ignorelocal=False, allow_null_return=False):
+        if pyfusion.settings.VERBOSE > 0:
+            print "Only MultiChannel Timeseries data works for now" 
         diag = pyfusion.session.query(Diagnostic).filter(Diagnostic.name==diagnostic)[0]
         channel_list = []
         if pyfusion.settings.VERBOSE > 0:
@@ -116,12 +118,19 @@ class Shot(pyfusion.Base):
             if ch not in ignore_channels:
                 channel_list.append(ch)
         for chi, chn in enumerate(channel_list):
-            _tmp = load_channel(self.shot,chn,savelocal=savelocal)
+            _tmp = load_channel(self.shot,chn,savelocal=savelocal,ignorelocal=ignorelocal, allow_null_return=allow_null_return)
             if chi==0:
                 channel_MCT = _tmp
             else:
                 channel_MCT.add_multichannel(_tmp,skip_timebase_check=skip_timebase_check)
         self.data[diagnostic] = channel_MCT
+
+    def load_ch(self, chn, skip_timebase_check = False,savelocal=False,ignorelocal=False,allow_null_return=False):
+        if pyfusion.settings.VERBOSE > 0:
+            print "Only MultiChannel Timeseries data works for now" 
+        _tmp = load_channel(self.shot,chn,savelocal=savelocal,ignorelocal=ignorelocal,allow_null_return=allow_null_return)
+        channel_MCT = _tmp
+        self.channels[chn] = channel_MCT
         
 
 
@@ -209,7 +218,7 @@ def get_shot(shot_number,shot_class = None):
 def last_shot():
     return pyfusion._device_module.last_shot()
 
-def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False):
+def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, allow_null_return=False):
     from os.path import exists
     ch = pyfusion.session.query(Channel).filter_by(name=channel_name)[0]
     localfilename = pyfusion.settings.getlocalfilename(shot_number, channel_name)
@@ -242,6 +251,10 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False):
         return _tmp
     except:
         msg=str('Failed to retrieve data from %s, shot %d') % (ch.name, shot_number)
+        if allow_null_return:
+            _tmp = MultiChannelTimeseries([])
+            _tmp.add_channel([], channel_name)
+            return _tmp
         if pyfusion.settings.VERBOSE>2:
             print (msg + ': Trying again without catching exception')
             _tmp = _ProcessData.load_channel(ch, shot_number)
@@ -397,62 +410,99 @@ class TimeSegment(pyfusion.Base):
     parent_min_sample = Column('parent_min_sample', Integer)
     n_samples = Column('n_samples', Integer)
     data = {}
+    channel_data = {}
     def get_primary_diagnostic(self):
         return pyfusion.session.query(Diagnostic).get(self.primary_diagnostic_id)
-    def _load_data(self, diag = None, all_diags=False,savelocal=False,ignorelocal=False):
+    def _load_data(self, diag = None, channel=None, all_diags=False,savelocal=False,ignorelocal=False):
         # if there is no data in the shot (ie - reading from previous run) then try loading the primary diagnostic
         #need to update session - we may have called the time segment from another session ...
         pyfusion.session.save_or_update(self)
         pd = self.get_primary_diagnostic()
+        #print "-------", self.shot
         loaded_diags = self.shot.data.keys()
-        print 'loaded_diags', loaded_diags
+        loaded_channels = self.shot.channels.keys()
+        #print 'loaded_diags', loaded_diags
+        #print 'loaded_channels',loaded_channels
         if diag:
             if not diag in loaded_diags:
-                self.shot.load_diag(diag)
+                self.shot.load_diag(diag,allow_null_return=True, allow_null_return=True)
             # need pd for timebase anyway, although we need only one channel...
             if not pd.name in loaded_diags:
-                self.shot.load_diag(pd.name,ignore_channels=pd.ordered_channel_list[1:])
+                self.shot.load_diag(pd.name,ignore_channels=pd.ordered_channel_list[1:],ignorelocal=ignorelocal)
             elif pd.ordered_channel_list[0] not in self.shot.data[pd.name].signals.keys():
-                self.shot.load_diag(pd.name,ignore_channels=pd.ordered_channel_list[1:])                
+                self.shot.load_diag(pd.name,ignore_channels=pd.ordered_channel_list[1:],ignorelocal=ignorelocal)                
+        elif channel:
+            if not channel in loaded_channels:
+                self.shot.load_ch(channel, allow_null_return=True)
+            if not pd.name in loaded_diags:
+                self.shot.load_diag(pd.name,ignore_channels=pd.ordered_channel_list[1:],ignorelocal=ignorelocal)
+            elif pd.ordered_channel_list[0] not in self.shot.data[pd.name].signals.keys():
+                self.shot.load_diag(pd.name,ignore_channels=pd.ordered_channel_list[1:],ignorelocal=ignorelocal)                
+            
         else:
             if not pd.name in loaded_diags:
                 self.shot.load_diag(pd.name)
 
         use_samples = [True, True]
 
-        if all_diags:
-            load_list = self.shot.data.keys()
-        elif diag:
-            load_list = [diag]
-        else:
-            load_list = [pd.name]
-
-        for diag_i in load_list:
-            if diag_i == pd.name:
-                reference_timebase = None
+        if not channel:
+            if all_diags:
+                load_list = self.shot.data.keys()
+            elif diag:
+                load_list = [diag]
             else:
-                # TODO: this means that parent_min_sample must refer to the original shot timebase...
-                #_tmp = load_channel(self.shot.shot,pd.ordered_channel_list[0],savelocal=savelocal, ignorelocal=ignorelocal)
-                reference_timebase = self.shot.data[pd.name].timebase
-            self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, 
-                                                                   self.n_samples, use_samples=use_samples, reference_timebase=reference_timebase)
-    def generate_data_summary(self,diag_name,savelocal=False,ignorelocal=False):
+                load_list = [pd.name]
+
+            for diag_i in load_list:
+                if diag_i == pd.name:
+                    reference_timebase = None
+                else:
+                    # TODO: this means that parent_min_sample must refer to the original shot timebase...
+                    #_tmp = load_channel(self.shot.shot,pd.ordered_channel_list[0],savelocal=savelocal, ignorelocal=ignorelocal)
+                    reference_timebase = self.shot.data[pd.name].timebase
+                self.data[diag_i] = self.shot.data[diag_i].timesegment(self.parent_min_sample, 
+                                                                       self.n_samples, use_samples=use_samples, reference_timebase=reference_timebase)
+        else:
+            #ch_data = load_channel(self.shot.shot, channel)
+            reference_timebase = self.shot.data[pd.name].timebase
+            self.channel_data[channel] = self.shot.channels[channel].timesegment(self.parent_min_sample, 
+                                                                                 self.n_samples, use_samples=use_samples, reference_timebase=reference_timebase)
+            
+    def generate_data_summary(self,diag_name,channel=False, savelocal=False,ignorelocal=False,save=True):
         """
         generate a TimeSegmentDataSummary for this timesegment and channels in diag
         TODO: don't reload data if it's already there
+        temporary hack: if channel==True, then diag_name is interpreted as a channel name - will fix but don't want to break much right now
         """
         try:
             output = []
-            self._load_data(diag_name,ignorelocal=ignorelocal, savelocal=savelocal)
-            diag = pyfusion.session.query(Diagnostic).filter(Diagnostic.name==diag_name).one()
-            for ch in diag.channels:
-                _data = self.data[diag_name].signals[ch.name]
-                _mean = mean(_data)
-                _rms = sqrt(mean((_data-_mean)**2))
-                _var = var(_data)
-                tsds = TimeSegmentDataSummary(timesegment_id=self.id, channel_id=ch.id, mean=_mean, rms=_rms, var=_var)
-                pyfusion.session.save(tsds)
-                output.append(tsds)
+            if channel:
+                self._load_data(channel=diag_name,ignorelocal=ignorelocal, savelocal=savelocal)
+                ch = pyfusion.session.query(Channel).filter_by(name=diag_name).one()
+                _data = self.channel_data[diag_name].signals[diag_name]
+                if len(_data)>0:
+                    _mean = mean(_data)
+                    _rms = sqrt(mean((_data-_mean)**2))
+                    _var = var(_data)
+                    tsds = TimeSegmentDataSummary(timesegment_id=self.id, channel_id=ch.id, mean=_mean, rms=_rms, var=_var)
+                    if save:
+                        #print 'added tsds'
+                        pyfusion.session.save(tsds)
+                    output.append(tsds)
+                else:
+                    print "_data is empty"
+            else:
+                self._load_data(diag=diag_name,ignorelocal=ignorelocal, savelocal=savelocal)
+                diag = pyfusion.session.query(Diagnostic).filter(Diagnostic.name==diag_name).one()
+                for ch in diag.channels:
+                    _data = self.data[diag_name].signals[ch.name]
+                    _mean = mean(_data)
+                    _rms = sqrt(mean((_data-_mean)**2))
+                    _var = var(_data)
+                    tsds = TimeSegmentDataSummary(timesegment_id=self.id, channel_id=ch.id, mean=_mean, rms=_rms, var=_var)
+                    if save:
+                        pyfusion.session.save(tsds)
+                    output.append(tsds)
             return output
         except IndexError:
             # TODO: this exception should be handled in _load_data....

@@ -369,7 +369,7 @@ def _old_get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
             used_fs.append(fs)
     return [data_array, used_fs]
 
-def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11), input_data = None):
+def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11), modelnames=None, input_data = None):
     """
     there are a couple of explicit flush() calls here. without them nothing gets saaved - is there
     an alternative way to write the code so we don't need them? this isn't really a performance hit, as 
@@ -386,9 +386,13 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
     else:
         [data_array, used_fs] = get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs)
 
-    clusterdataset = ClusterDataSet(name=clusterdatasetname)
-    pyfusion.session.save(clusterdataset)
+    try:
+        clusterdataset = pyfusion.session.query(ClusterDataSet).filter_by(name=clusterdatasetname).one()
+    except:
+        clusterdataset = ClusterDataSet(name=clusterdatasetname)
+    pyfusion.session.save_or_update(clusterdataset)
     pyfusion.session.flush()
+
 # may need this in 2.4.1 bdb - strange behaviour otherwise?
 # but occasionally generates warning:
 #   clustering/core.py:338: SyntaxWarning: import * only allowed at module level
@@ -399,8 +403,22 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
     for n_clusters in n_cluster_list:
         try:
             if pyfusion.settings.VERBOSE>0: print 'n_clusters = %d' %n_clusters
-            MX = r.Mclust(array(data_array),G=n_clusters, header='FALSE')
-            clusterset = ClusterSet(modelname=MX['modelName'], bic=MX['bic'], loglik=MX['loglik'], n_clusters=n_clusters, n_flucstrucs=MX['n'])
+            if modelnames:
+                MX = r.Mclust(array(data_array),G=n_clusters, modelNames=modelnames, header='FALSE')
+            else:
+                MX = r.Mclust(array(data_array),G=n_clusters, header='FALSE')
+            # seems to be special case for NCl=1:
+            if n_clusters==1:
+                if len(MX['bic'].keys()) != 1:
+                    raise NotImplementedError
+                
+                mn = MX['bic'].keys()[0].split(',')[0]
+                bic = MX['bic'].values()[0]
+            else:
+                mn = MX['modelName']
+                bic=MX['bic']
+
+            clusterset = ClusterSet(modelname=mn, bic=bic, loglik=MX['loglik'], n_clusters=n_clusters, n_flucstrucs=MX['n'])
             pyfusion.session.save(clusterset)
             clusterdataset.clustersets.append(clusterset)
             pyfusion.session.flush()
@@ -418,7 +436,8 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
             print "Failed for n_clusters = %d" %n_clusters
             raise
         pyfusion.session.save_or_update(clusterdataset)
-
+        # make sure all clusters are saved
+        pyfusion.session.flush()
 
 def use_clustvarsel(fs_list, channel_pairs,  max_clusters = 10,max_iterations=100):
     """
@@ -451,17 +470,17 @@ def get_fs_in_set(fs_set_name,min_energy = 0.0):
     fs_query = pyfusion.session.query(FluctuationStructure).filter_by(set=fs_set)
     return fs_query.filter(FluctuationStructure.energy > min_energy).all()
 
-def get_clusters_for_fs_set(fs_set_name,min_energy = 0.0,n_cluster_list = range(2,11)):
+def get_clusters_for_fs_set(fs_set_name,min_energy = 0.0,n_cluster_list = range(2,11),modelnames=None):
     # min energy is a temporary hack - see get_fs_in_set
     fs_list = get_fs_in_set(fs_set_name,min_energy = min_energy)
-    get_clusters_for_fs_list(fs_list, fs_set_name + '_clusters',n_cluster_list = n_cluster_list)
+    get_clusters_for_fs_list(fs_list, fs_set_name + '_clusters',n_cluster_list = n_cluster_list,modelnames=modelnames)
 
-def get_clusters_for_fs_list(fs_list, cluster_dataset_name,n_cluster_list = range(2,11)):
+def get_clusters_for_fs_list(fs_list, cluster_dataset_name,n_cluster_list = range(2,11),modelnames=None):
     # BAD... should ensure that all used_channels are the same - not just grab them from one FS in the set!
     # do we need to do a query here? probably not
     chs = [pyfusion.session.query(pyfusion.Channel).filter_by(name=i).one() for i in fs_list[0].svd.used_channels]
     # default channel pairs - use pairs from used_channels - assumed to be ordered - at the moment it's taken from ordeed_channel_list
     ch_pairs = [[chs[i],chs[i+1]] for i in range(len(chs)-1)]
     #cluster_dataset_name = fs_set_name + '_clusters'
-    get_clusters(fs_list, ch_pairs, cluster_dataset_name,n_cluster_list=n_cluster_list)
+    get_clusters(fs_list, ch_pairs, cluster_dataset_name,n_cluster_list=n_cluster_list,modelnames=modelnames)
     

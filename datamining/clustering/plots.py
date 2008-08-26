@@ -54,6 +54,14 @@ class Dendrogram(pyfusion.Base):
         self.max_n_clusters = max([cs.n_clusters for cs in self.cluster_dataset.clustersets])
         
     def get_links(self):
+        # simple hack - for some reason the DendrogramLink table wan't being created.
+        # need to undertstand why
+        try:
+            # raises an exception if table exists
+            DendrogramLink.__table__.create()
+        except:
+            # no harm done. 
+            pass
         parent_clusters = [self.head_cluster]
         for n_cl in range(self.head_clusterset.n_clusters+1, self.max_n_clusters+1):
             child_clusterset = pyfusion.q(ClusterSet).filter_by(clusterdataset_id=self.cluster_dataset.id, n_clusters=n_cl).one()

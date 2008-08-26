@@ -10,8 +10,8 @@ from sqlalchemy.orm import eagerload
 import pylab as pl
 from numpy import mean, average, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum
 from pyfusion.utils import r_lib
+from pyfusion.visual.core import PLOT_MARKERS
 
-ordered_channels=[]
 
 class DeltaPhase(pyfusion.Base):
     __tablename__ = 'dm_dphase'
@@ -262,13 +262,21 @@ class ClusterDataSet(pyfusion.Base):
     clustersets = relation("ClusterSet", backref="clusterdataset")
     def plot_BIC(self):
         import pylab as pl
-        n_cluster_list = [i.n_clusters for i in self.clustersets]
-        bic_list = [i.bic for i in self.clustersets]
-        pl.plot(n_cluster_list, bic_list)
-        pl.plot(n_cluster_list, bic_list,'o')
+        model_data = {}
+        
+        for cl in self.clustersets:
+            if not cl.modelname in model_data.keys():
+                model_data[cl.modelname] = {'ncl':[], 'bic':[]}
+            model_data[cl.modelname]['ncl'].append(cl.n_clusters)
+            model_data[cl.modelname]['bic'].append(cl.bic)
+        
+        for modelname_i, modelname in enumerate(model_data.keys()):
+            pl.plot(model_data[modelname]['ncl'],model_data[modelname]['bic'],PLOT_MARKERS[modelname_i],label=modelname)
+
         pl.xlabel('Number of Clusters')
         pl.ylabel('Bayesian Information Classifier (BIC)')
         pl.title('Cluster Dataset: %s' %self.name)
+        pl.legend(loc='upper right')
         pl.show()
 
     def plot_N_clusters(self,N_clusters,title=""):

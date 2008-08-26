@@ -8,6 +8,8 @@ from types import FunctionType, StringTypes
 
 golden_ratio = (1.0 * 5.0**0.5)/2
 
+PLOT_MARKERS = ['bo','rx','mD','ks','g^']
+
 class GenericPlot(object):
     def __init__(self,*args,**kwargs):
         """

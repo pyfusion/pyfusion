@@ -8,7 +8,7 @@ import pyfusion
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet, ClusterDataSet, Cluster, ClusterSet
 from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list
-from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d,take
+from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d,take,pi
 from pyfusion.visual.core import ScatterPlot, golden_ratio, datamap
 from numpy.random import rand
 
@@ -79,7 +79,7 @@ class Dendrogram(pyfusion.Base):
                         _tmp = DendrogramLink(parent_id=parent.id, child_id=child.id, fraction = frac, fs_intersection=fs_intersection)
                         pyfusion.session.save_or_update(_tmp)
             parent_clusters = child_clusters
-    def simple_plot(self,x_plot='svd.timebase[0]',y_plot='frequency',x_lims=[0,1],y_lims=[0,1],x_space=0.2,y_space=0.2, random_sample = None):
+    def simple_plot(self,x_plot='svd.timebase[0]',y_plot='frequency',x_lims=[0,1],y_lims=[0,1],x_space=0.2,y_space=0.2, random_sample = None, var_col=True):
         """
         x_plot, y_plot = attributes of fluctuation structures to be plotted
         x_lim, y_lim, range ofr subplots
@@ -182,6 +182,9 @@ class Dendrogram(pyfusion.Base):
         cl_q = pyfusion.q(Cluster)
         pl.setp(main_axes,xlim=[0,1],ylim=[0,1])
 
+        mean_var_list = []
+        colmap = pl.get_cmap('jet')
+        colfactor = 256./(pi/2)
         # plot the sub-plots
         for clidstri,clidstr in enumerate(plot_coords.keys()):
             print "cl %d of %d" %(clidstri+1, len(plot_coords.keys()))
@@ -190,6 +193,9 @@ class Dendrogram(pyfusion.Base):
             local_axes = pl.axes([clco[0]-0.5*subplot_width,clco[1]-0.5*subplot_height,subplot_width,subplot_height])
             cl = cl_q.get(int(clidstr))
             cl_fs = cl.flucstrucs
+            cl_phase_info = get_phase_info_for_fs_list(cl_fs)
+            cl_mean_var = mean([i[1] for i in cl_phase_info[0]])
+            mean_var_list.append(cl_mean_var)
             if random_sample:
                 _x_vals=[]
                 _y_vals=[]
@@ -199,15 +205,17 @@ class Dendrogram(pyfusion.Base):
                         _x_vals.append(x_vals[all_fs_ids.index(fsid)])
                         _y_vals.append(y_vals[all_fs_ids.index(fsid)])
                 if len(_x_vals)>0:
-                    pl.plot(_x_vals,_y_vals,'k.')
+                    pl.plot(_x_vals,_y_vals,marker='.',color=colmap(int(colfactor*cl_mean_var)), linestyle='None')
             else: 
                 _x_vals = [x_vals[all_fs_ids.index(i.id)] for i in cl_fs]
                 _y_vals = [y_vals[all_fs_ids.index(i.id)] for i in cl_fs]
-                pl.plot(_x_vals,_y_vals,'k.')
+                pl.plot(_x_vals,_y_vals,marker='.',color=colmap(int(colfactor*cl_mean_var)), linestyle='None')
+                #pl.plot(_x_vals,_y_vals,'k.')
             
             pl.setp(local_axes,xlim=x_lims,ylim=y_lims,xticks=[],yticks=[])
             pl.axes(main_axes)
-
+        print 'min, ', min(mean_var_list)
+        print 'max, ', max(mean_var_list)
         pl.show()
 
 

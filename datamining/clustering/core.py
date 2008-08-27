@@ -317,6 +317,7 @@ class Cluster(pyfusion.Base):
     __tablename__ = 'dm_clusters'
     id = Column('id', Integer, primary_key=True)
     clusterset_id = Column("clusterset_id", Integer, ForeignKey('dm_cluster_sets.id'))
+    mean_phase_var = Column("mean_phase_var", Float)
 
 cluster_flucstrucs = Table('cluster_flucstrucs', pyfusion.Base.metadata,
                       Column('cluster_id', Integer, ForeignKey('dm_clusters.id')),

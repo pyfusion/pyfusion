@@ -98,9 +98,16 @@ TIMEBASE_DIFFERENCE_TOLERANCE = 1.e-16
 SHOT_T_MIN = -1.e10
 SHOT_T_MAX = 1.e10
 
+# default shot pulse start time, used to calulate baseline offsets, etc
+SHOT_PULSE_START = 0.0
+
 DEFAULT_SHOT_DATE = datetime(1900, 1, 1, 0, 0)
 
 LOCAL_SAVEFILE_DIR = gettempdir()
+
+# these should come from some system settings...
+BIG_FLOAT = 1.e20
+SMALL_FLOAT = 1.e-20
 
 def getlocalfilename(shot_number, channel_name):
 	"""

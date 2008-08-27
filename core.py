@@ -85,6 +85,7 @@ class Shot(pyfusion.Base):
     device = relation(Device, primaryjoin=device_id==Device.id, backref="shots")    
     shot_type = Column('shot_type', String(50)) ## want something to map...
     date = Column('date',DateTime, default=pyfusion.settings.DEFAULT_SHOT_DATE)
+    pulse_start = Column('pulse_start',Float, default=pyfusion.settings.SHOT_PULSE_START)
     __mapper_args__ = {'polymorphic_on':shot_type}
     data = {}
     channels = {}
@@ -193,6 +194,15 @@ class Shot(pyfusion.Base):
             [t0,t1] = [self.time_segments[1][segment_number], self.time_segments[1][segment_number+1]]
             return self.data[diag].timesegment(t0,t1-t0, use_samples=[False, False])
 
+class ChannelBaseline(pyfusion.Base):
+    __tablename__ = "channel_baselines"
+    id = Column('id', Integer, primary_key=True)
+    channel_id = Column('channel_id', Integer, ForeignKey('channels.id'))
+    channel = relation(Channel, primaryjoin=channel_id==Channel.id)
+    shot_id = Column('shot_id', Integer, ForeignKey('shots.id'))
+    shot = relation(Shot, primaryjoin=shot_id==Shot.id)
+    value = Column('value',Float)
+
 
 
 def get_shot(shot_number,shot_class = None):
@@ -218,8 +228,15 @@ def get_shot(shot_number,shot_class = None):
 def last_shot():
     return pyfusion._device_module.last_shot()
 
-def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, allow_null_return=False):
+def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, allow_null_return=False, ignore_shot_lims = False):
     from os.path import exists
+    if ignore_shot_lims:
+        ignorelocal=True
+        savelocal=False
+        tmp_lims = [pyfusion.settings.SHOT_T_MIN, pyfusion.settings.SHOT_T_MAX]
+        pyfusion.settings.SHOT_T_MIN = -pyfusion.settings.BIG_FLOAT
+        pyfusion.settings.SHOT_T_MAX = pyfusion.settings.BIG_FLOAT
+        
     ch = pyfusion.session.query(Channel).filter_by(name=channel_name)[0]
     localfilename = pyfusion.settings.getlocalfilename(shot_number, channel_name)
     if exists(localfilename) and not ignorelocal:
@@ -248,16 +265,25 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
                       signal=_tmp.signals[channel_name],
                       parent_element=_tmp.parent_element)
             else: print("**Warning - not saving - need numpy 1.1.0 or higher")
+        if ignore_shot_lims:
+            pyfusion.settings.SHOT_T_MIN = tmp_lims[0]
+            pyfusion.settings.SHOT_T_MAX = tmp_lims[1]
         return _tmp
     except:
         msg=str('Failed to retrieve data from %s, shot %d') % (ch.name, shot_number)
         if allow_null_return:
             _tmp = MultiChannelTimeseries([])
             _tmp.add_channel([], channel_name)
+            if ignore_shot_lims:
+                pyfusion.settings.SHOT_T_MIN = tmp_lims[0]
+                pyfusion.settings.SHOT_T_MAX = tmp_lims[1]
             return _tmp
         if pyfusion.settings.VERBOSE>2:
             print (msg + ': Trying again without catching exception')
             _tmp = _ProcessData.load_channel(ch, shot_number)
+            if ignore_shot_lims:
+                pyfusion.settings.SHOT_T_MIN = tmp_lims[0]
+                pyfusion.settings.SHOT_T_MAX = tmp_lims[1]
             raise LookupError, msg
         
 class MultiChannelTimeseries(object):
@@ -481,10 +507,16 @@ class TimeSegment(pyfusion.Base):
                 ch = pyfusion.session.query(Channel).filter_by(name=diag_name).one()
                 _data = self.channel_data[diag_name].signals[diag_name]
                 if len(_data)>0:
+                    try:
+                        cb = pyfusion.session.query(ChannelBaseline).filter_by(shot_id=self.shot_id, channel_id=ch.id).one()
+                    except:
+                        _full_channel_data = load_channel(self.shot.shot,ch.name,ignore_shot_lims=True)
+                        t0el = searchsorted(_full_channel_data.timebase,self.shot.pulse_start)
+                        cb = ChannelBaseline(shot_id=self.shot_id, channel_id=ch.id, value=float(mean(_full_channel_data.signals[ch.name][:t0el])))
                     _mean = mean(_data)
                     _rms = sqrt(mean((_data-_mean)**2))
                     _var = var(_data)
-                    tsds = TimeSegmentDataSummary(timesegment_id=self.id, channel_id=ch.id, mean=_mean, rms=_rms, var=_var)
+                    tsds = TimeSegmentDataSummary(timesegment_id=self.id, channel_id=ch.id, mean=_mean, rms=_rms, var=_var, baseline=cb)
                     if save:
                         #print 'added tsds'
                         pyfusion.session.save(tsds)
@@ -496,10 +528,16 @@ class TimeSegment(pyfusion.Base):
                 diag = pyfusion.session.query(Diagnostic).filter(Diagnostic.name==diag_name).one()
                 for ch in diag.channels:
                     _data = self.data[diag_name].signals[ch.name]
+                    try:
+                        cb = pyfusion.session.query(ChannelBaseline).filter_by(shot_id=self.shot_id, channel_id=ch.id).one()
+                    except:
+                        _full_channel_data = load_channel(self.shot.shot,ch.name,ignore_shot_lims=True)
+                        t0el = searchsorted(_full_channel_data.timebase,self.shot.pulse_start)
+                        cb = ChannelBaseline(shot_id=self.shot_id, channel_id=ch.id, value=float(mean(_full_channel_data.signals[ch.name][:t0el])))
                     _mean = mean(_data)
                     _rms = sqrt(mean((_data-_mean)**2))
                     _var = var(_data)
-                    tsds = TimeSegmentDataSummary(timesegment_id=self.id, channel_id=ch.id, mean=_mean, rms=_rms, var=_var)
+                    tsds = TimeSegmentDataSummary(timesegment_id=self.id, channel_id=ch.id, mean=_mean, rms=_rms, var=_var, baseline=cb)
                     if save:
                         pyfusion.session.save(tsds)
                     output.append(tsds)
@@ -516,7 +554,8 @@ class TimeSegmentDataSummary(pyfusion.Base):
     timesegment = relation(TimeSegment, primaryjoin=timesegment_id==TimeSegment.id)
     channel_id = Column('channel_id', Integer, ForeignKey('channels.id'))
     channel = relation(Channel, primaryjoin=channel_id==Channel.id)
-    
+    baseline_id = Column('baseline_id', Integer, ForeignKey('channel_baselines.id'))
+    baseline = relation(ChannelBaseline, primaryjoin=baseline_id==ChannelBaseline.id)
     mean = Column('mean',Float)
     # RMS after baseline is removed
     rms = Column('rms',Float)

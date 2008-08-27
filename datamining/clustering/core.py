@@ -12,6 +12,7 @@ from numpy import mean, average, array, fft, conjugate, arange, searchsorted, ar
 from pyfusion.utils import r_lib
 from pyfusion.visual.core import PLOT_MARKERS
 
+ordered_channels=[]
 
 class DeltaPhase(pyfusion.Base):
     __tablename__ = 'dm_dphase'
@@ -136,7 +137,7 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
         #sess.close()
 
 
-def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
+def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True, data_summary_channels = []):
     # get fs_set or register a new one
     try:
         fs_set = pyfusion.session.query(FluctuationStructureSet).filter_by(name=fs_set_name).one()
@@ -147,6 +148,8 @@ def generate_flucstrucs(shot, diag_name, fs_set_name, store_chronos=False, thres
     diag_inst = pyfusion.session.query(pyfusion.Diagnostic).filter(pyfusion.Diagnostic.name == diag_name).one()
     for seg_i, seg in enumerate(segs[::-1]):
         generate_flucstrucs_for_time_segment(seg, diag_inst, fs_set, store_chronos=store_chronos, threshold=threshold, normalise=normalise)
+        for ch_name in data_summary_channels:
+            seg.generate_data_summary(ch_name,channel=True)
             
     
 

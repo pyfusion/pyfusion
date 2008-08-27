@@ -8,8 +8,9 @@ import pyfusion
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet, ClusterDataSet, Cluster, ClusterSet
 from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list
-from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d
+from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d,take
 from pyfusion.visual.core import ScatterPlot, golden_ratio, datamap
+from numpy.random import rand
 
 from sqlalchemy import Column, Integer, ForeignKey, Float
 from sqlalchemy.orm import relation
@@ -44,14 +45,17 @@ class Dendrogram(pyfusion.Base):
     id = Column('id', Integer, primary_key=True)
     head_cluster_id = Column('head_cluster_id', Integer, ForeignKey('dm_clusters.id'))
     head_cluster = relation(Cluster, primaryjoin=head_cluster_id==Cluster.id)
-    def __init__(self, head_cluster):
+    def __init__(self, head_cluster, max_clusters=None):
         self.head_cluster = head_cluster
         # get n_clusters of head_cluster
         self.head_clusterset = self.head_cluster.clusterset
         if self.head_clusterset.n_clusters != 1:
             print "Warning: Not starting from n_clusters = 1, results may be strange"
         self.cluster_dataset = self.head_clusterset.clusterdataset
-        self.max_n_clusters = max([cs.n_clusters for cs in self.cluster_dataset.clustersets])
+        if max_clusters:
+            self.max_n_clusters = max_clusters
+        else:
+            self.max_n_clusters = max([cs.n_clusters for cs in self.cluster_dataset.clustersets])
         
     def get_links(self):
         # simple hack - for some reason the DendrogramLink table wan't being created.
@@ -66,6 +70,7 @@ class Dendrogram(pyfusion.Base):
         for n_cl in range(self.head_clusterset.n_clusters+1, self.max_n_clusters+1):
             child_clusterset = pyfusion.q(ClusterSet).filter_by(clusterdataset_id=self.cluster_dataset.id, n_clusters=n_cl).one()
             child_clusters = child_clusterset.clusters
+            print 'n_cl, ', n_cl
             for parent in parent_clusters:
                 for child in child_clusters:
                     if pyfusion.q(DendrogramLink).filter_by(parent=parent,child=child).count() == 0:
@@ -74,7 +79,7 @@ class Dendrogram(pyfusion.Base):
                         _tmp = DendrogramLink(parent_id=parent.id, child_id=child.id, fraction = frac, fs_intersection=fs_intersection)
                         pyfusion.session.save_or_update(_tmp)
             parent_clusters = child_clusters
-    def simple_plot(self,x_plot='svd.timebase[0]',y_plot='frequency',x_lims=[0,1],y_lims=[0,1],x_space=0.2,y_space=0.2):
+    def simple_plot(self,x_plot='svd.timebase[0]',y_plot='frequency',x_lims=[0,1],y_lims=[0,1],x_space=0.2,y_space=0.2, random_sample = None):
         """
         x_plot, y_plot = attributes of fluctuation structures to be plotted
         x_lim, y_lim, range ofr subplots
@@ -166,6 +171,11 @@ class Dendrogram(pyfusion.Base):
         # pre-load plot data for all flucstrucs, so we don't fetch it for individual plots
         print '... loading plot data'
         all_fs = self.head_cluster.flucstrucs
+        if random_sample:
+            rarr = rand(len(all_fs))
+            ras = argsort(rarr)
+            all_fs = take(all_fs,ras[:random_sample])
+
         all_fs_ids = [i.id for i in all_fs]
         x_vals = datamap(all_fs, x_plot)
         y_vals = datamap(all_fs, y_plot)
@@ -180,11 +190,22 @@ class Dendrogram(pyfusion.Base):
             local_axes = pl.axes([clco[0]-0.5*subplot_width,clco[1]-0.5*subplot_height,subplot_width,subplot_height])
             cl = cl_q.get(int(clidstr))
             cl_fs = cl.flucstrucs
-            _x_vals = [x_vals[all_fs_ids.index(i.id)] for i in cl_fs]
-            _y_vals = [y_vals[all_fs_ids.index(i.id)] for i in cl_fs]
-            pl.plot(_x_vals,_y_vals,'k.')
+            if random_sample:
+                _x_vals=[]
+                _y_vals=[]
+                cl_fs_ids = [i.id for i in cl_fs]
+                for fsid in all_fs_ids:
+                    if fsid in cl_fs_ids:
+                        _x_vals.append(x_vals[all_fs_ids.index(fsid)])
+                        _y_vals.append(y_vals[all_fs_ids.index(fsid)])
+                if len(_x_vals)>0:
+                    pl.plot(_x_vals,_y_vals,'k.')
+            else: 
+                _x_vals = [x_vals[all_fs_ids.index(i.id)] for i in cl_fs]
+                _y_vals = [y_vals[all_fs_ids.index(i.id)] for i in cl_fs]
+                pl.plot(_x_vals,_y_vals,'k.')
+            
             pl.setp(local_axes,xlim=x_lims,ylim=y_lims,xticks=[],yticks=[])
-
             pl.axes(main_axes)
 
         pl.show()

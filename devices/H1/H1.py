@@ -239,6 +239,10 @@ mirnov_linear_5 = MDSPlusChannel(name = 'mirnov_linear_5', mds_server = H1_MDS_S
                                  coords = CylindricalCoordinates(r=1.08, phi=0.6109, z=0.4))
 
 
+ne_centre = MDSPlusChannel(name = 'ne_centre', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', 
+                                 mds_path='.electr_dens.ne_het:ne_centre')
+
+
 mirnovbeans = pyfusion.Diagnostic(name='mirnovbeans')
 mirnov_all = pyfusion.Diagnostic(name='mirnov_all')
 

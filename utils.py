@@ -5,7 +5,7 @@ from numpy import fft, conjugate, array, choose, min, max, pi,random,take,argsor
 from datetime import datetime
 import pyfusion
 
-def add_timesegmentdatasummary_for_ts_list(input_ts_list, diag_name, exist_check='any',savelocal=False, ignorelocal=False):
+def add_timesegmentdatasummary_for_ts_list(input_ts_list, diag_name, exist_check='any',savelocal=False, ignorelocal=False, is_channel=False):
     """
     add TimeSegmentDataSummary for each TimeSegment instance in ts_list for given diag
     we find distinct shots to minimise number of times we need to fetch data, and close the session 
@@ -17,8 +17,11 @@ def add_timesegmentdatasummary_for_ts_list(input_ts_list, diag_name, exist_check
                  'all' : if all channels from diag exists, don't regenerate the TSDS
 
     """
-    if exist_check == None:
+    if exist_check == None or is_channel==True:
         exist_check = 'none'
+
+    if is_channel:
+        print 'implementation shortfall: overriding checking (ie: not checking) of existing data summaries.'
 
     if exist_check.lower() == 'none':
         ts_list = input_ts_list
@@ -59,7 +62,7 @@ def add_timesegmentdatasummary_for_ts_list(input_ts_list, diag_name, exist_check
     for shi,sh_str in enumerate(shot_dict.keys()):
         for tsi,ts in enumerate(shot_dict[sh_str]):
             print 'Shot %s, %d of %d. Timesegment %d of %d. Diag: %s' %(sh_str, shi+1,n_shots,tsi+1,len(shot_dict[sh_str]), diag_name)
-            ts.generate_data_summary(diag_name,savelocal=savelocal,ignorelocal=ignorelocal)
+            ts.generate_data_summary(diag_name,channel=is_channel, savelocal=savelocal,ignorelocal=ignorelocal)
         #pyfusion.session.close()
 
 

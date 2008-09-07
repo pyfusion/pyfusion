@@ -8,7 +8,7 @@ import pyfusion
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet, ClusterDataSet, Cluster, ClusterSet
 from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list
-from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d,take,pi
+from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d,take,pi, arange
 from pyfusion.visual.core import ScatterPlot, golden_ratio, datamap
 from numpy.random import rand
 

@@ -8,12 +8,135 @@ import pyfusion
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet, ClusterDataSet, Cluster, ClusterSet
 from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list
-from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d,take,pi, arange
+from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d, take,pi, arange, mat, cov,average, trace, log, sin,cos
 from pyfusion.visual.core import ScatterPlot, golden_ratio, datamap
 from numpy.random import rand
+from numpy.linalg import det
 
 from sqlalchemy import Column, Integer, ForeignKey, Float
 from sqlalchemy.orm import relation
+
+def KL_dist(input_data0,input_data1,symmetric=True):
+    """
+    Compute the Kullback-Leibler divergence (~distance) between two normally distributed sets of data in the same space.
+
+    input_data0, input_data1 -- Ndp x Ndim arrays or matricies. Ndp is number of data points, Ndim is number of dimensions
+
+    We use the form of the KL divergence for normal distributions, if the data is far from normal do not expect a useful result.
+    reference: http://en.wikipedia.org/wiki/Multivariate_normal_distribution#Kullback-Leibler_divergence
+
+    By definition, the KL divergence is not symmetric (d_KL(a,b) != d_KL(b,a)). 
+    If the symmetric argument = True, KL_dist will return (d_KL(a,b)+d_KL(b,a))/2
+    """
+    # convert input data into numpy matrices
+    data0 = mat(input_data0).T
+    data1 = mat(input_data1).T
+
+    # calulate means mu and covariance matrix S for input data
+    mu0 = mat(average(data0,axis=1))
+    mu1 = mat(average(data1,axis=1))
+    S0 = mat(cov(data0))
+    S1 = mat(cov(data1))
+
+    N = shape(mu0)[1]
+    print shape(data0),shape(data1)
+    print len(mu1),len(mu0)
+    m10 = mu1-mu0
+    
+    X = 0.5*( log(det(S1)/det(S0)) + trace(S1.I * S0) + m10.T * S1.I * m10 - N)
+    x = array(X)[0][0]
+    if symmetric:
+        return 0.5*(x + KL_dist(input_data1,input_data0,symmetric=False))
+    else:
+        return x
+
+
+def plot_clusterset_net(clusterset):
+    """
+    Plot the clusters in the given clusterset as a graph. 
+    Distances between clusters are defined by the Kullback-Leibier distance.
+    We use graphviz (via pygraphviz) to graph the clusters as a `spring model' (using the
+    Kamada-Kawai model for energy minimisation)
+
+    arguments:
+    clusterset -- a ClusterSet instance
+    """
+    print "WARNING: this code is incomplete"
+    import pygraphviz
+
+    # load clusters from clusterset
+    cluster_list = pyfusion.q(Cluster).filter_by(clusterset=clusterset).all()
+    
+    # dictionary to hold phase info for cluster flucstrucs
+    cluster_phases = dict.fromkeys([str(cluster.id) for cluster in cluster_list])
+
+    # get phase info for clusters
+    for cl_i, cluster in enumerate(cluster_list):
+        if pyfusion.settings.VERBOSE>1:
+            print "getting phases for cluster %d, %d of %d" %(cluster.id, cl_i+1, len(cluster_list))
+        _tmp_cluster_phases = []
+        for fs_i, flucstruc in enumerate(cluster.flucstrucs):
+            _tmp_flucstruc_phases = []
+            _tmp_flucstruc_phases.extend([sin(phase_i.d_phase) for phase_i in flucstruc.phases ])
+            _tmp_flucstruc_phases.extend([cos(phase_i.d_phase) for phase_i in flucstruc.phases ])
+            _tmp_cluster_phases.append(_tmp_flucstruc_phases)
+        cluster_phases[str(cluster.id)] = _tmp_cluster_phases
+
+    # dictionary to hold distances between clusters
+    cluster_dist = dict.fromkeys([str(cluster.id) for cluster in cluster_list],{})
+
+    # get distance between each pair of clusters
+    all_dists = []
+    for cl1_i, cluster1 in enumerate(cluster_list):
+        if pyfusion.settings.VERBOSE>1:
+            print "calculating distances for cluster %d, %d of %d" %(cluster1.id, cl1_i+1, len(cluster_list))
+        for _tmp_counter, cluster2 in enumerate(cluster_list[cl1_i+1:]):
+            cl2_i = cl1_i+_tmp_counter+1
+            cluster_dist[str(cluster1.id)][str(cluster2.id)] = log(KL_dist(cluster_phases[str(cluster1.id)], cluster_phases[str(cluster2.id)]))
+            all_dists.append(cluster_dist[str(cluster1.id)][str(cluster2.id)])
+
+    # initialise main plot (not subplot) axes
+    main_axes = pl.axes([0.,0.,1,1])
+
+    # compute graph coordinates
+    G=pygraphviz.AGraph()
+    for cl1 in cluster_dist.keys():
+        for cl2 in cluster_dist[cl1].keys():
+            G.add_edge(cl1,cl2,len=str(cluster_dist[cl1][cl2]))
+    G.layout()
+    
+    # read back the plot coordinates of the nodes (cluster locations) so we can plot our own subplots with numpy
+    node_list = []
+    node_coord_list = []
+    for i,n in enumerate(G.iternodes()):
+        x = float(n.attr['pos'].split(',')[0])
+        y = float(n.attr['pos'].split(',')[1])    
+        node_list.append(n)
+        node_coord_list.append([x,y])
+    
+    # parameters for plotting
+    colourmap = pl.get_cmap('jet')
+    print 'yy ', all_dists
+    get_norm_dist = lambda x: (x-min(all_dists))/(max(all_dists)-min(all_dists))
+    linewidth_offset = 0.2 # we plot the linewidth as inverse of distance, so let's not let it reach zero
+    linewidth_scale = 5.0
+    #min_alpha = 0.2
+
+    # plot graph edges
+    for cl1 in cluster_dist.keys():
+        for cl2 in cluster_dist[cl1].keys():
+            x0 = node_coord_list[node_list.index(cl1)][0]
+            y0 = node_coord_list[node_list.index(cl1)][1]
+            x1 = node_coord_list[node_list.index(cl2)][0]
+            y1 = node_coord_list[node_list.index(cl2)][1]
+            norm_dist = get_norm_dist(cluster_dist[cl1][cl2])
+            print 'xx ', norm_dist
+            linewidth_val = 1./(linewidth_scale*norm_dist+linewidth_offset)
+            colour_val = colourmap(int(norm_dist*256))
+            #alpha_val = (1-norm_dv)*(1-min_alpha)+min_alpha
+            pl.plot([x0,x1],[y0,y1],color=colour_val,lw=linewidth_val)
+
+    pl.show()
 
 
 class DendrogramLink(pyfusion.Base):

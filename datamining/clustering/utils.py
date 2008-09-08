@@ -5,6 +5,18 @@ from numpy import sin,cos, array, pi, mean, argmax, abs, std, transpose, random
 
 import pyfusion
 
+
+def update_cluster_mean_phase_var(cl):
+    """
+    for a cluster, calculate the mean (across all dimensions) of the variance of fs d_phase values 
+    and add to cluster table
+    """
+    cl_phase_info = get_phase_info_for_fs_list(cl.flucstrucs)
+    cl_mean_var = mean([i[1] for i in cl_phase_info[0]])
+    cl.mean_phase_var = cl_mean_var
+    pyfusion.session.save_or_update(cl)
+
+
 def add_timesegmentdatasummary_for_fs_list(fs_list, diag_name, ts_exist_check='any',savelocal=False, ignorelocal=False):
     """
     for a list of flucstrucs, add TimeSegmentDataSummary to their TimeSegments

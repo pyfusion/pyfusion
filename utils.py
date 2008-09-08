@@ -263,13 +263,13 @@ def remap_angle_0_2pi(angle,avoid_zero=False):
     return angle
 
 
-def remap_angle_negpi_pi(angle):
+def remap_angle_negpi_pi(angle, offset=0.0):
     """
     surely there's a better way?
     """
-    while angle >= pi:
+    while angle >= offset+pi:
         angle -= 2*pi
-    while angle < -pi:
+    while angle < offset-pi:
         angle += 2*pi
     return angle
 

@@ -263,18 +263,21 @@ class ClusterDataSet(pyfusion.Base):
     id = Column('id', Integer, primary_key=True)
     name = Column("name", String(500), unique=True)
     clustersets = relation("ClusterSet", backref="clusterdataset")
-    def plot_BIC(self):
+    def plot_BIC(self, loglik=False):
         import pylab as pl
         model_data = {}
         
         for cl in self.clustersets:
             if not cl.modelname in model_data.keys():
-                model_data[cl.modelname] = {'ncl':[], 'bic':[]}
+                model_data[cl.modelname] = {'ncl':[], 'bic':[], 'loglik':[]}
             model_data[cl.modelname]['ncl'].append(cl.n_clusters)
             model_data[cl.modelname]['bic'].append(cl.bic)
+            model_data[cl.modelname]['loglik'].append(cl.loglik)
         
         for modelname_i, modelname in enumerate(model_data.keys()):
             pl.plot(model_data[modelname]['ncl'],model_data[modelname]['bic'],PLOT_MARKERS[modelname_i],label=modelname)
+            if loglik:
+                pl.plot(model_data[modelname]['ncl'],model_data[modelname]['loglik'],'k.')
 
         pl.xlabel('Number of Clusters')
         pl.ylabel('Bayesian Information Classifier (BIC)')

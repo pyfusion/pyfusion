@@ -4,7 +4,7 @@ plots for clustering
 yes, it's a mess.
 """
 
-import pyfusion
+import pyfusion, os, pickle
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet, ClusterDataSet, Cluster, ClusterSet
 from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list
@@ -15,6 +15,9 @@ from numpy.linalg import det
 
 from sqlalchemy import Column, Integer, ForeignKey, Float
 from sqlalchemy.orm import relation
+from tempfile import gettempdir
+
+
 
 def KL_dist(input_data0,input_data1,symmetric=True):
     """
@@ -39,8 +42,6 @@ def KL_dist(input_data0,input_data1,symmetric=True):
     S1 = mat(cov(data1))
 
     N = shape(mu0)[1]
-    print shape(data0),shape(data1)
-    print len(mu1),len(mu0)
     m10 = mu1-mu0
     
     X = 0.5*( log(det(S1)/det(S0)) + trace(S1.I * S0) + m10.T * S1.I * m10 - N)
@@ -51,19 +52,17 @@ def KL_dist(input_data0,input_data1,symmetric=True):
         return x
 
 
-def plot_clusterset_net(clusterset):
+def get_clusterset_net_data(clusterset, use_cache=True):
     """
-    Plot the clusters in the given clusterset as a graph. 
-    Distances between clusters are defined by the Kullback-Leibier distance.
-    We use graphviz (via pygraphviz) to graph the clusters as a `spring model' (using the
-    Kamada-Kawai model for energy minimisation)
-
-    arguments:
-    clusterset -- a ClusterSet instance
+    get and cache phases and distances for clusterset_net plot
     """
-    print "WARNING: this code is incomplete"
-    import pygraphviz
-
+    cache_filename = gettempdir()+'/plot_clusterset_net_%d.dat' %(clusterset.id)
+    if os.path.exists(cache_filename) and use_cache==True:
+        f = open(cache_filename)
+        [cluster_dist,all_dists] = pickle.load(f)
+        f.close()
+        return [cluster_dist,all_dists]
+    
     # load clusters from clusterset
     cluster_list = pyfusion.q(Cluster).filter_by(clusterset=clusterset).all()
     
@@ -95,6 +94,26 @@ def plot_clusterset_net(clusterset):
             cluster_dist[str(cluster1.id)][str(cluster2.id)] = log(KL_dist(cluster_phases[str(cluster1.id)], cluster_phases[str(cluster2.id)]))
             all_dists.append(cluster_dist[str(cluster1.id)][str(cluster2.id)])
 
+    f = open(cache_filename,'w')
+    pickle.dump([cluster_dist,all_dists],f)
+    f.close()
+    return [cluster_dist,all_dists]
+
+def plot_clusterset_net(clusterset,use_cache=True):
+    """
+    Plot the clusters in the given clusterset as a graph. 
+    Distances between clusters are defined by the Kullback-Leibier distance.
+    We use graphviz (via pygraphviz) to graph the clusters as a `spring model' (using the
+    Kamada-Kawai model for energy minimisation)
+
+    arguments:
+    clusterset -- a ClusterSet instance
+    """
+    print "WARNING: this code is incomplete"
+    import pygraphviz
+
+    [cluster_dist,all_dists] = get_clusterset_net_data(clusterset, use_cache=use_cache)
+
     # initialise main plot (not subplot) axes
     main_axes = pl.axes([0.,0.,1,1])
 
@@ -116,7 +135,6 @@ def plot_clusterset_net(clusterset):
     
     # parameters for plotting
     colourmap = pl.get_cmap('jet')
-    print 'yy ', all_dists
     get_norm_dist = lambda x: (x-min(all_dists))/(max(all_dists)-min(all_dists))
     linewidth_offset = 0.2 # we plot the linewidth as inverse of distance, so let's not let it reach zero
     linewidth_scale = 5.0
@@ -130,7 +148,6 @@ def plot_clusterset_net(clusterset):
             x1 = node_coord_list[node_list.index(cl2)][0]
             y1 = node_coord_list[node_list.index(cl2)][1]
             norm_dist = get_norm_dist(cluster_dist[cl1][cl2])
-            print 'xx ', norm_dist
             linewidth_val = 1./(linewidth_scale*norm_dist+linewidth_offset)
             colour_val = colourmap(int(norm_dist*256))
             #alpha_val = (1-norm_dv)*(1-min_alpha)+min_alpha

@@ -387,7 +387,7 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
     
     r_lib(r,'mclust')
     
-    if input_data:
+    if input_data != None:
         data_array = input_data
         used_fs = fs_list
     else:

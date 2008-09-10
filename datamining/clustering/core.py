@@ -8,9 +8,10 @@ from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, Strin
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
 import pylab as pl
-from numpy import mean, average, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum
+from numpy import mean, average, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum, resize, shape
 from pyfusion.utils import r_lib
 from pyfusion.visual.core import PLOT_MARKERS
+from sqlalchemy import select,func
 
 ordered_channels=[]
 
@@ -324,6 +325,26 @@ class Cluster(pyfusion.Base):
     id = Column('id', Integer, primary_key=True)
     clusterset_id = Column("clusterset_id", Integer, ForeignKey('dm_cluster_sets.id'))
     mean_phase_var = Column("mean_phase_var", Float)
+
+    def get_phases(self):
+        """
+        retrive phase information from fluctuation structres in this cluster
+        returns a N_fs x N_phase array, where flucstruc rows are ordered by flucstruc id
+        and d_phase columns are ordered by d_phase channel1.id, channel2.id
+        WARNING: there is no checking to make sure each flucstruc has the same phase channels
+        """
+        joined_table = Cluster.__table__.join(cluster_flucstrucs).join(
+            FluctuationStructure.__table__).join(DeltaPhase.__table__)
+
+        phase_select = select([DeltaPhase.d_phase],from_obj=[joined_table]).where(
+            Cluster.id==self.id).group_by(FluctuationStructure.id,DeltaPhase.channel_1_id,DeltaPhase.channel_2_id)
+
+        nfs = len(self.flucstrucs)
+        data = array(pyfusion.session.execute(phase_select).fetchall(),dtype='float')
+
+        reshaped_data = data.reshape([nfs,data.shape[0]/nfs])
+
+        return reshaped_data
 
 cluster_flucstrucs = Table('cluster_flucstrucs', pyfusion.Base.metadata,
                       Column('cluster_id', Integer, ForeignKey('dm_clusters.id')),

@@ -4,9 +4,10 @@ H-1 specific utility code...
 from numpy import poly1d,polyval,array
 import pyfusion
 from pyfusion.utils import remap_angle_0_2pi
-from pyfusion.datamining.clustering.core import get_sin_cos_phase_for_channel_pairs
-
+from pyfusion.datamining.clustering.core import get_sin_cos_phase_for_channel_pairs, Cluster, FluctuationStructure,cluster_flucstrucs 
+from pyfusion.devices.H1.H1 import H1Shot
 # coefficients for 6th order polynomial mapping kappa_h to LCFS magnetic angle for each Mirnov coil
+from sqlalchemy.sql import select
 
 c1   = [-9.06397180e-05, 3.22626079e-04, -4.36408010e-04, 3.83230378e-01,-4.30402453e-01, 2.06079743e-01,-1.83250233e-01]
 c2   = [-4.02284321e-04, 1.40334646e-03, -1.80544756e-03, 7.19490088e-01,-1.02622240e+00, 3.77580551e-01, 1.93965006e-01]
@@ -126,4 +127,22 @@ def h1_khavg_fs_phases(fs_list, channel_pairs = None):
         output_phases.append(fs_dphases)
         print len(fs_dphases)
     return array(output_phases)
-    
+
+
+def get_kh_flucstuc_properties(cl,fs_props=['frequency']):
+    joined_table = Cluster.__table__.join(cluster_flucstrucs).join(
+        FluctuationStructure.__table__).join(pyfusion.MultiChannelSVD.__table__).join(pyfusion.TimeSegment.__table__).join(pyfusion.Shot.__table__).join(H1Shot.__table__)
+
+    select_list = [H1Shot.kappa_h]
+    for fs_p in fs_props:
+        select_list.append(FluctuationStructure.__dict__[fs_p])
+
+    data_select = select(select_list,from_obj=[joined_table]).where(
+        Cluster.id==cl.id).group_by(FluctuationStructure.id) 
+
+    data = pyfusion.session.execute(data_select).fetchall()
+
+    return data
+
+def get_kh_fs_freq(cl):
+    return get_kh_flucstuc_properties(cl, fs_props=['frequency'])

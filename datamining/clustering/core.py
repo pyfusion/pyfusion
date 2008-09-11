@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, Strin
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
 import pylab as pl
-from numpy import mean, average, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum, resize, shape
+from numpy import mean, average, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum, resize, shape, ndarray
 from pyfusion.utils import r_lib
 from pyfusion.visual.core import PLOT_MARKERS
 from sqlalchemy import select,func
@@ -345,6 +345,38 @@ class Cluster(pyfusion.Base):
         reshaped_data = data.reshape([nfs,data.shape[0]/nfs])
 
         return reshaped_data
+
+    def get_sin_cos_phases(self):
+        """
+        return sin() and cos() components of cluster phases. 
+        the array returned from get_phases() is transformed as, for example:
+        |a00 a01|     |sin(a00) cos(a00) sin(a01) cos(a01)|
+        |a10 a11| --> |sin(a10) cos(a10) sin(a11) cos(a11)|
+        |a20 a21|     |sin(a20) cos(a20) sin(a21) cos(a21)|
+        """
+        cl_ph = self.get_phases()
+        cl_cs_phases = ndarray(shape=(cl_ph.shape[0],2*cl_ph.shape[1]))
+        cl_cs_phases[:,::2] = sin(cl_ph)
+        cl_cs_phases[:,1::2] = cos(cl_ph)
+        return cl_cs_phases
+
+    def get_time_flucstuc_properties(self,fs_props=['frequency']):
+        joined_table = Cluster.__table__.join(cluster_flucstrucs).join(
+            FluctuationStructure.__table__).join(pyfusion.MultiChannelSVD.__table__)
+        
+        select_list = [pyfusion.MultiChannelSVD.timebase]
+        for fs_p in fs_props:
+            select_list.append(FluctuationStructure.__dict__[fs_p])
+
+        data_select = select(select_list,from_obj=[joined_table]).where(
+            Cluster.id==self.id).group_by(FluctuationStructure.id) 
+
+        data = pyfusion.session.execute(data_select).fetchall()
+       
+        # take first element of timebase
+        data_t0 = map(lambda x: [x[0][0]]+list(x)[1:],data)
+
+        return data_t0
 
 cluster_flucstrucs = Table('cluster_flucstrucs', pyfusion.Base.metadata,
                       Column('cluster_id', Integer, ForeignKey('dm_clusters.id')),

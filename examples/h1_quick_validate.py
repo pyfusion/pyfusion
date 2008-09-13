@@ -53,3 +53,5 @@ clusterdataset = pyfusion.session.query(ClusterDataSet).filter_by(name='test_flu
 
 print delta_t("total", total=True)
 clusterdataset.plot_N_clusters(4)
+info=str("shot %d %s" % (shot_number, pyfusion.utils.get_revision() ))
+pl.suptitle(info)

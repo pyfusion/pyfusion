@@ -3,17 +3,30 @@ Some are simple tests, others are more complicated scripts to do actual
 analysis.  Their separation from the parent directory ../examples allows
 that directory to be reserved for simple or illustrative scripts.
 
-PLEASE ALWAYS confirm examples/always_validate_test_signals.py completes before committing!
+PLEASE ALWAYS confirm examples/always_validate_test_signals.py completes 
+before committing!
 
-Note that the script form of these means that, provided unnecessary code, variables
-or imports are avoided, these scripts can usually be run on earlier datasets.
-This aids in tracing when analysis changed or bugs were introduced, as the newer
-scripts can be more revealing.
+Note that the script form of these means that, provided unnecessary
+code, variables or imports are avoided, these scripts can usually be
+run on earlier datasets.  This aids in tracing when analysis changed
+or bugs were introduced, as the newer scripts can be more revealing.
 
 We also need a site-independent validation suite.
 The beginning of this is examples/always_validate_test_signals.py
 
 Below is a log of which example files worked under which version.
+
+r260: Dendrogram link error.
+
+but you were right, this is a fix anyway
+from pyfusion.datamining.clustering.plots import DendrogramLink
+DendrogramLink.__table__.create()
+allowed pyfusion.utils.show_db()
+to work
+I guess pyfusion.utils.show_db() gets a little nosey...
+Sent at 9:46 PM on Saturday
+Boyd: Need to do same with Dendrogram
+
 
 r201: (Dave)
 I have changed the way environment variables are read into pyfusion. 
@@ -49,6 +62,7 @@ and sometimes: clustering/core.py:338: SyntaxWarning: import * only allowed at m
 examples/h1_quick_validate.py  complettes with similar warnings.  I am not comvinced about the phase  - there are too many 0 and pis!
 
 r146:
+# great for confirming data, but so far, assumes H1
 ipython examples/Boyds/wid_specgram.py 
 # example to show all the SQL commands used
 export PYFUSION_SETTINGS_VERBOSE=7
@@ -128,3 +142,6 @@ Out[2]: 4
 
 In [3]: len(diag.channels)
 Out[3]: 0
+'sqlite:///relative/path/to/database.txt'  'sqlite://:memory:'
+'sqlite:///sqlite.txt' 
+

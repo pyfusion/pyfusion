@@ -229,6 +229,24 @@ def show_db(partial_name='', page_width=80):
         else:
             print('%s ... etc') % str(diags[0:6])
 
+    dmtmp = pyfusion.session.query(pyfusion.datamining.clustering.core.ClusterDataSet)
+    print '%d cluster data set%s' % (int(dmtmp.count()), ['','s'][dmtmp.count()!=1]),
+    if dmtmp.count():
+        dm_csets = [d.name for d in dmtmp]
+        if len(dm_csets) < 6: 
+            print (dm_csets)
+        else:
+            print('%s ... etc') % str(dm_csets[0:6])
+
+    fsset_tmp = pyfusion.session.query(pyfusion.datamining.clustering.core.FluctuationStructureSet)
+    print '%d fluctuation structure set%s' % (int(fsset_tmp.count()), ['','s'][fsset_tmp.count()!=1]),
+    if fsset_tmp.count():
+        fs_sets = [d.name for d in fsset_tmp]
+        if len(fs_sets) < 6: 
+            print (fs_sets)
+        else:
+            print('%s ... etc') % str(fs_sets[0:6])
+
 def shotrange(shot_numbers, max_width=30):
     """ Return a concise string representation of a numer of shots
     limiting the character width to max_width
@@ -280,3 +298,14 @@ def random_sample(input_arr, out_length):
     rand_args = argsort(rand_list)[:out_length]
     return take(input_arr, rand_args)
     
+def get_revision(which_dir="."):  #"$PYFUSIONPATH/pyfusion"):
+    """ return the svn revision number string of the given directory 
+    A string is returned, as details of modifications contain non-integers
+    """
+    import os
+    try:
+        svout=os.popen("svnversion -n " + which_dir)
+        ver=svout.read()
+        svout.close()
+    except: print('utils: failed in attempt to run svnversion')
+    return(ver)

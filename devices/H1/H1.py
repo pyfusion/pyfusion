@@ -245,6 +245,11 @@ ne_centre = MDSPlusChannel(name = 'ne_centre', mds_server = H1_MDS_SERVER, mds_t
 
 mirnovbeans = pyfusion.Diagnostic(name='mirnovbeans')
 mirnov_all = pyfusion.Diagnostic(name='mirnov_all')
+density_diag = pyfusion.Diagnostic(name='density_diag')
+
+for ch in [ne_centre]:
+    density_diag.add_channel(ch)
+
 
 for ch in [mirnov_1_1, mirnov_1_2,mirnov_1_3,mirnov_1_4,mirnov_1_7,mirnov_1_8,mirnov_1_9,mirnov_1_10, mirnov_1_15 ,mirnov_1_16 ,mirnov_1_17,mirnov_1_18, mirnov_2_1, mirnov_2_2, mirnov_2_3, mirnov_2_5, mirnov_2_7, mirnov_2_8, mirnov_2_9, mirnov_2_10, mirnov_2_15, mirnov_2_17, mirnov_2_18, mirnov_2_19, mirnov_2_20]:
     mirnovbeans.add_channel(ch)

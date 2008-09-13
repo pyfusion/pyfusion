@@ -46,3 +46,4 @@ from pyfusion.datamining.clustering.core import ClusterDataSet
 clusterdataset = pyfusion.session.query(ClusterDataSet).filter_by(name='test_flucstrucs_clusters').one()
 
 clusterdataset.plot_N_clusters(4)
+pl.suptitle('always_validate svn'+pyfusion.utils.get_revision())

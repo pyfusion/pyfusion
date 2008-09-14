@@ -2,8 +2,32 @@
 utilities for datamining/clustering
 """
 from numpy import sin,cos, array, pi, mean, argmax, abs, std, transpose, random
-
+from pyfusion.datamining.clustering.core import FluctuationStructure, flucstruc_svs
 import pyfusion
+from sqlalchemy.sql import select
+
+def get_shot_attributes_for_fsid_list(fsid_list, attr='shot',customshot=None):
+    """
+    returns list of given Shot attribute for each flucstruc with id in fsid_list
+    use this to aviod loading SVDs (i.e.: flucstruc.svd.timesegment.shot.attr)
+    arguments: 
+    fsid_list -- list of integers corresponding to FluctuationStructure.id
+    attr -- attribute of Shot to retuen
+    customshot -- a subclass of Shot (which might have different attributes to Shot)
+    """
+    joined_table = FluctuationStructure.__table__.join(
+        pyfusion.MultiChannelSVD.__table__).join(pyfusion.TimeSegment.__table__).join(pyfusion.Shot.__table__)
+    if customshot != None:
+        joined_table = joined_table.join(customshot.__table__)
+    
+    if customshot:
+        phase_select = select([customshot.__dict__[attr]],from_obj=[joined_table]).where(FluctuationStructure.__table__.c.id.in_(fsid_list))
+    else:
+        phase_select = select([pyfusion.Shot.__dict__[attr]],from_obj=[joined_table]).where(FluctuationStructure.__table__.c.id.in_(fsid_list))
+    
+    data = [i[0] for i in pyfusion.session.execute(phase_select).fetchall()]
+    
+    return data
 
 
 def update_cluster_mean_phase_var(cl):

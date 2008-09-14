@@ -137,6 +137,8 @@ def plot_clusterset_net(clusterset, clusterplot_func=None, clusterplot_xlim=None
     
     # parameters for plotting
     colourmap = pl.get_cmap('jet')
+    if min(all_dists) == max(all_dists):
+        raise ValueError, "cannot normalise distances between clusters"
     get_norm_dist = lambda x: (x-min(all_dists))/(max(all_dists)-min(all_dists))
     linewidth_offset = 0.2 # we plot the linewidth as inverse of distance, so let's not let it reach zero
     linewidth_scale = 5.0

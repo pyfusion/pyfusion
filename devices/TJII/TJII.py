@@ -7,8 +7,18 @@ from pyfusion.data_acq.TJII.TJII import TJIIChannel
 from pyfusion.data_acq.TJII import tjiidata
 from pyfusion.coords import ToroidalCoordinates
 from datetime import datetime
-DEFAULT_SHOT_CLASS = 'Shot'
+from sqlalchemy import Column, Float, Integer, ForeignKey, String
 
+DEFAULT_SHOT_CLASS = 'TJIIShot'
+
+class TJIIShot(pyfusion.core.Shot):
+    __tablename__ = 'tjii_customshot'
+    __mapper_args__ = {'polymorphic_identity':'TJII'}
+    id = Column('id', Integer, ForeignKey('shots.id'), primary_key=True, index=True)
+    config = Column('config', String(20))
+    iota_0 = Column('iota_0', Float)
+    iota_a = Column('iota_a', Float)
+    iota_2_3 = Column('iota_2_3', Float)
 
 def get_shot_datetime(shot_number):
     dlist = tjiidata.fecha(shot_number)

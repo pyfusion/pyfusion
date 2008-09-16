@@ -6,7 +6,7 @@ from pyfusion.datamining.clustering.core import FluctuationStructure, flucstruc_
 import pyfusion
 from sqlalchemy.sql import select
 
-def get_shot_attributes_for_fsid_list(fsid_list, attr='shot',customshot=None):
+def get_shot_attributes_for_fsid_list(fsid_list, attr='shot',customshot=None, return_fsid=False):
     """
     returns list of given Shot attribute for each flucstruc with id in fsid_list
     use this to aviod loading SVDs (i.e.: flucstruc.svd.timesegment.shot.attr)
@@ -19,14 +19,23 @@ def get_shot_attributes_for_fsid_list(fsid_list, attr='shot',customshot=None):
         pyfusion.MultiChannelSVD.__table__).join(pyfusion.TimeSegment.__table__).join(pyfusion.Shot.__table__)
     if customshot != None:
         joined_table = joined_table.join(customshot.__table__)
-    
+
+    sel_list = []
+    if return_fsid:
+        sel_list.append(FluctuationStructure.id)
     if customshot:
-        phase_select = select([customshot.__dict__[attr]],from_obj=[joined_table]).where(FluctuationStructure.__table__.c.id.in_(fsid_list))
+        sel_list.append(customshot.__dict__[attr])
     else:
-        phase_select = select([pyfusion.Shot.__dict__[attr]],from_obj=[joined_table]).where(FluctuationStructure.__table__.c.id.in_(fsid_list))
+        sel_list.append(pyfusion.Shot.__dict__[attr])
+
+    phase_select = select(sel_list,from_obj=[joined_table]).where(FluctuationStructure.__table__.c.id.in_(fsid_list))
     
-    data = [i[0] for i in pyfusion.session.execute(phase_select).fetchall()]
-    
+    result = pyfusion.session.execute(phase_select).fetchall()
+
+    if len(sel_list) == 1:
+        data = [i[0] for i in result]
+    else:
+        data = result
     return data
 
 

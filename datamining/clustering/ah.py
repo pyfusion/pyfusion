@@ -18,7 +18,8 @@ def phase_dist_function(ph1, ph2):
     if len(ph1) != len(ph2):
         raise ValueError
     delta_arr = array([remap_angle_negpi_pi(ph2[i] - ph1[i]) for i in range(len(ph1))])
-    return sqrt(abs(sum(delta_arr)))
+#    return sqrt(abs(sum(delta_arr)))
+    return sqrt(abs(sum(delta_arr**2)))
 
 def phase_pdist(phase_data):
     """

@@ -72,6 +72,10 @@ mirnov_1_4  = MDSPlusChannel(name = 'mirnov_1_4',  mds_server = H1_MDS_SERVER, m
                              mds_path='.operations.mirnov:a14_14:input_4',
                              coords = CylindricalCoordinates(r=1.198, phi=0.7732, z=0.137))
 
+mirnov_1_4xx  = MDSPlusChannel(name = 'mirnov_1_4xx',  mds_server = H1_MDS_SERVER, mds_tree='H1DATA', 
+                             mds_path='.operations.mirnov:a14_14:input_4',
+                             coords = CylindricalCoordinates(r=1.198, phi=0.7732, z=0.137))
+
 #mirnov_1_5  = MDSPlusChannel(name = 'mirnov_1_5',  mds_server = H1_MDS_SERVER, mds_tree='H1DATA', 
 #                             mds_path='',
 #                             coords = CylindricalCoordinates(r=1.129, phi=0.7732, z=0.123))
@@ -95,6 +99,19 @@ mirnov_1_9  = MDSPlusChannel(name = 'mirnov_1_9',  mds_server = H1_MDS_SERVER, m
 mirnov_1_10 = MDSPlusChannel(name = 'mirnov_1_10', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', 
                              mds_path='.operations.mirnov:a14_15:input_3',
                              coords = CylindricalCoordinates(r=0.900, phi=0.7732, z=-0.008))
+
+mirnov_1_7xx  = MDSPlusChannel(name = 'mirnov_1_7xx',  mds_server = H1_MDS_SERVER, mds_tree='H1DATA', 
+                             mds_path='.operations.mirnov:a14_14:input_6',
+                             coords = CylindricalCoordinates(r=0.963, phi=0.7732, z=0.112))
+
+mirnov_1_8xx  = MDSPlusChannel(name = 'mirnov_1_8xx',  mds_server = H1_MDS_SERVER, mds_tree='H1DATA', 
+                             mds_path='.operations.mirnov:a14_15:input_1',
+                             coords = CylindricalCoordinates(r=0.924, phi=0.7732, z=0.087))
+
+mirnov_1_9xx  = MDSPlusChannel(name = 'mirnov_1_9xx',  mds_server = H1_MDS_SERVER, mds_tree='H1DATA', 
+                             mds_path='.operations.mirnov:a14_15:input_2',
+                             coords = CylindricalCoordinates(r=0.902, phi=0.7732, z=0.052))
+
 
 #mirnov_1_11 = MDSPlusChannel(name = 'mirnov_1_11', mds_server = H1_MDS_SERVER, mds_tree='H1DATA', 
 #                             mds_path='',
@@ -266,7 +283,7 @@ for ch in [mirnov_1_1, mirnov_1_2,mirnov_1_3,mirnov_1_4,mirnov_1_7,mirnov_1_8,mi
 # just the really strong ones, also speeds up code for debugging
 mirnov_small = pyfusion.Diagnostic(name='mirnov_small')
 
-for ch in [mirnov_1_4,mirnov_1_7,mirnov_1_8,mirnov_1_9]:
+for ch in [mirnov_1_4xx,mirnov_1_7xx,mirnov_1_8xx,mirnov_1_9xx]:
     mirnov_small.add_channel(ch)
 
 """

@@ -431,9 +431,10 @@ def _old_get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
 
 def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = range(2,11), modelnames=None, input_data = None):
     """
-    there are a couple of explicit flush() calls here. without them nothing gets saaved - is there
-    an alternative way to write the code so we don't need them? this isn't really a performance hit, as 
-    we only get a flush when saving a clusters, which takes much time.
+    There are a couple of explicit flush() calls here. without them nothing gets saved - 
+    is there an alternative way to write the code so we don't need them? this isn't
+    really a performance hit, as we only get a flush when saving a clusters, which takes
+    much time.
     """
     from rpy import r, RVER
     from numpy import unique  #bdb added
@@ -462,9 +463,10 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
 
     for n_clusters in n_cluster_list:
         try:
-            if pyfusion.settings.VERBOSE>0: print 'n_clusters = %d' %n_clusters
+            if pyfusion.settings.VERBOSE>0: print 'mclust: n_clusters = %d' %n_clusters
             if modelnames:
-                MX = r.Mclust(array(data_array),G=n_clusters, modelNames=modelnames, header='FALSE')
+                MX = r.Mclust(array(data_array),G=n_clusters, 
+                              modelNames=modelnames, header='FALSE')
             else:
                 MX = r.Mclust(array(data_array),G=n_clusters, header='FALSE')
             # seems to be special case for NCl=1:
@@ -478,7 +480,8 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
                 mn = MX['modelName']
                 bic=MX['bic']
 
-            clusterset = ClusterSet(modelname=mn, bic=bic, loglik=MX['loglik'], n_clusters=n_clusters, n_flucstrucs=MX['n'])
+            clusterset = ClusterSet(modelname=mn, bic=bic, loglik=MX['loglik'],
+                                    n_clusters=n_clusters, n_flucstrucs=MX['n'])
             pyfusion.session.save(clusterset)
             clusterdataset.clustersets.append(clusterset)
             pyfusion.session.flush()

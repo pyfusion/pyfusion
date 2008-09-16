@@ -10,6 +10,8 @@ execfile('process_cmd_line_args.py')
 fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).filter(pyfusion.Shot.shot.in_(shots)).all()
 
 import pylab as pl
+a12=array([fs.a12 for fs in fs_list])
+a13=array([fs.a13 for fs in fs_list])
 entropy=array([fs.svd.entropy for fs in fs_list])
 energy=array([fs.energy for fs in fs_list])
 freq=array([fs.frequency for fs in fs_list])/1e3

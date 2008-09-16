@@ -303,7 +303,7 @@ def get_revision(which_dir="."):  #"$PYFUSIONPATH/pyfusion"):
     A string is returned, as details of modifications contain non-integers
     """
     import os
-    try:
+    try:             # this try/except does not intercept sh error, but continues anyway
         svout=os.popen("svnversion -n " + which_dir)
         ver=svout.read()
         svout.close()

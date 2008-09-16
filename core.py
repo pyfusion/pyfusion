@@ -331,7 +331,7 @@ class MultiChannelTimeseries(object):
             for channel_name in multichanneldata.ordered_channel_list:
                 self.add_channel(multichanneldata.signals[channel_name], channel_name)
         else:
-            print "Timebase not the same. Not joining multichannel data!"
+            print "Timebase not the same. Not joining multichannel data!!"
     
     def export(self, filename, compression = 'bzip2', filetype = 'csv'):
         if compression != 'bzip2':

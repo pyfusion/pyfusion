@@ -249,7 +249,7 @@ class Dendrogram(pyfusion.Base):
                         _tmp = DendrogramLink(parent_id=parent.id, child_id=child.id, fraction = frac, fs_intersection=fs_intersection)
                         pyfusion.session.save_or_update(_tmp)
             parent_clusters = child_clusters
-    def simple_plot(self, clusterplot_func=None,x_lims=[0,1],y_lims=[0,1],x_space=0.2,y_space=0.2, random_sample = None, var_col=True):
+    def simple_plot(self, clusterplot_func=None,x_lims=[0,1],y_lims=[0,1],x_space=0.2,y_space=0.2, random_sample = None, var_col=True, text_list=[], show_cluster_id=False):
         """
         x_plot, y_plot = attributes of fluctuation structures to be plotted
         x_lim, y_lim, range ofr subplots
@@ -363,7 +363,14 @@ class Dendrogram(pyfusion.Base):
                 
             pl.plot(cluster_data[0],cluster_data[1],marker='.',color=colmap(int(colfactor*cl_mean_var)), linestyle='None')
             pl.setp(local_axes,xlim=x_lims,ylim=y_lims,xticks=[],yticks=[])
+            if show_cluster_id:
+                pl.title(clidstr)
             pl.axes(main_axes)
+        text_start_x = 0.1
+        text_start_y = 0.9
+        text_height = 0.05
+        for line_i,line in enumerate(text_list):
+            pl.text(text_start_x,text_start_y-line_i*text_height,line,size=14)
         pl.show()
 
 

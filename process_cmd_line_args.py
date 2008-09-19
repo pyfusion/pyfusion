@@ -6,6 +6,7 @@ This is code to be "inlined" to allow python statments to be passed
  Usage: execfile("process_cmd_line_args.py")
 """
 import sys as _sys
+from numpy import arange, array
 # override the defaults that have been set before execfile'ing' this code
 if pyfusion.settings.VERBOSE>2: print ('%d args found') % (len(_sys.argv))
 for _i in range(1,len(_sys.argv)):

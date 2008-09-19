@@ -289,13 +289,19 @@ class ClusterDataSet(pyfusion.Base):
     def plot_N_clusters(self,N_clusters,title=""):
         """ Simple f-t plot of this ClusterDataSet for a given N_clusters
         """
-        clusterset = pyfusion.session.query(ClusterSet).filter_by(clusterdataset_id=self.id).filter_by(n_clusters=N_clusters).one()
+        clusterset = pyfusion.session.query(ClusterSet).filter_by(clusterdataset_id=self.id).filter_by(n_clusters=N_clusters).all()   #one() - be more flexible -bdb
+        if len(clusterset)>1: 
+            len_cset=len(clusterset)
+            print("More than one clusterset in %s with %d elements - choosing #%d!!" % 
+                  (self.name, len_cset, clusterset.id))
+                                    
+        clusterset=clusterset[0]  # needed as we now look for all()
         print "**** clusters: ", clusterset.clusters
         for cl in clusterset.clusters:
             t0_freq_list = [[i.svd.timebase[0],i.frequency] for i in cl.flucstrucs]
             pl.plot([i[0] for i in t0_freq_list], [i[1] for i in t0_freq_list],'o')
-            pl.title(title+' coloured according to cluster, id=['+
-                     str(self.id)+"]")
+            pl.title(title+' coloured according to cluster, cset id '+
+                     str(self.id)+':'+str(self.name))
         pl.show()
 
     def plot_N_cumu_phase(self,N_clusters):
@@ -406,7 +412,7 @@ def get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
             data_array.append(tmp_data)
             used_fs.append(fs)
         else:
-            print "maybe error...", len(tmp_data), len(channel_pairs),'fs.id=',fs.id
+            print "maybe error...", len(tmp_data), len(channel_pairs),'fs.id=',fs.id,"!!"
     return [data_array, used_fs]
 
 def _old_get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs):
@@ -496,7 +502,7 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
                 pyfusion.session.save(cl)
             pyfusion.session.save_or_update(clusterset)
         except:
-            print "Failed for n_clusters = %d" %n_clusters
+            print "Failed for n_clusters = %d!!" %n_clusters
             raise
         pyfusion.session.save_or_update(clusterdataset)
         # make sure all clusters are saved
@@ -533,10 +539,11 @@ def get_fs_in_set(fs_set_name,min_energy = 0.0):
     fs_query = pyfusion.session.query(FluctuationStructure).filter_by(set=fs_set)
     return fs_query.filter(FluctuationStructure.energy > min_energy).all()
 
-def get_clusters_for_fs_set(fs_set_name,min_energy = 0.0,n_cluster_list = range(2,11),modelnames=None):
+def get_clusters_for_fs_set(fs_set_name,cluster_dataset_name=None, min_energy = 0.0,n_cluster_list = range(2,11),modelnames=None):
     # min energy is a temporary hack - see get_fs_in_set
+    if cluster_dataset_name==None: cluster_dataset_name = fs_set_name + '_clusters'
     fs_list = get_fs_in_set(fs_set_name,min_energy = min_energy)
-    get_clusters_for_fs_list(fs_list, fs_set_name + '_clusters',n_cluster_list = n_cluster_list,modelnames=modelnames)
+    get_clusters_for_fs_list(fs_list, cluster_dataset_name, n_cluster_list = n_cluster_list,modelnames=modelnames)
 
 def get_clusters_for_fs_list(fs_list, cluster_dataset_name,n_cluster_list = range(2,11),modelnames=None):
     # BAD... should ensure that all used_channels are the same - not just grab them from one FS in the set!
@@ -545,5 +552,7 @@ def get_clusters_for_fs_list(fs_list, cluster_dataset_name,n_cluster_list = rang
     # default channel pairs - use pairs from used_channels - assumed to be ordered - at the moment it's taken from ordeed_channel_list
     ch_pairs = [[chs[i],chs[i+1]] for i in range(len(chs)-1)]
     #cluster_dataset_name = fs_set_name + '_clusters'
+    if (pyfusion.settings.VERBOSE>0) and (len(fs_list)>1000) : 
+        print("a lot of flucstrucs: %d?" % len(fs_list)) 
     get_clusters(fs_list, ch_pairs, cluster_dataset_name,n_cluster_list=n_cluster_list,modelnames=modelnames)
     

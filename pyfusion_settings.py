@@ -151,7 +151,7 @@ try:
 		print('importing pyfusion_local_settings')
 
 except:
-	print "Local settings not found (looking for pyfusion_local_settings.py in python path)"
+	print "Local settings not found (looking for pyfusion_local_settings.py in python path!!)"
 
 
 # Allow overriding of these settings with environment variables.
@@ -174,7 +174,7 @@ for envvar in os.environ.keys():
 				if VERBOSE > 0:
 					print 'importing environment variable %s -> %s (%s)' %(envvar, _pfvar, _pfvar_type)
 			except:
-				print "Error: Cannot cast environment variable %s to %s, not importing variable" %(envvar, _pfvar_type)
+				print "Error: Cannot cast environment variable %s to %s, not importing variable!!" %(envvar, _pfvar_type)
 
 
 

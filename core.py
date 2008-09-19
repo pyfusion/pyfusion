@@ -55,7 +55,7 @@ class Diagnostic(pyfusion.Base):
         in ordered_channel_list
         """
         if len(self.channels) != len(self.ordered_channel_list): 
-            print('******** Inconsistency in ordered channels %d != %d') % (len(self.channels), len(self.ordered_channel_list))
+            print('******** Inconsistency in ordered channels %d != %d!!') % (len(self.channels), len(self.ordered_channel_list))
         outlist = []
         for oc in self.ordered_channel_list:
             outlist.append(pyfusion.session.query(Channel).filter_by(name=oc, diagnostic_id=self.id).one())
@@ -103,7 +103,7 @@ class Shot(pyfusion.Base):
         try:
             self.date = pyfusion._device_module.get_shot_datetime(self.shot)
         except:
-            print 'Failed to get date/time for shot using "get_shot_datetime" in device module'
+            print 'Failed to get date/time for shot using "get_shot_datetime" in device module!!'
 
     def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False,ignorelocal=False, allow_null_return=False):
         if pyfusion.settings.VERBOSE > 0:
@@ -160,7 +160,7 @@ class Shot(pyfusion.Base):
 # see note about N_SAMPLES_TIME_SEGMENT in get_time_segments        
         if n_samples == False: n_samples=pyfusion.settings.N_SAMPLES_TIME_SEGMENT
         if overlap == False: overlap=pyfusion.settings.SEGMENT_OVERLAP
-        if overlap > 1.99: raise Exception, str('overlap (%.4g) must be < 2, advise < 1.8') % overlap
+        if overlap > 1.99: raise Exception, str('overlap (%.4g) must be < 2, advise < 1.8 !!') % overlap
         len_timebase = len(self.data[diag].timebase)
         overlapped_samples = int((overlap*n_samples)/2)
         if pyfusion.settings.VERBOSE >0: 
@@ -214,7 +214,7 @@ def get_shot(shot_number,shot_class = None):
             try:
                 shot_class = pyfusion._device_module.__getattribute__(default_shot_class)
             except:
-                raise ValueError,'Cannot load default shot class: %s' %default_shot_class
+                raise ValueError,'Cannot load default shot class: %s!!' %default_shot_class
     try:
         existing_shot = pyfusion.session.query(shot_class).filter_by(device_id = pyfusion._device.id, shot = shot_number).one()
         return existing_shot
@@ -242,7 +242,7 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
     if exists(localfilename) and not ignorelocal:
         localdata = load(localfilename)
         if pyfusion.settings.SHOT_T_MIN < localdata['timebase'][0] or pyfusion.settings.SHOT_T_MAX > localdata['timebase'][-1]:
-            raise ValueError, "SHOT_T_MIN/MAX lie outside the timebase of locally saved data. Either use ignorelocal=True or change pyfusion.settings.SHOT_T_MIN / MAX. While you decide what to do, I'm going to raise an exception and find myself some sangria..."
+            raise ValueError, "SHOT_T_MIN/MAX lie outside the timebase of locally saved data. Either use ignorelocal=True or change pyfusion.settings.SHOT_T_MIN / MAX. While you decide what to do, I'm going to raise an exception and find myself some sangria...!!"
         t_lim = searchsorted(localdata['timebase'],[pyfusion.settings.SHOT_T_MIN,pyfusion.settings.SHOT_T_MAX])            
         loaded_MCT = MultiChannelTimeseries(localdata['timebase'][t_lim[0]:t_lim[1]],parent_element=int(localdata['parent_element']+t_lim[0]))
         loaded_MCT.add_channel(localdata['signal'][t_lim[0]:t_lim[1]],channel_name)
@@ -264,7 +264,7 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
                 savez(localfilename,timebase=_tmp.timebase,
                       signal=_tmp.signals[channel_name],
                       parent_element=_tmp.parent_element)
-            else: print("**Warning - not saving - need numpy 1.1.0 or higher")
+            else: print("**Warning - not saving - need numpy 1.1.0 or higher!!")
         if ignore_shot_lims:
             pyfusion.settings.SHOT_T_MIN = tmp_lims[0]
             pyfusion.settings.SHOT_T_MAX = tmp_lims[1]
@@ -279,7 +279,7 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
                 pyfusion.settings.SHOT_T_MAX = tmp_lims[1]
             return _tmp
         if pyfusion.settings.VERBOSE>2:
-            print (msg + ': Trying again without catching exception')
+            print (msg + ': Trying again without catching exception!!')
             _tmp = _ProcessData.load_channel(ch, shot_number)
             if ignore_shot_lims:
                 pyfusion.settings.SHOT_T_MIN = tmp_lims[0]
@@ -298,7 +298,7 @@ class MultiChannelTimeseries(object):
         timebase = array(timebase)
         # check timebase is monotonically increasing
         if min(timebase[1:]-timebase[:-1]) <= 0:
-            raise ValueError, "timebase is not monotonically increasing"
+            raise ValueError, "timebase is not monotonically increasing!!"
         self.timebase = timebase
         self.len_timebase = len(timebase)
         self.nyquist = 0.5/mean(self.timebase[1:]-self.timebase[:-1])
@@ -317,7 +317,7 @@ class MultiChannelTimeseries(object):
             self.signals[str(channel_name)] = signal
             self.ordered_channel_list.append(str(channel_name))
         else:
-            print "Signal '%s' not same length as timebase. Not adding to multichannel data" %channel_name
+            print "Signal '%s' not same length as timebase. Not adding to multichannel data!!" %channel_name
 
     def add_multichannel(self, multichanneldata, skip_timebase_check = False):
         """
@@ -522,7 +522,7 @@ class TimeSegment(pyfusion.Base):
                         pyfusion.session.save(tsds)
                     output.append(tsds)
                 else:
-                    print "_data is empty"
+                    print "_data is empty!!"
             else:
                 self._load_data(diag=diag_name,ignorelocal=ignorelocal, savelocal=savelocal)
                 diag = pyfusion.session.query(Diagnostic).filter(Diagnostic.name==diag_name).one()
@@ -544,7 +544,7 @@ class TimeSegment(pyfusion.Base):
             return output
         except IndexError:
             # TODO: this exception should be handled in _load_data....
-            print 'Data is out of range for timesegment: %d, diagnostic: %s' %(self.id, diag_name)
+            print 'Data is out of range for timesegment: %d, diagnostic: %s!!' %(self.id, diag_name)
             return False
 
 class TimeSegmentDataSummary(pyfusion.Base):

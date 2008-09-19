@@ -45,7 +45,8 @@ def local_flat_top_freq(vec):
     return(w)
 
 # defaults
-shot=58123
+global shot_number
+shot_number=58123
 cmap=None
 xextent=None
 NFFT=512
@@ -56,6 +57,7 @@ _window = local_none
 foverlap=0
 _type='F'
 fmod=0
+execfile('process_cmd_line_args.py')
 
 # arrays for test signal
 tm=arange(0,0.02,1e-6)
@@ -156,7 +158,7 @@ y0=0
 
 class IntegerCtl():
 # these really should be in an init
-    shot=58125
+    shot=shot_number
 
     def set_shot(s):
         shot=s

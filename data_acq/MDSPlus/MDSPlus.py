@@ -22,7 +22,7 @@ def _loadmds(mdsch,shot, invert=False):
         # (dgp: mirnov_dtacq is H-1 specific - any mirnov_dtacq customisations would go in devices/H1)
         msg=str('Error accessing server %s: Shot %d, \\%s::top%s') % (mdsch.mds_server, shot, mdsch.mds_tree, mdsch.mds_path)
         print(msg)
-        raise LookupError, str
+        raise LookupError, msg
     if invert:
         data = -data
     return [dim_data,data]

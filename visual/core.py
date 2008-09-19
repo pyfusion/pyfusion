@@ -10,6 +10,60 @@ golden_ratio = (1.0 * 5.0**0.5)/2
 
 PLOT_MARKERS = ['bo','rx','mD','ks','g^']
 
+
+class ShotOverview:
+    """
+    A general time-trace plot for channels of a given shot.
+    Arguments: 
+     shot_number - number of shot to be displayed
+     channel_list - a list of channel names to be displayed
+     subplot_array - if not provided, the subplots will be one column and len(channel_list) rows. 
+        if provided, we require subplot_array[0]*subplot_array[1] >= len(channel_list)
+    """
+    def __init__(self, shot_number, channel_list, subplot_array = None):
+        self.shot_number  = shot_number
+        self.channel_list = channel_list
+        self.shot = pyfusion.q(pyfusion.Shot).filter_by(shot=shot_number).one()
+        for ch_name in self.channel_list:
+            self.shot.load_ch(ch_name)
+        if subplot_array != None:
+            if subplot_array[0]*subplot_array[1] >= len(channel_list):
+                self.subplot_array = subplot_array
+            else:
+                raise ValueError, "Require subplot_array[0]*subplot_array[1] >= len(channel_list)"
+        else:
+            self.subplot_array = [len(channel_list),1]
+
+        # a list to hold subplot axes
+        self.subplot_list = []
+        self.global_xlims=[pyfusion.settings.BIG_FLOAT,-pyfusion.settings.BIG_FLOAT]
+
+    def plot(self,xlims = None):
+        """
+        if xlims is not supplied, the x limits will be min,max of all subplots
+        """
+        
+        for chi,ch in enumerate(self.channel_list):
+            _tmp_plt = pl.subplot(self.subplot_array[0],self.subplot_array[1],chi+1)
+            pl.cla()
+            x = self.shot.channels[ch].timebase
+            y = self.shot.channels[ch].signals[ch]
+            pl.plot(x,y)
+            _tmp_lims =pl.xlim()
+            if _tmp_lims[0] < self.global_xlims[0]:
+                self.global_xlims[0] = _tmp_lims[0]
+            if _tmp_lims[1] > self.global_xlims[1]:
+                self.global_xlims[1] = _tmp_lims[1]
+            self.subplot_list.append(_tmp_plt)
+        
+        if xlims == None:
+            for i,p in enumerate(self.subplot_list):
+                pl.setp(self.subplot_list[i],xlim=[self.global_xlims[0],self.global_xlims[1]])
+        else:
+            for i,p in enumerate(self.subplot_list):
+                pl.setp(self.subplot_list[i], xlim=[xlims[0],xlims[1]])
+        pl.show()
+
 class GenericPlot(object):
     def __init__(self,*args,**kwargs):
         """

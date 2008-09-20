@@ -233,6 +233,9 @@ def _new_group_svs(input_SVD):
     if len(remaining_svs) == 1:
         output_fs_list.append(remaining_svs)
 
+    if pyfusion.settings.VERBOSE>3: 
+        print('%d flucstrucs from new_group_svs' % len(output_fs_list))
+
     return output_fs_list
 
 

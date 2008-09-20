@@ -8,7 +8,8 @@ import pyfusion, os, pickle
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet, ClusterDataSet, Cluster, ClusterSet
 from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list
-from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d, take,pi, arange, mat, cov,average, trace, log, sin,cos, ndarray, var
+from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d, take,pi, arange, mat, cov,average, trace, log, sin,cos, ndarray, var, size
+from numpy.random import random_sample
 from pyfusion.visual.core import ScatterPlot, golden_ratio, datamap
 from numpy.random import rand
 from numpy.linalg import det
@@ -453,13 +454,13 @@ def cluster_detail_plot(cluster, d_names, savefig=False, tfargs={}, dfargs={}):
         pl.show()
 
 
-def plot_flucstrucs_for_set(set_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = ''):
+def plot_flucstrucs_for_set(set_name, size_factor = 40.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False):
     #fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(FluctuationStructureSet.name == set_name).all()
     fs_list = pyfusion.session.query(FluctuationStructure).join(['set']).filter(FluctuationStructureSet.name == set_name).all()
-    plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile)
+    plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile, number=number)
     
 
-def plot_flucstrucs_for_shot(shot_number, diag_name, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False):
+def plot_flucstrucs_for_shot(shot_number, diag_name, size_factor = 40.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False):
     """
     TO DO: need to be able to separate flucstrucs from different runs, etc...
     quick fix to allow multiple shot_numbers
@@ -472,17 +473,67 @@ def plot_flucstrucs_for_shot(shot_number, diag_name, size_factor = 30.0, colour_
     fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot.in_(shot_number)).filter(pyfusion.Diagnostic.name.like(diag_name)).all()
     plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile, number=number)
 
-def plot_flucstrucs(fs_list, size_factor = 30.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False):
-    data = transpose(array([[f.svd.timebase[0], f.frequency, f.energy] for f in fs_list]))
+def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False, dither=0.001):
+    data = transpose(array([[f.svd.timebase[0], f.frequency, f.energy, f.a12] for f in fs_list]))
     if len(data)==0: raise LookupError, ' no data found for fs list'
-    pl.scatter(data[0],data[1],size_factor*data[2], colour_factor*data[2])
+#    pl.scatter(data[0],data[1],size_factor*data[2], colour_factor*data[2])
+#    pl.figure()
+# Use three different symbols according to a12 - side effect is to rescale the colors for
+# each symbol type -> so color seems to be reset - i.e. unrelated between ranges.
+# tricky way to get the remainder
+
+    s=1 # ellipse scale factor (really want an ellipse - needs more points) - autoscaled?
+    ellipse=([[0.45*s,0],[0.3*s,0.7*s], [0,1*s],[-0.3*s,0.7*s],
+              [-0.45*s,0],[-0.3*s,-0.7*s],[0,-1*s],[0.3*s,-0.7*s]],0)
+    thin_ellipse=([[0.2*s,0],[0.12*s,0.85*s],[0,1*s],[-0.12*s,0.85*s],
+                   [-0.2*s,0],[-0.12*s,-0.85*s],[0,-1*s],[0.12*s,-0.85*s]],0)
+    vertline=(2,0,0)  # polygon form - 2 sides
+    singles = (data[3]==0).nonzero()
+    if size(singles)>0: 
+        inds=singles
+        print "singles************",inds, data[2,inds].flatten()
+        print data[2]
+        pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),size_factor*data[2,inds].flatten(),
+                   colour_factor*data[2,inds].flatten(),marker=vertline)
+        
+    remain_a12 = data[3]
+    remain_a12[singles]=0
+    circs = (remain_a12>0.7).nonzero()
+    if size(circs)>0: 
+        inds=circs
+        remain_a12[inds]=0  # take these out of futher consideration
+        print "************",inds, data[2,inds].flatten(),data[2]
+        pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),size_factor*data[2,inds].flatten(), 
+                   colour_factor*data[2,inds].flatten(),marker='o') #circles
+
+    midrange = (remain_a12>0.4).nonzero()
+    if size(midrange)>0: 
+        inds=midrange
+        remain_a12[inds]=0  # take these out of futher consideration
+        print "************",inds, data[2,inds].flatten(),data[2]
+        pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),0.4*size_factor*data[2,inds].flatten(), 
+                   colour_factor*data[2,inds].flatten(), marker=ellipse)
+
+    rest = (remain_a12 > 0).nonzero()
+    if size(rest)>0: 
+        inds=rest
+        print "rest************",inds, data[0,inds].flatten()
+        pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),0.45*size_factor*data[2,inds].flatten(), 
+                   colour_factor*data[2,inds].flatten(), marker=thin_ellipse)
+
     if number:
         ndata=len(data[0])
         print "ndata=", ndata
         for i in range(0,pyfusion.utils.smaller(number, ndata)): 
             interact=pl.isinteractive()
             if interact: pl.ioff()
-            pl.text(data[0,i], data[1,i], str(fs_list[i].id))
+            if dither:
+                dx=data[0,i]*dither*(random_sample()-0.5)
+                dy=data[1,i]*dither*(random_sample()-0.5)
+            else:
+                dx=0
+                dy=0
+            pl.text(dx+data[0,i], dy+data[1,i], str(fs_list[i].id))
             if interact: pl.ion()
     pl.grid(True)
     if not frequency_range[0]:

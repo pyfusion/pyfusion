@@ -57,6 +57,7 @@ _window = local_none
 foverlap=0
 _type='F'
 fmod=0
+# t_max=0.08
 execfile('process_cmd_line_args.py')
 
 # arrays for test signal

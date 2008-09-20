@@ -24,13 +24,16 @@ import pyfusion
 # about the minimum data that will cluster, maybe not enough to make sense
 diag_name = 'mirnov_small'
 shot_number = 58122  # shot in CPC paper
-pyfusion.settings.SHOT_T_MIN=0.02
-pyfusion.settings.SHOT_T_MAX=0.06
+min_energy = 0.2
+t_min=0.02
+t_max=0.06
 
 # Note - as of r124, needed 20-60ms instead of 40-60ms to get >4 clusters
 
 # tweak parameters according to command line args
 execfile('process_cmd_line_args.py')
+pyfusion.settings.SHOT_T_MIN=t_min
+pyfusion.settings.SHOT_T_MAX=t_max
 
 s = pyfusion.get_shot(shot_number)
 s.load_diag(diag_name)
@@ -40,11 +43,18 @@ from pyfusion.datamining.clustering.core import generate_flucstrucs
 generate_flucstrucs(s, diag_name, 'test_flucstrucs', store_chronos=True)
 print "flucstrucs -> "+ delta_t("flucstrucs", total=True)
 
+from pyfusion.datamining.clustering.plots import plot_flucstrucs_for_shot
+plot_flucstrucs_for_shot(s.shot, diag_name, savefile='')
+info=str("shot %d %s" % (shot_number, pyfusion.utils.get_revision() ))
+import pylab as pl
+pl.suptitle(info)
+figure()
+
 from pyfusion.datamining.clustering.core import get_clusters_for_fs_set
 
-get_clusters_for_fs_set('test_flucstrucs')
+#get_clusters_for_fs_set('test_flucstrucs')
+get_clusters_for_fs_set('test_flucstrucs',min_energy=min_energy, n_cluster_list=range(1,11))
 
-import pylab as pl
 from pyfusion.datamining.clustering.core import ClusterDataSet
 
 clusterdataset = pyfusion.session.query(ClusterDataSet).filter_by(name='test_flucstrucs_clusters').one()
@@ -53,5 +63,4 @@ clusterdataset = pyfusion.session.query(ClusterDataSet).filter_by(name='test_flu
 
 print delta_t("total", total=True)
 clusterdataset.plot_N_clusters(4)
-info=str("shot %d %s" % (shot_number, pyfusion.utils.get_revision() ))
 pl.suptitle(info)

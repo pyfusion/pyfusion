@@ -19,10 +19,12 @@ class ShotOverview:
      channel_list - a list of channel names to be displayed
      subplot_array - if not provided, the subplots will be one column and len(channel_list) rows. 
         if provided, we require subplot_array[0]*subplot_array[1] >= len(channel_list)
+     fft_list - a list of elements of channels in channel_list which should be plotted as Fourer transform rather than timeseries 
     """
-    def __init__(self, shot_number, channel_list, subplot_array = None):
+    def __init__(self, shot_number, channel_list, subplot_array = None, fft_list = []):
         self.shot_number  = shot_number
         self.channel_list = channel_list
+        self.fft_list = fft_list
         self.shot = pyfusion.q(pyfusion.Shot).filter_by(shot=shot_number).one()
         for ch_name in self.channel_list:
             self.shot.load_ch(ch_name)
@@ -38,6 +40,7 @@ class ShotOverview:
         self.subplot_list = []
         self.global_xlims=[pyfusion.settings.BIG_FLOAT,-pyfusion.settings.BIG_FLOAT]
 
+
     def plot(self,xlims = None):
         """
         if xlims is not supplied, the x limits will be min,max of all subplots
@@ -48,7 +51,13 @@ class ShotOverview:
             pl.cla()
             x = self.shot.channels[ch].timebase
             y = self.shot.channels[ch].signals[ch]
-            pl.plot(x,y)
+            if chi in self.fft_list:
+                sample_rate = 2.*self.shot.channels[ch].nyquist
+                Pxx, freqs, bins, im = pl.specgram(y,Fs=sample_rate)
+                _tmp_ext = im.get_extent()
+                im.set_extent([x[0],x[-1],_tmp_ext[2],_tmp_ext[3]])
+            else:
+                pl.plot(x,y)
             _tmp_lims =pl.xlim()
             if _tmp_lims[0] < self.global_xlims[0]:
                 self.global_xlims[0] = _tmp_lims[0]

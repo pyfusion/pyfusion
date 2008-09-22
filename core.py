@@ -157,7 +157,7 @@ class Shot(pyfusion.Base):
         @param overlap: 0 (default) for contiguous segments, 1 50% each end, <2 max
         @param n_samples: width of time segment (using sample rate of primary_diag)
         """
-# see note about N_SAMPLES_TIME_SEGMENT in get_time_segments        
+        # see note about N_SAMPLES_TIME_SEGMENT in get_time_segments        
         if n_samples == False: n_samples=pyfusion.settings.N_SAMPLES_TIME_SEGMENT
         if overlap == False: overlap=pyfusion.settings.SEGMENT_OVERLAP
         if overlap > 1.99: raise Exception, str('overlap (%.4g) must be < 2, advise < 1.8 !!') % overlap

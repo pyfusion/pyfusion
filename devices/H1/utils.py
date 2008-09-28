@@ -150,7 +150,7 @@ def get_kh_fs_freq(cl):
 def get_kappa_h(shot_number, time=None, average_interval=0.001, mdsserver='localhost'):
     """Return the kappa_h (helicalcurrent ratio) for H1 for a given shot
     if no time is given, return the programmed value.  Otherwise the measured.
-    Lives in examples, so that it does not require all of pyfusion.
+    Used to live in examples, so that it does not require all of pyfusion.
     """
     import pmds
     pmds.mdsconnect(mdsserver)

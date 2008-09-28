@@ -387,8 +387,11 @@ class MultiChannelTimeseries(object):
 
     def plot(self, title="",saveas="", xlim=[None, None], 
              ylim=[None, None], hold=False):
-        from matplotlib.ticker import *
+        from matplotlib.ticker import NullFormatter
         import pylab as pl
+# change the order so that the first (now lowermost)channel 
+#    can act as a template for other xaxes.  Turns out that you can 
+#    zoom the x-axis on any equally well.
         num_ch = len(self.ordered_channel_list)
         for ch_i, ch in enumerate(self.ordered_channel_list):
             if ch_i==0: 
@@ -403,8 +406,13 @@ class MultiChannelTimeseries(object):
             pl.ylabel(ch)
             if xlim[1]!=None : pl.xlim(xlim)    
             if ylim[1]!=None : pl.ylim(ylim)    
+
         if title:
-            pl.suptitle(title)
+            try:        # earlier matplotlib doesn't have suptitle
+                pl.suptitle(title)
+            except:
+                pl.xlabel(title)
+                
         if saveas:
             pl.savefig(saveas)
         else:
@@ -460,7 +468,7 @@ class TimeSegment(pyfusion.Base):
         #print 'loaded_channels',loaded_channels
         if diag:
             if not diag in loaded_diags:
-                self.shot.load_diag(diag,allow_null_return=True, allow_null_return=True)
+                self.shot.load_diag(diag, allow_null_return=True)
             # need pd for timebase anyway, although we need only one channel...
             if not pd.name in loaded_diags:
                 self.shot.load_diag(pd.name,ignore_channels=pd.ordered_channel_list[1:],ignorelocal=ignorelocal)

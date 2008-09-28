@@ -48,7 +48,7 @@ subplots_adjust(left=0.3)
 axcolor = 'lightgoldenrodyellow'
 
 #define the box where the buttons live
-rax = axes([0.02, 0.75, 0.13, 0.13], axisbg=axcolor)
+rax = axes([0.02, 0.80, 0.13, 0.1], axisbg=axcolor)
 radio = RadioButtons(rax, ('xlabels', 'no xlabs'), active=0)
 def xlabfunc(label):
     print 'xlabfunc', label
@@ -59,7 +59,7 @@ def xlabfunc(label):
 
 radio.on_clicked(xlabfunc)
 
-rax = axes([0.02, 0.6, 0.13, 0.13], axisbg=axcolor)
+rax = axes([0.02, 0.65, 0.13, 0.13], axisbg=axcolor)
 radio = RadioButtons(rax, ('vert gap', 'small','no gap'), active=0)
 def xgapfunc(label):
     gapdict={'vert gap':0.7, 'small':0.03, 'no gap':0}
@@ -71,7 +71,7 @@ def xgapfunc(label):
 
 radio.on_clicked(xgapfunc)
 
-rax = axes([0.02, 0.45, 0.13, 0.13], axisbg=axcolor)
+rax = axes([0.02, 0.53, 0.13, 0.1], axisbg=axcolor)
 radio = RadioButtons(rax, ('hold', 'off'),active=1)
 def holdfunc(label):
     global hold
@@ -81,7 +81,7 @@ def holdfunc(label):
 
 radio.on_clicked(holdfunc)
 
-rax = axes([0.02, 0.3, 0.13, 0.13], axisbg=axcolor)
+rax = axes([0.02, 0.41, 0.13, 0.10], axisbg=axcolor)
 radio = RadioButtons(rax, ('x auto', 'x freeze'),active=0)
 def xfreezefunc(label):
     global x_auto
@@ -90,6 +90,21 @@ def xfreezefunc(label):
     else: x_auto=0
 
 radio.on_clicked(xfreezefunc)
+
+rax = axes([0.02, 0.23, 0.2, 0.15], axisbg=axcolor)
+from pyfusion import Diagnostic
+dqry=pyfusion.session.query(Diagnostic).all()
+if len(dqry)>0:
+    dnames= [d.name for d in dqry]
+    radio = RadioButtons(rax, dnames, active=0)
+    diag_name=dnames[0]
+
+def diagfunc(label):
+    global diag_name
+    print 'diagnostic', label
+    diag_name=label
+
+radio.on_clicked(diagfunc)
 
 ##############################################################
 # This line is where I joined the radio button code to the shot number code
@@ -103,7 +118,7 @@ radio.on_clicked(xfreezefunc)
 x0=0
 y0=0
 
-class IntegerCtl():
+class IntegerCtl:
 # these really should be in an init
     shot=shot_number
 
@@ -115,7 +130,7 @@ class IntegerCtl():
     
 # probably need to redraw the whole graph
     def redraw(self):
-        global hold, x_auto
+        global hold, x_auto, diag_name
         bshot.label.set_text(str(self.shot))
         inter=isinteractive
         if inter: ioff()
@@ -129,8 +144,9 @@ class IntegerCtl():
 #            xlims=gca().xaxis.get_data_interval()
             xlims=gca().get_axes().viewLim._get_intervalx()
 
-        print xlims
-        xx=x[0].plot(xlim=array(xlims),title=str(shot_number), hold=hold)
+        print xlims 
+        ii=len(x)-1       ## a bug in load_diag or data.values appends rather than replaces
+        xx=x[ii].plot(xlim=array(xlims),title=str(shot_number), hold=hold)
         subplots_adjust(left=0.3)
         draw()
         if inter: ion()

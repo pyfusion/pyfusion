@@ -84,7 +84,7 @@ subplots_adjust(left=0.3)
 x0=0
 y0=0
 
-class IntegerCtl():
+class IntegerCtl:
 # these really should be in an init
     shot=shot_number
 
@@ -124,17 +124,20 @@ class IntegerCtl():
 
     def wid_specgram(self, event):
         import os 
-        os.spawnlp(os.P_NOWAIT, 'ipython', -'pylab', 'examples/Boyds/wid_specgram.py')
+        os.spawnlp(os.P_NOWAIT, 'ipython', -'pylab', 'examples/Boyds/wid_specgram.py',
+                   str("shot_number=%d" % self.shot))
         self.redraw()
 
     def wid_showsigs(self, event):
         import os 
-        os.spawnlp(os.P_NOWAIT, 'ipython', '-pylab', 'examples/Boyds/wid_showsigs.py')
+        os.spawnlp(os.P_NOWAIT, 'ipython', '-pylab', 'examples/Boyds/wid_showsigs.py',
+                  str("shot_number=%d" % self.shot))
         self.redraw()
 
     def wid_showallsigs(self, event):
         import os 
-        os.spawnlp(os.P_NOWAIT, 'ipython', '-pylab',  'examples/Boyds/wid_showsigs.py', "diag_name='mirnovbeans'")
+        os.spawnlp(os.P_NOWAIT, 'ipython', '-pylab',  'examples/Boyds/wid_showsigs.py', 
+                   "diag_name='mirnovbeans'", str("shot_number=%d" % self.shot))
         self.redraw()
 
 

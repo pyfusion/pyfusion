@@ -157,7 +157,7 @@ radio.on_clicked(typfunc)
 x0=0
 y0=0
 
-class IntegerCtl():
+class IntegerCtl:
 # these really should be in an init
     shot=shot_number
 

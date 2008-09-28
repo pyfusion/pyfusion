@@ -51,13 +51,15 @@ class ShotOverview:
             pl.cla()
             x = self.shot.channels[ch].timebase
             y = self.shot.channels[ch].signals[ch]
-            if chi in self.fft_list:
+            if ch in self.fft_list:
                 sample_rate = 2.*self.shot.channels[ch].nyquist
                 Pxx, freqs, bins, im = pl.specgram(y,Fs=sample_rate)
                 _tmp_ext = im.get_extent()
                 im.set_extent([x[0],x[-1],_tmp_ext[2],_tmp_ext[3]])
+                pl.ylabel(ch)
             else:
                 pl.plot(x,y)
+                pl.ylabel(ch)
             _tmp_lims =pl.xlim()
             if _tmp_lims[0] < self.global_xlims[0]:
                 self.global_xlims[0] = _tmp_lims[0]
@@ -71,6 +73,12 @@ class ShotOverview:
         else:
             for i,p in enumerate(self.subplot_list):
                 pl.setp(self.subplot_list[i], xlim=[xlims[0],xlims[1]])
+
+        try:         # older pylabs don't have this....if so, use xlabel
+            pl.suptitle(self.shot.shot)
+        except:
+            pl.xlabel(self.shot.shot)
+
         pl.show()
 
 class GenericPlot(object):

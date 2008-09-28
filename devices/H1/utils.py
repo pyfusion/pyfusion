@@ -146,3 +146,15 @@ def get_kh_flucstuc_properties(cl,fs_props=['frequency']):
 
 def get_kh_fs_freq(cl):
     return get_kh_flucstuc_properties(cl, fs_props=['frequency'])
+
+def get_kappa_h(shot_number, time=None, average_interval=0.001, mdsserver='localhost'):
+    """Return the kappa_h (helicalcurrent ratio) for H1 for a given shot
+    if no time is given, return the programmed value.  Otherwise the measured.
+    Lives in examples, so that it does not require all of pyfusion.
+    """
+    import pmds
+    pmds.mdsconnect(mdsserver)
+    pmds.mdsopen('h1data', shot_number)
+    im2 = pmds.mdsvalue('.operations.magnetsupply.lcu.setup_main.i2')
+    is2 = pmds.mdsvalue('.operations.magnetsupply.lcu.setup_sec.i2')
+    return is2/im2

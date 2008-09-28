@@ -386,11 +386,20 @@ class MultiChannelTimeseries(object):
         return new_mc_data
 
     def plot(self, title="",saveas="", xlim=[None, None], 
-             ylim=[None, None]):
+             ylim=[None, None], hold=False):
+        from matplotlib.ticker import *
         import pylab as pl
+        num_ch = len(self.ordered_channel_list)
         for ch_i, ch in enumerate(self.ordered_channel_list):
-            pl.subplot(len(self.ordered_channel_list),1,ch_i+1)
-            pl.plot(self.timebase,self.signals[ch])
+            if ch_i==0: 
+                ax1=pl.subplot(num_ch,1,num_ch-ch_i)
+            else:
+                axn=pl.subplot(num_ch,1, num_ch-ch_i,sharex=ax1)
+# both these attempts to suppress the labels affect ALL, as the axes are linked 
+# This (sharex) is a nice feature.  An alternative is to unlink axes, and use SpanSelector
+#                pl.setp(axn, 'xticklabels', [])
+#                axn.xaxis.set_major_formatter(NullFormatter())
+            pl.plot(self.timebase,self.signals[ch],hold=hold)
             pl.ylabel(ch)
             if xlim[1]!=None : pl.xlim(xlim)    
             if ylim[1]!=None : pl.ylim(ylim)    

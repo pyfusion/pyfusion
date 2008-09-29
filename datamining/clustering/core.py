@@ -267,7 +267,7 @@ class ClusterDataSet(pyfusion.Base):
     id = Column('id', Integer, primary_key=True)
     name = Column("name", String(500), unique=True)
     clustersets = relation("ClusterSet", backref="clusterdataset")
-    def plot_BIC(self, loglik=False):
+    def plot_BIC(self, loglik=False,log_ncl=False, grid=True):
         import pylab as pl
         model_data = {}
         
@@ -279,14 +279,22 @@ class ClusterDataSet(pyfusion.Base):
             model_data[cl.modelname]['loglik'].append(cl.loglik)
         
         for modelname_i, modelname in enumerate(model_data.keys()):
-            pl.plot(model_data[modelname]['ncl'],model_data[modelname]['bic'],PLOT_MARKERS[modelname_i],label=modelname)
+            if log_ncl != False:
+                pl.semilogx(model_data[modelname]['ncl'],model_data[modelname]['bic'],PLOT_MARKERS[modelname_i],label=modelname)
+            else:
+                pl.plot(model_data[modelname]['ncl'],model_data[modelname]['bic'],PLOT_MARKERS[modelname_i],label=modelname)
             if loglik:
-                pl.plot(model_data[modelname]['ncl'],model_data[modelname]['loglik'],'k.')
+                if log_ncl != False:
+                    pl.semilogx(model_data[modelname]['ncl'],model_data[modelname]['loglik'],'k.')
+                else:
+                    pl.plot(model_data[modelname]['ncl'],model_data[modelname]['loglik'],'k.')
 
         pl.xlabel('Number of Clusters')
         pl.ylabel('Bayesian Information Classifier (BIC)')
         pl.title('Cluster Dataset: %s' %self.name)
         pl.legend(loc='upper right')
+        if grid==True:
+            pl.grid()
         pl.show()
 
     def plot_N_clusters(self,N_clusters,title=""):

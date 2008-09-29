@@ -361,8 +361,11 @@ class Dendrogram(pyfusion.Base):
                 cluster_data = transpose(clusterplot_func(cl))
             else:
                 cluster_data = transpose(cl.get_time_flucstuc_properties(fs_props=['frequency']))
-                
-            pl.plot(cluster_data[0],cluster_data[1],marker='.',color=colmap(int(colfactor*cl_mean_var)), linestyle='None')
+
+            if len(cluster_data) == 0:
+                print 'Warning, no data found for cluster %s' %clidstr 
+            else:
+                pl.plot(cluster_data[0],cluster_data[1],marker='.',color=colmap(int(colfactor*cl_mean_var)), linestyle='None')
             pl.setp(local_axes,xlim=x_lims,ylim=y_lims,xticks=[],yticks=[])
             if show_cluster_id:
                 pl.title(clidstr)

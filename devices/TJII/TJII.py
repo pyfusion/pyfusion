@@ -7,7 +7,7 @@ from pyfusion.data_acq.TJII.TJII import TJIIChannel
 from pyfusion.data_acq.TJII import tjiidata
 from pyfusion.coords import ToroidalCoordinates
 from datetime import datetime
-from sqlalchemy import Column, Float, Integer, ForeignKey, String
+from sqlalchemy import Column, Float, Integer, ForeignKey, String, Boolean
 
 DEFAULT_SHOT_CLASS = 'TJIIShot'
 
@@ -19,6 +19,11 @@ class TJIIShot(pyfusion.core.Shot):
     iota_0 = Column('iota_0', Float)
     iota_a = Column('iota_a', Float)
     iota_2_3 = Column('iota_2_3', Float)
+    volume = Column('volume', Float)
+    minor_radius = Column('minor_radius', Float)
+    gas = Column('gas', String(2))
+    field_direction = Column('field_direction', String(4))
+    nbi = Column('nbi', Boolean)
 
 def get_shot_datetime(shot_number):
     dlist = tjiidata.fecha(shot_number)

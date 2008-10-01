@@ -347,7 +347,7 @@ class Cluster(pyfusion.Base):
         """
         retrive phase information from fluctuation structres in this cluster
         returns a N_fs x N_phase array, where flucstruc rows are ordered by flucstruc id
-        and d_phase columns are ordered by d_phase channel1.id, channel2.id
+        and d_phase columns are ordered by channel1.id, channel2.id
         WARNING: there is no checking to make sure each flucstruc has the same phase channels
         """
         joined_table = Cluster.__table__.join(cluster_flucstrucs).join(

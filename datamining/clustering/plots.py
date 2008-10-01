@@ -53,7 +53,7 @@ def KL_dist(input_data0,input_data1,symmetric=True):
         return x
 
 
-def get_clusterset_net_data(clusterset):
+def get_clusterset_net_data(clusterset, phase_data_function=None):
     """
     get phases and distances for clusterset_net plot
     """
@@ -68,7 +68,10 @@ def get_clusterset_net_data(clusterset):
     for cl_i, cluster in enumerate(cluster_list):
         if pyfusion.settings.VERBOSE>1:
             print "getting phases for cluster %d, %d of %d" %(cluster.id, cl_i+1, len(cluster_list))
-        cluster_phases[str(cluster.id)] = cluster.get_sin_cos_phases()
+        if phase_data_function == None:
+            cluster_phases[str(cluster.id)] = cluster.get_sin_cos_phases()
+        else:
+            cluster_phases[str(cluster.id)] = phase_data_function(cluster)
 
     # dictionary to hold distances between clusters
     cluster_dist = dict.fromkeys([str(cluster.id) for cluster in cluster_list],{})
@@ -90,7 +93,7 @@ def get_clusterset_net_data(clusterset):
 
     return [cluster_dist,all_dists]
 
-def plot_clusterset_net(clusterset, clusterplot_func=None, clusterplot_xlim=None, clusterplot_ylim=None):
+def plot_clusterset_net(clusterset, clusterplot_func=None, clusterplot_xlim=None, clusterplot_ylim=None, phase_data_function=None):
     """
     Plot the clusters in the given clusterset as a graph. 
     Distances between clusters are defined by the Kullback-Leibier distance.
@@ -105,8 +108,8 @@ def plot_clusterset_net(clusterset, clusterplot_func=None, clusterplot_xlim=None
     clusterplot_ylim -- [min,max] for y axis of cluster subplots
     """
     import pygraphviz
-
-    [cluster_dist,all_dists] = get_clusterset_net_data(clusterset)
+    
+    [cluster_dist,all_dists] = get_clusterset_net_data(clusterset, phase_data_function=phase_data_function)
 
     # initialise main plot (not subplot) axes
     main_axes = pl.axes([0.,0.,1,1])
@@ -154,6 +157,7 @@ def plot_clusterset_net(clusterset, clusterplot_func=None, clusterplot_xlim=None
             y1 = node_coord_list[clid_str_list.index(cl2)][1]
             norm_dist = get_norm_dist(cluster_dist[cl1][cl2])
             linewidth_val = 1./(linewidth_scale*norm_dist+linewidth_offset)
+            print 'norm_dist', norm_dist
             colour_val = colourmap(int(norm_dist*256))
             #alpha_val = (1-norm_dv)*(1-min_alpha)+min_alpha
             pl.plot([x0,x1],[y0,y1],color=colour_val,lw=linewidth_val)
@@ -174,7 +178,8 @@ def plot_clusterset_net(clusterset, clusterplot_func=None, clusterplot_xlim=None
             cluster_data = clusterplot_func(clusterset.clusters[clid_str_i])
         else:
             cluster_data = clusterset.clusters[clid_str_i].get_time_flucstuc_properties(fs_props=['frequency'])
-        local_axes = pl.axes([(nx-10)/main_dx,(ny-10)/main_dy,70./main_dx,70./main_dy])
+        #local_axes = pl.axes([(nx-10)/main_dx,(ny-10)/main_dy,70./main_dx,70./main_dy])
+        local_axes = pl.axes([(nx-10)/main_dx,(ny-10)/main_dy,140./main_dx,140./main_dy])
 
         cd_t = transpose(array(cluster_data,dtype='float'))
         pl.plot(cd_t[0],cd_t[1],'.')

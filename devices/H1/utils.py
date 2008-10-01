@@ -1,7 +1,7 @@
 """
 H-1 specific utility code...
 """
-from numpy import poly1d,polyval,array
+from numpy import poly1d,polyval,array, ndarray, sin, cos
 import pyfusion
 from pyfusion.utils import remap_angle_0_2pi
 from pyfusion.datamining.clustering.core import get_sin_cos_phase_for_channel_pairs, Cluster, FluctuationStructure,cluster_flucstrucs 
@@ -125,8 +125,19 @@ def h1_khavg_fs_phases(fs_list, channel_pairs = None):
         for dp in fs.phases:
             fs_dphases.append(map_phase_kh_avg(dp.d_phase, kh, ch_id_name_map[str(dp.channel_1_id)], ch_id_name_map[str(dp.channel_2_id)]))
         output_phases.append(fs_dphases)
-        print len(fs_dphases)
     return array(output_phases)
+
+
+def get_h1_khavg_phases_for_cluster(cl):
+    return h1_khavg_fs_phases(cl.flucstrucs)
+
+
+def get_h1_khavg_sin_cos_phases_for_cluster(cl):
+    cl_ph = h1_khavg_fs_phases(cl.flucstrucs)
+    cl_cs_phases = ndarray(shape=(cl_ph.shape[0],2*cl_ph.shape[1]))
+    cl_cs_phases[:,::2] = sin(cl_ph)
+    cl_cs_phases[:,1::2] = cos(cl_ph)
+    return cl_cs_phases
 
 
 def get_kh_flucstuc_properties(cl,fs_props=['frequency']):

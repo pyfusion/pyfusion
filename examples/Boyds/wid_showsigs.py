@@ -26,10 +26,9 @@ diag_name='mirnov_coils_original'
 # note that axes are ganged with sharex, so zoom applies to all.
 t0=0.0
 dt=0.1
-execfile('process_cmd_line_args.py')
 hold=0
 marker=''
-markersize=1
+markersize=0.15
 linestyle='-'
 x_auto=1
 cmap=None
@@ -47,7 +46,7 @@ _type='F'
 fmod=0
 # t_max=0.08
 execfile('process_cmd_line_args.py')
-
+if marker=='.': linestyle='None'
 ax = subplot(111)
 subplots_adjust(left=0.3)
 

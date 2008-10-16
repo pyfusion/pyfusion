@@ -125,6 +125,7 @@ def h1_khavg_fs_phases(fs_list, channel_pairs = None):
         for dp in fs.phases:
             fs_dphases.append(map_phase_kh_avg(dp.d_phase, kh, ch_id_name_map[str(dp.channel_1_id)], ch_id_name_map[str(dp.channel_2_id)]))
         output_phases.append(fs_dphases)
+        if pyfusion.settings.VERBOSE>5: print("%d fs_phases" % len(fs_dphases))
     return array(output_phases)
 
 

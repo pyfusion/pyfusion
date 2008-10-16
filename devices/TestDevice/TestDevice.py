@@ -5,6 +5,9 @@ from numpy import pi, array
 
 DEFAULT_SHOT_CLASS = 'Shot'
 
+def get_shot_datetime(shot_number):
+    return pyfusion.settings.DEFAULT_SHOT_DATE
+
 sample_freq = 1000000.
 n_samples = 10000
 

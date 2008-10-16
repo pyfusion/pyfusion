@@ -45,12 +45,13 @@ def local_flat_top_freq(vec):
     return(w)
 
 # defaults
-global shot_number
+global shot_number, chan_name
 shot_number=58123
 cmap=None
 xextent=None
 NFFT=512
 Fsamp=2
+chan_name=''
 Fcentre=0
 detrend=mlab.detrend_none
 _window = local_none
@@ -65,20 +66,23 @@ tm=arange(0,0.02,1e-6)
 y=sin((2e5 + 5e3*sin(fmod*2*pi*tm))*2*pi*tm)
 
 def call_spec():
-    global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
+    global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod, chan_name
     print len(y), NFFT,foverlap, _type, fmod
     ax = subplot(111)
     z=_window(y)
     if _type=='F': 
         shot=callback.get_shot()
         print("shot=%d") % shot
-        try:
-            ch=pyfusion.Session.query(pyfusion.Channel)
-            name=ch[0].name
-        except:
-            print "Failed to open channel database - try mirnov_1_8"
-            name='mirnov_1_8'
-        
+        if chan_name=='':
+            try:
+                ch=pyfusion.Session.query(pyfusion.Channel)
+                name=ch[0].name
+            except:
+                print "Failed to open channel database - try mirnov_1_8"
+                name='mirnov_1_8'
+        else:        
+            name=chan_name
+
         data = pyfusion.load_channel(shot,name)
         data.spectrogram(NFFT=NFFT,noverlap=foverlap*NFFT,colorbar=True)
 #        colorbar() # comes up on a separate page, leave for now

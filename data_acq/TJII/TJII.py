@@ -12,13 +12,14 @@ try:
     import tjiidata
 except:
     import os
-    print 'Compiling TJ-II data aquisition library, please wait...'
-    cdir = os.path.dirname(os.path.abspath(__file__))
-    tmp = pyfusion.settings.compile_tjiidata(cdir)
-    try:
-        import tjiidata
-    except:
-        raise ImportError, "Can't import TJ-II data aquisition library"
+    if os.name!='nt':  # Don't try to import the native code on a PC
+        print 'Compiling TJ-II data aquisition library, please wait...'
+        cdir = os.path.dirname(os.path.abspath(__file__))
+        tmp = pyfusion.settings.compile_tjiidata(cdir)
+        try:
+            import tjiidata
+        except:
+            raise ImportError, "Can't import TJ-II data aquisition library"
 
 
 

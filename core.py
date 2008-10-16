@@ -241,7 +241,12 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
     localfilename = pyfusion.settings.getlocalfilename(shot_number, channel_name)
     if exists(localfilename) and not ignorelocal:
         localdata = load(localfilename)
-        if pyfusion.settings.SHOT_T_MIN < localdata['timebase'][0] or pyfusion.settings.SHOT_T_MAX > localdata['timebase'][-1]:
+        # allow for tiny rounding errors
+        eps=(localdata['timebase'][-1] - localdata['timebase'][0])/len(localdata['timebase'])
+        if pyfusion.settings.SHOT_T_MIN < (localdata['timebase'][0]-eps) \
+           or pyfusion.settings.SHOT_T_MAX > (localdata['timebase'][-1]+eps):
+            print("localdatatimebase = %g to %g") % (
+                localdata['timebase'][0], localdata['timebase'][-1])
             raise ValueError, "SHOT_T_MIN/MAX lie outside the timebase of locally saved data. Either use ignorelocal=True or change pyfusion.settings.SHOT_T_MIN / MAX. While you decide what to do, I'm going to raise an exception and find myself some sangria...!!"
         t_lim = searchsorted(localdata['timebase'],[pyfusion.settings.SHOT_T_MIN,pyfusion.settings.SHOT_T_MAX])            
         loaded_MCT = MultiChannelTimeseries(localdata['timebase'][t_lim[0]:t_lim[1]],parent_element=int(localdata['parent_element']+t_lim[0]))
@@ -260,6 +265,7 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
     try:
         _tmp = _ProcessData.load_channel(ch, shot_number)
         if savelocal:
+            print ("savelocal to file %s") % (localfilename)
             if int(numpy_version.version.replace('.','')) >= 110:
                 savez(localfilename,timebase=_tmp.timebase,
                       signal=_tmp.signals[channel_name],
@@ -305,6 +311,8 @@ class MultiChannelTimeseries(object):
         self.signals = {}
         self.parent_element = parent_element
         self.t0 = min(timebase)
+        if pyfusion.settings.VERBOSE>4: print('timebase from %g, nyq=%g' % (
+                self.t0, self.nyquist))
         self.norm_info = {} # raw (not normalised) data has empty dict.
         self.ordered_channel_list = [] # keep the order in which channels are added - use this ordering for SVD, etc
 
@@ -386,7 +394,7 @@ class MultiChannelTimeseries(object):
         return new_mc_data
 
     def plot(self, title="",saveas="", xlim=[None, None], 
-             ylim=[None, None], hold=False):
+             ylim=[None, None], hold=False, marker='None', markersize=1,linestyle='-'):
         from matplotlib.ticker import NullFormatter
         import pylab as pl
 # change the order so that the first (now lowermost)channel 
@@ -402,7 +410,9 @@ class MultiChannelTimeseries(object):
 # This (sharex) is a nice feature.  An alternative is to unlink axes, and use SpanSelector
 #                pl.setp(axn, 'xticklabels', [])
 #                axn.xaxis.set_major_formatter(NullFormatter())
-            pl.plot(self.timebase,self.signals[ch],hold=hold)
+            pl.plot(self.timebase,self.signals[ch],hold=hold, marker=marker, markersize=markersize, linestyle=linestyle)
+            if pyfusion.settings.VERBOSE>3:
+                print("plotting ch %d -> %s" % (ch_i, ch))
             pl.ylabel(ch)
             if xlim[1]!=None : pl.xlim(xlim)    
             if ylim[1]!=None : pl.ylim(ylim)    

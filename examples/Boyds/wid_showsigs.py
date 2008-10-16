@@ -18,13 +18,19 @@ from pyfusion.visual import ShotOverview
 
 
 # defaults
-global shot_number, diag_name, t0, dt, hold, x_auto
+global shot_number, diag_name, t0, dt, hold, x_auto, marker, markersize, linestyle
 shot_number=58123
+shot_number=18993
 diag_name='mirnovbean1'
+diag_name='mirnov_coils_original'
 # note that axes are ganged with sharex, so zoom applies to all.
 t0=0.0
 dt=0.1
+execfile('process_cmd_line_args.py')
 hold=0
+marker=''
+markersize=1
+linestyle='-'
 x_auto=1
 cmap=None
 xextent=None
@@ -48,7 +54,7 @@ subplots_adjust(left=0.3)
 axcolor = 'lightgoldenrodyellow'
 
 #define the box where the buttons live
-rax = axes([0.02, 0.80, 0.13, 0.1], axisbg=axcolor)
+rax = axes([0.02, 0.89, 0.13, 0.08], axisbg=axcolor)
 radio = RadioButtons(rax, ('xlabels', 'no xlabs'), active=0)
 def xlabfunc(label):
     print 'xlabfunc', label
@@ -59,19 +65,20 @@ def xlabfunc(label):
 
 radio.on_clicked(xlabfunc)
 
-rax = axes([0.02, 0.65, 0.13, 0.13], axisbg=axcolor)
+rax = axes([0.02, 0.74, 0.13, 0.13], axisbg=axcolor)
 radio = RadioButtons(rax, ('vert gap', 'small','no gap'), active=0)
 def xgapfunc(label):
-    gapdict={'vert gap':0.7, 'small':0.03, 'no gap':0}
+    gapdict={'vert gap':0.07, 'small':0.03, 'no gap':0}
     print 'xgapfunc', label
     gcf().subplotpars.hspace=gapdict[label]
-    gcf().subplotpars.top=1-gapdict[label]
+   # gcf().subplotpars.top=1-gapdict[label]
+    gcf().subplots_adjust(top=1-gapdict[label])
     gcf().subplotpars.bottom=gapdict[label]
     draw()
 
 radio.on_clicked(xgapfunc)
 
-rax = axes([0.02, 0.53, 0.13, 0.1], axisbg=axcolor)
+rax = axes([0.02, 0.64, 0.13, 0.08], axisbg=axcolor)
 radio = RadioButtons(rax, ('hold', 'off'),active=1)
 def holdfunc(label):
     global hold
@@ -81,7 +88,7 @@ def holdfunc(label):
 
 radio.on_clicked(holdfunc)
 
-rax = axes([0.02, 0.41, 0.13, 0.10], axisbg=axcolor)
+rax = axes([0.02, 0.54, 0.13, 0.08], axisbg=axcolor)
 radio = RadioButtons(rax, ('x auto', 'x freeze'),active=0)
 def xfreezefunc(label):
     global x_auto
@@ -91,7 +98,26 @@ def xfreezefunc(label):
 
 radio.on_clicked(xfreezefunc)
 
-rax = axes([0.02, 0.23, 0.2, 0.15], axisbg=axcolor)
+# the point size box
+rax = axes([0.02, 0.39, 0.13, 0.13], axisbg=axcolor)
+radio = RadioButtons(rax, ('line', 'point','small','tiny'), active=0)
+def xpointfunc(label):
+# note - this needs a redraw - if we were to pl[0].set_markersize, it would
+# only apply to the last plotted
+    global marker, markersize, linestyle
+    typedict={'line':'', 'point':'.', 'small':'.', 'tiny':'.'}
+    sizedict={'line':1, 'point':1, 'small':0.3, 'tiny':0.1}
+    linedict={'line':'-', 'point':'None', 'small':'None', 'tiny':'None'}
+    print 'xpointfunc', label
+    marker=typedict[label]
+    markersize=sizedict[label]
+    linestyle=linedict[label]
+
+radio.on_clicked(xpointfunc)
+
+# box for diagnostic list
+#           xlleft yll xwidth yheight
+rax = axes([0.02, 0.20, 0.2, 0.17], axisbg=axcolor)
 from pyfusion import Diagnostic
 dqry=pyfusion.session.query(Diagnostic).all()
 if len(dqry)>0:
@@ -130,7 +156,7 @@ class IntegerCtl:
     
 # probably need to redraw the whole graph
     def redraw(self):
-        global hold, x_auto, diag_name
+        global hold, x_auto, diag_name, marker, markersize, linestyle
         bshot.label.set_text(str(self.shot))
         inter=isinteractive
         if inter: ioff()
@@ -145,8 +171,10 @@ class IntegerCtl:
             xlims=gca().get_axes().viewLim._get_intervalx()
 
         print xlims 
+        print "bug in load_diag? appends? %d elements in x" % (len(x))
         ii=len(x)-1       ## a bug in load_diag or data.values appends rather than replaces
-        xx=x[ii].plot(xlim=array(xlims),title=str(shot_number), hold=hold)
+        xx=x[ii].plot(xlim=array(xlims),title=str(shot_number), hold=hold, marker=marker, markersize=markersize, linestyle=linestyle)
+        print marker, markersize, linestyle
         subplots_adjust(left=0.3)
         draw()
         if inter: ion()
@@ -186,11 +214,11 @@ axshowsigs =     axes([x0+0.01,  y0+0.03+but_h, 0.1, but_h], axisbg=axcolor)
 axwid_specgram = axes([x0+0.01,  y0+0.04+2*but_h, 0.1, but_h], axisbg=axcolor)
 
 #axwid_specgram = axes([x0+0.12,  y0+0.03+but_h, 0.2, but_h], axisbg=axcolor)
-axfrew = axes([x0+0.01,  y0+0.02, 0.03, but_h], axisbg=axcolor)
-axrew  = axes([x0+0.045, y0+0.02, 0.02, but_h], axisbg=axcolor)
-axshot = axes([x0+0.070, y0+0.02, 0.1,  but_h], axisbg=axcolor)
-axfwd  = axes([x0+0.175, y0+0.02, 0.02, but_h], axisbg=axcolor)
-axffwd = axes([x0+0.2,   y0+0.02, 0.03, but_h], axisbg=axcolor)
+axfrew = axes([x0+0.01,  y0+0.02, 0.035, but_h], axisbg=axcolor)
+axrew  = axes([x0+0.05, y0+0.02, 0.02, but_h], axisbg=axcolor)
+axshot = axes([x0+0.075, y0+0.02, 0.1,  but_h], axisbg=axcolor)
+axfwd  = axes([x0+0.18, y0+0.02, 0.02, but_h], axisbg=axcolor)
+axffwd = axes([x0+0.205,   y0+0.02, 0.035, but_h], axisbg=axcolor)
 
 #radio = RadioButtons(rax, ('2 Hz', '4 Hz', '8 Hz'))
 bfrew=Button(axfrew,'<<')
@@ -200,6 +228,9 @@ brew=Button(axrew,'<')
 brew.on_clicked(callback.rew)
 
 bshot=Button(axshot,'12345')
+bshot.on_clicked(callback.redraw)
+# the above needs two args??
+# actually, should not just redraw, but allow changes in shot number
 
 bfwd=Button(axfwd,'>')
 bfwd.on_clicked(callback.fwd)

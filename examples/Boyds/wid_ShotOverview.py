@@ -25,7 +25,9 @@ Fcentre=0
 detrend=mlab.detrend_none
 local_none=1 # fudge
 ch_list=['mirnov_1_9','mirnov_1_10','ne_centre']
+ch_list=['mirnov_5p_105','mirnov_5p_104']
 fft_list=['mirnov_1_9']
+fft_list=[ch_list[0]]
 _window = local_none
 foverlap=0
 _type='F'
@@ -124,20 +126,35 @@ class IntegerCtl:
 
     def wid_specgram(self, event):
         import os 
+# was spawnlp
         os.spawnlp(os.P_NOWAIT, 'ipython', -'pylab', 'examples/Boyds/wid_specgram.py',
                    str("shot_number=%d" % self.shot))
         self.redraw()
 
     def wid_showsigs(self, event):
         import os 
-        os.spawnlp(os.P_NOWAIT, 'ipython', '-pylab', 'examples/Boyds/wid_showsigs.py',
-                  str("shot_number=%d" % self.shot))
+        if os.name=='nt':
+            os.spawnl(os.P_NOWAIT, 'c:/cygwin/usr/local/bin/ipython', 
+                      '-pylab', 'examples/Boyds/wid_showsigs.py', 
+                      str("shot_number=%d" % self.shot))
+        else: 
+            os.spawnlp(os.P_NOWAIT, 'ipython', '-pylab',
+                      'examples/Boyds/wid_showsigs.py', 
+                      str("shot_number=%d" % self.shot))
         self.redraw()
 
     def wid_showallsigs(self, event):
         import os 
-        os.spawnlp(os.P_NOWAIT, 'ipython', '-pylab',  'examples/Boyds/wid_showsigs.py', 
-                   "diag_name='mirnovbeans'", str("shot_number=%d" % self.shot))
+        if os.name=='nt':
+            os.spawnl(os.P_NOWAIT, 'c:/cygwin/usr/local/bin/ipython', '-pylab', 
+                       'examples/Boyds/wid_showsigs.py',
+                      "diag_name='mirnov_coils'",
+                      str("shot_number=%d" % self.shot))
+        else: 
+            os.spawnlp(os.P_NOWAIT, 'ipython', '-pylab',
+                      'examples/Boyds/wid_showsigs.py', 
+                      "diag_name='mirnov_coils'",
+                      str("shot_number=%d" % self.shot))
         self.redraw()
 
 

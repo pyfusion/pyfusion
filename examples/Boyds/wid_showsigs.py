@@ -21,8 +21,9 @@ from pyfusion.visual import ShotOverview
 global shot_number, diag_name, t0, dt, hold, x_auto, marker, markersize, linestyle
 shot_number=58123
 shot_number=18993
-diag_name='mirnovbean1'
-diag_name='mirnov_coils_original'
+#diag_name='mirnovbean1'
+#diag_name='mirnov_coils_original'
+diag_name=''
 # note that axes are ganged with sharex, so zoom applies to all.
 t0=0.0
 dt=0.1
@@ -65,15 +66,17 @@ def xlabfunc(label):
 radio.on_clicked(xlabfunc)
 
 rax = axes([0.02, 0.74, 0.13, 0.13], axisbg=axcolor)
-radio = RadioButtons(rax, ('vert gap', 'small','no gap'), active=0)
+radio = RadioButtons(rax, ('vert gap', 'small','no gap'), active=1)
 def xgapfunc(label):
     gapdict={'vert gap':0.07, 'small':0.03, 'no gap':0}
     print 'xgapfunc', label
     gcf().subplotpars.hspace=gapdict[label]
    # gcf().subplotpars.top=1-gapdict[label]
     gcf().subplots_adjust(top=1-gapdict[label])
-    gcf().subplotpars.bottom=gapdict[label]
+    gcf().subplotpars.bottom=0.04+gapdict[label] # allow for text
     draw()
+
+xgapfunc('small')
 
 radio.on_clicked(xgapfunc)
 
@@ -119,10 +122,15 @@ radio.on_clicked(xpointfunc)
 rax = axes([0.02, 0.20, 0.2, 0.17], axisbg=axcolor)
 from pyfusion import Diagnostic
 dqry=pyfusion.session.query(Diagnostic).all()
+act=-1  # be prepared for a diagnostic not the list (why?)
 if len(dqry)>0:
     dnames= [d.name for d in dqry]
-    radio = RadioButtons(rax, dnames, active=0)
-    diag_name=dnames[0]
+    for id,dname in enumerate(dnames):
+        if dname==diag_name: act=id
+    if diag_name=='': #if blank, default to the first
+        act=0
+        diag_name=dnames[act]
+    radio = RadioButtons(rax, dnames, active=act)
 
 def diagfunc(label):
     global diag_name
@@ -161,7 +169,7 @@ class IntegerCtl:
         if inter: ioff()
         s = pyfusion.get_shot(self.shot)
         s.load_diag(diag_name)
-        x=s.data.values()
+        # x=s.data.values()
         inter=isinteractive
         if inter: ioff()
         if x_auto: xlims=[None, None] 
@@ -170,9 +178,10 @@ class IntegerCtl:
             xlims=gca().get_axes().viewLim._get_intervalx()
 
         print xlims 
-        print "bug in load_diag? appends? %d elements in x" % (len(x))
-        ii=len(x)-1       ## a bug in load_diag or data.values appends rather than replaces
-        xx=x[ii].plot(xlim=array(xlims),title=str(shot_number), hold=hold, marker=marker, markersize=markersize, linestyle=linestyle)
+        #print "bug in load_diag? appends? %d elements in x" % (len(x))
+        #ii=len(x)-1       ## a bug in load_diag or data.values appends rather than replaces
+        #xx=x[ii].plot(xlim=array(xlims),title=str(shot_number), hold=hold, marker=marker, markersize=markersize, linestyle=linestyle)
+        s.data[diag_name].plot(xlim=array(xlims),title=str(shot_number), hold=hold, marker=marker, markersize=markersize, linestyle=linestyle)
         print marker, markersize, linestyle
         subplots_adjust(left=0.3)
         draw()

@@ -204,6 +204,8 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
         pl.setp(pl.gca(),xticklabels=[],yticklabels=[])
         if show_cluster_id:
             pl.title(clid_str, size=12)
+
+    pl.setp(main_axes, xticks=[], yticks=[])
     pl.show()
 
 

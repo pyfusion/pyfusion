@@ -114,7 +114,7 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
     [cluster_dist,all_dists] = get_clusterset_net_data(cluster_input, phase_data_function=phase_data_function)
 
     # initialise main plot (not subplot) axes
-    main_axes = pl.axes([0.,0.,1,1])
+    main_axes = pl.axes([0,0.0,1,1])
 
     ### compute graph coordinates
     
@@ -167,10 +167,20 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
 
     # plot node plots
     pl.axes(main_axes)
+    # HACK: rescale so that outer subplots are not cut off
+    _tmp_x = pl.xlim()
+    _tmp_y = pl.ylim()
+    _x_offset = 0.15*(_tmp_x[1]-_tmp_x[0])
+    _y_offset = 0.15*(_tmp_y[1]-_tmp_y[0])
+    pl.xlim(_tmp_x[0]-_x_offset, _tmp_x[1]+_x_offset)
+    pl.ylim(_tmp_y[0]-_y_offset, _tmp_y[1]+_y_offset)
+
+
     main_xlim = pl.xlim()
     main_ylim = pl.ylim()
     main_dx = main_xlim[1] - main_xlim[0]
     main_dy = main_ylim[1] - main_ylim[0]
+    print pl.xlim(), pl.ylim()
     for clid_str_i, clid_str in enumerate(clid_str_list):
         pl.axes(main_axes)
         pl.xlim(main_xlim)
@@ -181,7 +191,9 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
         else:
             cluster_data = cluster_list[clid_str_i].get_time_flucstuc_properties(fs_props=['frequency'])
         #local_axes = pl.axes([(nx-10)/main_dx,(ny-10)/main_dy,70./main_dx,70./main_dy])
-        local_axes = pl.axes([(nx-10)/main_dx,(ny-10)/main_dy,140./main_dx,140./main_dy])
+        #local_axes = pl.axes([(nx-10)/main_dx,(ny-10)/main_dy,140./main_dx,140./main_dy])
+        #local_axes = pl.axes([(nx-70)/main_dx,(ny-70)/main_dy,140./main_dx,140./main_dy])
+        local_axes = pl.axes([(nx+70)/main_dx,(ny+70)/main_dy,140./main_dx,140./main_dy])
 
         cd_t = transpose(array(cluster_data,dtype='float'))
         pl.plot(cd_t[0],cd_t[1],'.')

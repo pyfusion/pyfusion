@@ -93,7 +93,7 @@ def get_clusterset_net_data(cluster_input, phase_data_function=None):
 
     return [cluster_dist,all_dists]
 
-def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=None, clusterplot_ylim=None, phase_data_function=None):
+def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=None, clusterplot_ylim=None, phase_data_function=None, show_cluster_id=True):
     """
     Plot the clusters in the given clusterset as a graph. 
     Distances between clusters are defined by the Kullback-Leibier distance.
@@ -180,7 +180,7 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
     main_ylim = pl.ylim()
     main_dx = main_xlim[1] - main_xlim[0]
     main_dy = main_ylim[1] - main_ylim[0]
-    print pl.xlim(), pl.ylim()
+
     for clid_str_i, clid_str in enumerate(clid_str_list):
         pl.axes(main_axes)
         pl.xlim(main_xlim)
@@ -202,7 +202,8 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
         if clusterplot_ylim != None:
             pl.ylim(clusterplot_ylim[0], clusterplot_ylim[1])
         pl.setp(pl.gca(),xticklabels=[],yticklabels=[])
-
+        if show_cluster_id:
+            pl.title(clid_str, size=12)
     pl.show()
 
 

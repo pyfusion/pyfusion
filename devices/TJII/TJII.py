@@ -115,6 +115,23 @@ mirnov_5p_20 = TJIIChannel(senal='MID5P20',name = 'mirnov_5p_20',processdata_ove
 density2 = TJIIChannel(senal='Densidad2_', name = 'density2')
 densityIR = TJIIChannel(senal='DensidadMedia_IR_', name = 'densitymediaIR')
 
+cbol01 = TJIIChannel(senal='CBOL1', name = 'cbol01')
+cbol02 = TJIIChannel(senal='CBOL2', name = 'cbol02')
+cbol03 = TJIIChannel(senal='CBOL3', name = 'cbol03')
+cbol04 = TJIIChannel(senal='CBOL4', name = 'cbol04')
+cbol05 = TJIIChannel(senal='CBOL5', name = 'cbol05')
+cbol06 = TJIIChannel(senal='CBOL6', name = 'cbol06')
+cbol07 = TJIIChannel(senal='CBOL7', name = 'cbol07')
+cbol08 = TJIIChannel(senal='CBOL8', name = 'cbol08')
+cbol09 = TJIIChannel(senal='CBOL9', name = 'cbol09')
+cbol10 = TJIIChannel(senal='CBOL10', name = 'cbol10')
+cbol11 = TJIIChannel(senal='CBOL11', name = 'cbol11')
+cbol12 = TJIIChannel(senal='CBOL12', name = 'cbol12')
+cbol13 = TJIIChannel(senal='CBOL13', name = 'cbol13')
+cbol14 = TJIIChannel(senal='CBOL14', name = 'cbol14')
+cbol15 = TJIIChannel(senal='CBOL15', name = 'cbol15')
+cbol16 = TJIIChannel(senal='CBOL16', name = 'cbol16')
+
 mirnov_coils = pyfusion.Diagnostic(name='mirnov_coils')
 
 # many TJII shots have Mirnov channel MID5P_02 missing, create a diagnostic without it.
@@ -151,6 +168,12 @@ mirnov_coils_channel_ordering_original = [mirnov_5p_1,
                                  mirnov_5p_14,  mirnov_5p_15]
 
 
+cbol_channels = [cbol01, cbol02, cbol03, cbol04, cbol05, cbol06, cbol07, cbol08, 
+                 cbol09, cbol10, cbol11, cbol12, cbol13, cbol14, cbol15, cbol16]
+
+cbol_channels_no_sat = [cbol01, cbol02, cbol03, 
+                               cbol12, cbol13, cbol14, cbol15, cbol16]
+
 for ch in mirnov_coils_channel_ordering:
     mirnov_coils.add_channel(ch)
 
@@ -161,14 +184,24 @@ for ch in mirnov_coils_channel_ordering_original:
     mirnov_coils_original.add_channel(ch)
 
 
+
 density_diag = pyfusion.Diagnostic(name='density')
 densityIR_diag = pyfusion.Diagnostic(name='densityIR')
+cbol_diag = pyfusion.Diagnostic(name='cbol')
+cbol_diag_no_sat = pyfusion.Diagnostic(name='cbol_no_sat')
 
 for ch in [density2]:
     density_diag.add_channel(ch)
 
 for ch in [densityIR]:
     densityIR_diag.add_channel(ch)
+
+#for ch in cbol_channels:
+#    cbol_diag.add_channel(ch)
+
+for ch in cbol_channels_no_sat:
+    cbol_diag_no_sat.add_channel(ch)
+
 
 mirnov_filter_diag = pyfusion.Diagnostic('mirnov_filter')
 

@@ -12,7 +12,7 @@ from sqlalchemy.orm import relation, synonym
 
 import pyfusion
 from pyfusion.coords import Coordinates
-from pyfusion.utils import local_import, get_conditional_select, check_same_timebase, delta_t
+from pyfusion.utils import local_import, get_conditional_select, check_same_timebase, delta_t, linear_interpolate_resample
 
 class Device(pyfusion.Base):
     """
@@ -105,7 +105,7 @@ class Shot(pyfusion.Base):
         except:
             print 'Failed to get date/time for shot using "get_shot_datetime" in device module!!'
 
-    def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False,ignorelocal=False, allow_null_return=False):
+    def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False,ignorelocal=False, allow_null_return=False, downsample=None):
         if pyfusion.settings.VERBOSE > 0:
             print "Only MultiChannel Timeseries data works for now" 
         diag = pyfusion.session.query(Diagnostic).filter(Diagnostic.name==diagnostic)[0]
@@ -123,7 +123,7 @@ class Shot(pyfusion.Base):
             if chi==0:
                 channel_MCT = _tmp
             else:
-                channel_MCT.add_multichannel(_tmp,skip_timebase_check=skip_timebase_check)
+                channel_MCT.add_multichannel(_tmp,skip_timebase_check=skip_timebase_check, downsample=downsample)
         self.data[diagnostic] = channel_MCT
 
     def load_ch(self, chn, skip_timebase_check = False,savelocal=False,ignorelocal=False,allow_null_return=False):
@@ -327,19 +327,25 @@ class MultiChannelTimeseries(object):
         else:
             print "Signal '%s' not same length as timebase. Not adding to multichannel data!!" %channel_name
 
-    def add_multichannel(self, multichanneldata, skip_timebase_check = False):
+    def add_multichannel(self, multichanneldata, skip_timebase_check = False, downsample = None,zeropad=True):
         """
         join another MultiChannelTimeseries object to this one
         """
-        if skip_timebase_check or check_same_timebase(self, multichanneldata):
-            allow_add = True
-        else:
-            allow_add = False
-        if allow_add:
+        if downsample != None and multichanneldata.nyquist != self.nyquist:
             for channel_name in multichanneldata.ordered_channel_list:
-                self.add_channel(multichanneldata.signals[channel_name], channel_name)
+                resampled_sig = linear_interpolate_resample(multichanneldata.signals[channel_name], multichanneldata.timebase, self.timebase, zeropad=zeropad)
+                self.add_channel(resampled_sig, channel_name)
         else:
-            print "Timebase not the same. Not joining multichannel data!!"
+            
+            if skip_timebase_check or check_same_timebase(self, multichanneldata):
+                allow_add = True
+            else:
+                allow_add = False
+            if allow_add:
+                for channel_name in multichanneldata.ordered_channel_list:
+                    self.add_channel(multichanneldata.signals[channel_name], channel_name)
+            else:
+                print "Timebase not the same. Not joining multichannel data!!"
     
     def export(self, filename, compression = 'bzip2', filetype = 'csv'):
         if compression != 'bzip2':
@@ -471,6 +477,7 @@ class TimeSegment(pyfusion.Base):
         #need to update session - we may have called the time segment from another session ...
         pyfusion.session.save_or_update(self)
         pd = self.get_primary_diagnostic()
+        pyfusion.session.flush()
         #print "-------", self.shot
         loaded_diags = self.shot.data.keys()
         loaded_channels = self.shot.channels.keys()
@@ -539,7 +546,12 @@ class TimeSegment(pyfusion.Base):
                     except:
                         _full_channel_data = load_channel(self.shot.shot,ch.name,ignore_shot_lims=True)
                         t0el = searchsorted(_full_channel_data.timebase,self.shot.pulse_start)
-                        cb = ChannelBaseline(shot_id=self.shot_id, channel_id=ch.id, value=float(mean(_full_channel_data.signals[ch.name][:t0el])))
+                        print 'REMOVE THIS HACK!'
+                        _tmp = 0
+                        # _tmp = float(mean(_full_channel_data.signals[ch.name][:t0el]))
+                        if not _tmp < pyfusion.settings.BIG_FLOAT:
+                            raise ValueError, 'cannot calculate baseline'
+                        cb = ChannelBaseline(shot_id=self.shot_id, channel_id=ch.id, value=_tmp)
                     _mean = mean(_data)
                     _rms = sqrt(mean((_data-_mean)**2))
                     _var = var(_data)
@@ -751,5 +763,6 @@ def new_svd(timesegment_instance, diagnostic_id = -1, normalise=False, remove_ba
         diagnostic_id = timesegment_instance.primary_diagnostic_id
     new_svd = MultiChannelSVD(timesegment_id=timesegment_instance.id, diagnostic_id = diagnostic_id)
     pyfusion.session.save(new_svd)
+    pyfusion.session.flush()
     new_svd._do_svd(normalise=normalise, remove_baseline=remove_baseline)
     return new_svd

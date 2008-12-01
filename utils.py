@@ -1,9 +1,54 @@
 """
 helper functions for pyfusion
 """
-from numpy import fft, conjugate, array, choose, min, max, pi,random,take,argsort
+from numpy import fft, conjugate, array, choose, min, max, pi,random,take,argsort, searchsorted, zeros, arange
 from datetime import datetime
 import pyfusion
+
+
+def linear_interpolate_resample(signal, original_timebase, new_timebase, zeropad=False):
+    """
+    A simple linear interpolation for downsampling a signal.
+    """
+    print 'Downsampling...'
+    # simple test to check that original timebase has higher sampling rate than new timebase
+    if (original_timebase[1] - original_timebase[0]) > (new_timebase[1] - new_timebase[0]):
+        raise ValueError, 'New timebase should have lower sampling rate than original timebase'
+
+    # also need new timebase to be within limits of original
+    if new_timebase[0] < original_timebase[0]:
+        if zeropad:
+            new_sig = zeros(len(signal)+1)
+            new_sig[1:] = signal
+            signal = new_sig
+            
+            new_ot = zeros(len(original_timebase)+1)
+            new_ot[0] = new_timebase[0]-pyfusion.settings.SMALL_FLOAT
+            new_ot[1:] = original_timebase
+            original_timebase = new_ot
+            del new_sig, new_ot
+        else:
+            raise ValueError, 'New timbase not within limits of original timebase'
+            
+    if new_timebase[-1] > original_timebase[-1]:
+        if zeropad:
+            new_sig = zeros(len(signal)+1)
+            new_sig[:-1] = signal
+            signal = new_sig
+            
+            new_ot = zeros(len(original_timebase)+1)
+            new_ot[-1] = new_timebase[-1]+pyfusion.settings.SMALL_FLOAT
+            new_ot[:-1] = original_timebase
+            original_timebase = new_ot
+            del new_sig, new_ot
+
+        else:
+            raise ValueError, 'New timbase not within limits of original timebase'
+
+    elmap=searchsorted(original_timebase, new_timebase)
+    new_signal = take(signal, elmap) + (take(signal,elmap) - take(signal,elmap-1))*(take(original_timebase,elmap)-new_timebase)/(take(original_timebase,elmap)-take(original_timebase,elmap-1))
+    return new_signal
+    
 
 def add_timesegmentdatasummary_for_ts_list(input_ts_list, diag_name, exist_check='any',savelocal=False, ignorelocal=False, is_channel=False):
     """

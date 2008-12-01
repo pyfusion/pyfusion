@@ -93,9 +93,9 @@ def get_single_phase(data,timebase,freq):
 
 
 
-def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
+def _bk_generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
     # clear out session (dramatically improves performance)
-    # pyfusion.session.clear()
+    pyfusion.session.clear()
     sess = pyfusion.Session()
     seg._load_data()
     
@@ -135,6 +135,52 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
             fs.svs.append(sv)
         fs.get_phases()
         sess.save_or_update(fs)
+        sess.flush()
+        #sess.close()
+
+def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=False, threshold=pyfusion.settings.SV_GROUPING_THRESHOLD, normalise=True):
+    # clear out session (dramatically improves performance)
+    #pyfusion.session.clear()
+    seg._load_data()
+    
+    seg_svd_q = pyfusion.session.query(pyfusion.MultiChannelSVD).filter_by(timesegment_id=seg.id, diagnostic_id = diag_inst.id)
+    if seg_svd_q.count() == 0:
+        seg_svd = pyfusion.MultiChannelSVD(timesegment=seg, diagnostic = diag_inst)
+        seg_svd._do_svd(store_chronos=store_chronos, normalise=normalise)
+        pyfusion.session.save(seg_svd)
+    else:
+        # this will raise an exception if there is more than one svd for 
+        # theis timesegment and diagnostic, but that's healthy as there
+        # should not be more than one
+        seg_svd = seg_svd_q.one()
+    E = seg_svd.energy
+    # sv_groupings = group_svs(seg_svd, threshold=threshold)
+    sv_groupings = _new_group_svs(seg_svd)
+    for svg_i, sv_group in enumerate(sv_groupings):
+        energy = float(sum([sv.value**2 for sv in sv_group])/E)
+        raw_energy=0 # not sure how yet
+        freq = float(peak_freq(sv_group[0].chrono, seg_svd.timebase))
+        tmid = float(average(seg_svd.timebase))
+        a1=sv_group[0].value
+        if len(sv_group)>1: a12 = sv_group[1].value/sv_group[0].value
+        else:               a12=0
+        if len(sv_group)>2: a13 = sv_group[2].value/sv_group[0].value
+        else:               a13=0
+        if pyfusion.settings.VERBOSE>2: 
+            print 'svg_i %d, len=%d, fr=%.3gkHz, t0=%.3gms,' % (
+                svg_i, len(sv_group), freq/1000, 1000*seg_svd.timebase[0]),
+            print 'SV=[%s]'%','.join([str("%.3g") % sv.value for sv in sv_group])
+        fs = FluctuationStructure(svd=seg_svd, frequency=freq, 
+                                  energy=energy, gamma_threshold=threshold, 
+                                  raw_energy=0, a1=a1, a12=a12, tmid=tmid, a13=a13,
+                                  set_id = fs_set.id)
+        pyfusion.session.save(fs)
+        for sv in sv_group:
+            fs.svs.append(sv)
+        fs.get_phases()
+        pyfusion.session.save_or_update(fs)
+        #pyfusion.session.flush()
+        #sess.flush()
         #sess.close()
 
 
@@ -270,7 +316,6 @@ class ClusterDataSet(pyfusion.Base):
     def plot_BIC(self, loglik=False,log_ncl=False, grid=True):
         import pylab as pl
         model_data = {}
-        
         for cl in self.clustersets:
             if not cl.modelname in model_data.keys():
                 model_data[cl.modelname] = {'ncl':[], 'bic':[], 'loglik':[]}

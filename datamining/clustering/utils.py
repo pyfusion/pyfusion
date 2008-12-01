@@ -2,9 +2,26 @@
 utilities for datamining/clustering
 """
 from numpy import sin,cos, array, pi, mean, argmax, abs, std, transpose, random
-from pyfusion.datamining.clustering.core import FluctuationStructure, flucstruc_svs
+from pyfusion.datamining.clustering.core import FluctuationStructure, flucstruc_svs, Cluster
 import pyfusion
 from sqlalchemy.sql import select
+
+def generic_cluster_input(cluster_input):
+    """
+    Determine if cluster_input is ClusterSet, or a list of Clusters or a list of Cluster
+    """
+    try:
+        return cluster_input.clusters()
+    except AttributeError:
+        output = []
+        for i in cluster_input:
+            if 'Cluster' in i.__str__():
+                output.append(i)
+            elif type(i) == type(1):
+                output.append(pyfusion.q(Cluster).get(i))
+            else:
+                raise TypeError, "I don't know what you're feeding me. Is it some kind of cluster thing?"
+        return output
 
 def get_shot_attributes_for_fsid_list(fsid_list, attr='shot',customshot=None, return_fsid=False):
     """

@@ -7,7 +7,7 @@ yes, it's a mess.
 import pyfusion, os, pickle
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet, ClusterDataSet, Cluster, ClusterSet
-from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list
+from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list, generic_cluster_input
 from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d, take,pi, arange, mat, cov,average, trace, log, sin,cos, ndarray, var, size
 from numpy.random import random_sample
 from pyfusion.visual.core import ScatterPlot, golden_ratio, datamap
@@ -53,13 +53,13 @@ def KL_dist(input_data0,input_data1,symmetric=True):
         return x
 
 
-def get_clusterset_net_data(clusterset, phase_data_function=None):
+def get_clusterset_net_data(cluster_input, phase_data_function=None):
     """
     get phases and distances for clusterset_net plot
     """
     
     # load clusters from clusterset
-    cluster_list = pyfusion.q(Cluster).filter_by(clusterset=clusterset).all()
+    cluster_list = generic_cluster_input(cluster_input)
     
     # dictionary to hold phase info for cluster flucstrucs
     cluster_phases = dict.fromkeys([str(cluster.id) for cluster in cluster_list])
@@ -93,7 +93,7 @@ def get_clusterset_net_data(clusterset, phase_data_function=None):
 
     return [cluster_dist,all_dists]
 
-def plot_clusterset_net(clusterset, clusterplot_func=None, clusterplot_xlim=None, clusterplot_ylim=None, phase_data_function=None):
+def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=None, clusterplot_ylim=None, phase_data_function=None):
     """
     Plot the clusters in the given clusterset as a graph. 
     Distances between clusters are defined by the Kullback-Leibier distance.
@@ -109,7 +109,9 @@ def plot_clusterset_net(clusterset, clusterplot_func=None, clusterplot_xlim=None
     """
     import pygraphviz
     
-    [cluster_dist,all_dists] = get_clusterset_net_data(clusterset, phase_data_function=phase_data_function)
+    cluster_list = generic_cluster_input(cluster_input)
+
+    [cluster_dist,all_dists] = get_clusterset_net_data(cluster_input, phase_data_function=phase_data_function)
 
     # initialise main plot (not subplot) axes
     main_axes = pl.axes([0.,0.,1,1])
@@ -119,7 +121,7 @@ def plot_clusterset_net(clusterset, clusterplot_func=None, clusterplot_xlim=None
     G=pygraphviz.AGraph()
     
     # cluster id list, corresponding to clusterset.clusters
-    clid_str_list = [str(cl.id) for cl in clusterset.clusters]
+    clid_str_list = [str(cl.id) for cl in cluster_list]
 
     # add cluster nodes:
     for clid_str in clid_str_list:
@@ -175,9 +177,9 @@ def plot_clusterset_net(clusterset, clusterplot_func=None, clusterplot_xlim=None
         pl.ylim(main_ylim)
         [nx,ny] = node_coord_list[clid_str_i]
         if clusterplot_func != None:
-            cluster_data = clusterplot_func(clusterset.clusters[clid_str_i])
+            cluster_data = clusterplot_func(cluster_list[clid_str_i])
         else:
-            cluster_data = clusterset.clusters[clid_str_i].get_time_flucstuc_properties(fs_props=['frequency'])
+            cluster_data = cluster_list[clid_str_i].get_time_flucstuc_properties(fs_props=['frequency'])
         #local_axes = pl.axes([(nx-10)/main_dx,(ny-10)/main_dy,70./main_dx,70./main_dy])
         local_axes = pl.axes([(nx-10)/main_dx,(ny-10)/main_dy,140./main_dx,140./main_dy])
 

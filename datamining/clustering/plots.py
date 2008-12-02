@@ -17,7 +17,7 @@ from numpy.linalg import det
 from sqlalchemy import Column, Integer, ForeignKey, Float
 from sqlalchemy.orm import relation
 from tempfile import gettempdir
-
+from pyfusion.utils import remap_angle_negpi_pi
 
 
 def KL_dist(input_data0,input_data1,symmetric=True):
@@ -665,3 +665,43 @@ def cluster_phase_plot(clusterdatasetname, xlims = [False,False], ylims =[-8, 8]
     else:
         pl.savefig(figurename)
             
+def cluster_phase_histograms(cluster_input, n_bins = 30):
+    """
+    Plot overlayed histograms of phase distribution for each channel pair
+
+    TODO: remap phase angles as operation on array, not individual elements...
+    """
+
+    cluster_list = generic_cluster_input(cluster_input)
+    n_clusters = len(cluster_list)
+    
+    # get phases for clusters
+    cluster_phases = [cl.get_phases() for cl in cluster_list]
+    
+    # assuming all clusters have the same set of phases:
+    n_phases = cluster_phases[0].shape[1]
+    channel_names = cluster_list[0].get_dphase_channel_names()
+    hist_bins = arange(-pi,pi, 2*pi/n_bins)
+
+    for ph_i in range(n_phases):
+        for cl_i, cl in enumerate(cluster_list):
+            pl.subplot(n_clusters, n_phases, cl_i*n_phases + ph_i + 1)
+            pl.hist([remap_angle_negpi_pi(i) for i in cluster_phases[cl_i][:,ph_i]], bins=hist_bins)
+            pl.xlim(-pi, pi)
+            pl.setp(pl.gca(), yticks=[], xticks = [-pi, -pi/2, 0, pi/2, pi])
+            if cl_i == n_clusters-1:
+                pl.setp(pl.gca(), xticklabels=['$-\pi$', '', '0', '', '$\pi$'])
+            else:
+                pl.setp(pl.gca(), xticklabels=[])
+            if ph_i == 0:
+                pl.ylabel(str(cl.id))
+            if cl_i == 0:
+                for text_part in [[0.1,channel_names[ph_i][0]],[0.3,'<->'],[0.5,channel_names[ph_i][1]]]:
+                    pl.text(text_part[0], 1.1, text_part[1],
+                            horizontalalignment='left',
+                            verticalalignment='bottom',
+                            rotation=45,
+                            transform = pl.gca().transAxes)
+                
+    pl.show()
+        

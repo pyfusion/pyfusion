@@ -388,9 +388,36 @@ class Cluster(pyfusion.Base):
     clusterset_id = Column("clusterset_id", Integer, ForeignKey('dm_cluster_sets.id'))
     mean_phase_var = Column("mean_phase_var", Float)
 
+    def get_dphase_channel_ids(self):
+        """
+        Return channel ids for delta phases in the same order as for get_phases() 
+        """
+        joined_table = Cluster.__table__.join(cluster_flucstrucs).join(
+            FluctuationStructure.__table__).join(DeltaPhase.__table__)
+
+        phase_select = select([DeltaPhase.channel_1_id, DeltaPhase.channel_2_id],
+                              from_obj=[joined_table]).where(Cluster.id==self.id).group_by(
+            DeltaPhase.channel_1_id,DeltaPhase.channel_2_id)
+        
+        data = array(pyfusion.session.execute(phase_select).fetchall(),dtype='int')
+
+        return data
+
+    def get_dphase_channel_names(self):
+        """
+        Return channel names for delta phases in the same order as for get_phases() 
+        """
+        
+        channel_id_pairs = self.get_dphase_channel_ids()
+        ch_query = pyfusion.q(pyfusion.Channel)
+        channel_names = [[ch_query.get(i[0]).name, ch_query.get(i[1]).name] for i in channel_id_pairs]
+
+        return channel_names
+        
+
     def get_phases(self):
         """
-        retrive phase information from fluctuation structres in this cluster
+        retrieve phase information from fluctuation structres in this cluster
         returns a N_fs x N_phase array, where flucstruc rows are ordered by flucstruc id
         and d_phase columns are ordered by channel1.id, channel2.id
         WARNING: there is no checking to make sure each flucstruc has the same phase channels

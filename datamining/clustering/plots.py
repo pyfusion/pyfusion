@@ -669,9 +669,9 @@ def cluster_phase_plot(clusterdatasetname, xlims = [False,False], ylims =[-8, 8]
     else:
         pl.savefig(figurename)
             
-def cluster_phase_histograms(cluster_input, n_bins = 30):
+def cluster_phase_histograms(cluster_input, n_bins = 30, overplot=False):
     """
-    Plot overlayed histograms of phase distribution for each channel pair
+    Plot histograms of phase distribution for each channel pair
 
     TODO: remap phase angles as operation on array, not individual elements...
     """
@@ -687,25 +687,48 @@ def cluster_phase_histograms(cluster_input, n_bins = 30):
     channel_names = cluster_list[0].get_dphase_channel_names()
     hist_bins = arange(-pi,pi, 2*pi/n_bins)
 
-    for ph_i in range(n_phases):
-        for cl_i, cl in enumerate(cluster_list):
-            pl.subplot(n_clusters, n_phases, cl_i*n_phases + ph_i + 1)
-            pl.hist([remap_angle_negpi_pi(i) for i in cluster_phases[cl_i][:,ph_i]], bins=hist_bins)
+    if overplot==True:
+        for ph_i in range(n_phases):
+            pl.subplot(n_phases, 1, ph_i+1)
+            for cl_i, cl in enumerate(cluster_list):
+                pl.hist(
+                    [remap_angle_negpi_pi(i) for i in cluster_phases[cl_i][:,ph_i]], 
+                    bins=hist_bins, 
+                    alpha=0.4, 
+                    label=str(cl.id)
+                    )
             pl.xlim(-pi, pi)
             pl.setp(pl.gca(), yticks=[], xticks = [-pi, -pi/2, 0, pi/2, pi])
-            if cl_i == n_clusters-1:
-                pl.setp(pl.gca(), xticklabels=['$-\pi$', '', '0', '', '$\pi$'])
+            _tmp = pl.gca().get_position()
+            pl.gca().set_position([_tmp.x0, _tmp.y0, 0.8*_tmp.width, _tmp.height])
+            if ph_i == n_phases-1:
+                pl.setp(pl.gca(), xticklabels=['$-\pi$', '$-\pi/2$', '0', '$\pi/2$', '$\pi$'])
+                pl.legend(loc=(1.05,0.5), labelsep=0.3, pad=0.6)
             else:
                 pl.setp(pl.gca(), xticklabels=[])
-            if ph_i == 0:
-                pl.ylabel(str(cl.id))
-            if cl_i == 0:
-                for text_part in [[0.1,channel_names[ph_i][0]],[0.3,'<->'],[0.5,channel_names[ph_i][1]]]:
-                    pl.text(text_part[0], 1.1, text_part[1],
-                            horizontalalignment='left',
-                            verticalalignment='bottom',
-                            rotation=45,
-                            transform = pl.gca().transAxes)
+        pl.show()
+
+
+    else:
+        for ph_i in range(n_phases):
+            for cl_i, cl in enumerate(cluster_list):
+                pl.subplot(n_clusters, n_phases, cl_i*n_phases + ph_i + 1)
+                pl.hist([remap_angle_negpi_pi(i) for i in cluster_phases[cl_i][:,ph_i]], bins=hist_bins)
+                pl.xlim(-pi, pi)
+                pl.setp(pl.gca(), yticks=[], xticks = [-pi, -pi/2, 0, pi/2, pi])
+                if cl_i == n_clusters-1:
+                    pl.setp(pl.gca(), xticklabels=['$-\pi$', '', '0', '', '$\pi$'])
+                else:
+                    pl.setp(pl.gca(), xticklabels=[])
+                if ph_i == 0:
+                    pl.ylabel(str(cl.id))
+                if cl_i == 0:
+                    for text_part in [[0.1,channel_names[ph_i][0]],[0.3,'<->'],[0.5,channel_names[ph_i][1]]]:
+                        pl.text(text_part[0], 1.1, text_part[1],
+                                horizontalalignment='left',
+                                verticalalignment='bottom',
+                                rotation=45,
+                                transform = pl.gca().transAxes)
                 
     pl.show()
         

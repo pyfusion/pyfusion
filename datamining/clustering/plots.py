@@ -74,7 +74,10 @@ def get_clusterset_net_data(cluster_input, phase_data_function=None):
             cluster_phases[str(cluster.id)] = phase_data_function(cluster)
 
     # dictionary to hold distances between clusters
-    cluster_dist = dict.fromkeys([str(cluster.id) for cluster in cluster_list],{})
+    cluster_dist = dict.fromkeys([str(cluster.id) for cluster in cluster_list])
+    for i in cluster_dist.keys():
+        cluster_dist[i]={}
+
 
     # get distance between each pair of clusters
     all_dists = []
@@ -82,6 +85,7 @@ def get_clusterset_net_data(cluster_input, phase_data_function=None):
         if pyfusion.settings.VERBOSE>1:
             print "calculating distances for cluster %d, %d of %d" %(cluster1.id, cl1_i+1, len(cluster_list))
         for _tmp_counter, cluster2 in enumerate(cluster_list[cl1_i+1:]):
+            print "cls:", cluster1.id, cluster2.id
             cl2_i = cl1_i+_tmp_counter+1
             cl_kl_dist = KL_dist(cluster_phases[str(cluster1.id)], cluster_phases[str(cluster2.id)])
             # check for nan (cl_kl_dist is pos def)

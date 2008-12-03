@@ -690,6 +690,7 @@ def cluster_phase_histograms(cluster_input, n_bins = 30, overplot=False):
     if overplot==True:
         for ph_i in range(n_phases):
             pl.subplot(n_phases, 1, ph_i+1)
+            pl.ylabel(channel_names[ph_i][0]+'\n'+channel_names[ph_i][1], rotation=0)
             for cl_i, cl in enumerate(cluster_list):
                 pl.hist(
                     [remap_angle_negpi_pi(i) for i in cluster_phases[cl_i][:,ph_i]], 

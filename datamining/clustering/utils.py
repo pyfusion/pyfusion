@@ -1,8 +1,9 @@
 """
 utilities for datamining/clustering
 """
-from numpy import sin,cos, array, pi, mean, argmax, abs, std, transpose, random
-from pyfusion.datamining.clustering.core import FluctuationStructure, flucstruc_svs, Cluster
+from numpy import sin,cos, array, pi, mean, argmax, abs, std, transpose, random, empty, mat, identity, square, sum, exp, argsort, take, shape, diag
+from numpy.linalg import det
+from pyfusion.datamining.clustering.core import FluctuationStructure, flucstruc_svs, Cluster, get_sin_cos_phase_for_channel_pairs, DeltaPhase
 import pyfusion
 from sqlalchemy.sql import select
 
@@ -212,3 +213,80 @@ def fs_to_arff(fs_list, filename=None, noise_stddev = 0):
                 outstr = outstr+"%f, %f ," %(sin(dp),cos(dp))
         f.write(outstr[:-2]+'\n')
     f.close()
+
+
+
+def gaussian(x, mean_vec, covariance):
+    """
+    x should be a list of vectors
+    """
+    # if covarience is not NxN, let's guess that it's a list, of 1d vector and make it a diagonal NxN
+    try:
+        assert shape(covariance)[0] == shape(covariance)[1]
+    except IndexError:
+        covariance = array(covariance)*identity(len(covariance))        
+    except AssertionError:
+        covariance = array(covariance)*identity(len(covariance))
+    
+    # use matricies
+    covariance = mat(covariance)
+    dx = mat(x).T - mat(mean_vec).T
+    exp_arg = -0.5*(dx.T * covariance.I * dx)
+    N = shape(covariance)[0]
+    front_factor = 1./((2*pi)**(float(N)/2) * det(covariance)**0.5)
+    return diag(front_factor*exp(exp_arg))
+        
+
+def get_cluster_dists_for_fs_list(flucstruc_ids, clusters, min_var = 0.0):
+    """
+    for a list of fluctuation structures, find distances to listed clusters 
+    """
+    clusters_mean_var = [cl.get_sin_cos_phases_mean_var() for cl in clusters]
+
+    if min_var > 0:
+        # yukky code
+        for i in range(len(clusters_mean_var)):
+            _tmp = clusters_mean_var[i]
+            for j,jj in enumerate(_tmp[1]):
+                if jj < min_var:
+                    _tmp[1][j]=min_var
+            clusters_mean_var[i] = _tmp
+
+    fs_dphase_list = []
+
+    # flucstrucs not in same order here as in flucstruc_ids - we re-order them at end of method
+    fs_dphase_list = pyfusion.q(DeltaPhase).filter(
+            DeltaPhase.flucstruc_id.in_(flucstruc_ids)).group_by(
+            DeltaPhase.flucstruc_id, DeltaPhase.channel_1_id,DeltaPhase.channel_2_id).all()
+    
+    nfs = len(flucstruc_ids)
+
+
+
+    ### copied from Cluster methods: could be more efficient here
+    flat_data = array([i.d_phase for i in fs_dphase_list],dtype='float')
+    data = flat_data.reshape([nfs,flat_data.shape[0]/nfs])
+    fs_cs_phases = empty(shape=(data.shape[0],2*data.shape[1]))
+    fs_cs_phases[:,::2] = sin(data)
+    fs_cs_phases[:,1::2] = cos(data)
+    ###
+
+    fs_cs_phases = mat(fs_cs_phases)
+
+    output = []
+
+    for i,clmv in enumerate(clusters_mean_var):
+        output.append(gaussian(fs_cs_phases,clmv[0], clmv[1]))
+
+    # must be neater way to do this...
+    _tmp_as = argsort(flucstruc_ids).tolist()
+    sorted_output = []
+    for i in output:
+        _i = list(i)
+        sorted_output.append([i[_tmp_as.index(j)] for j in range(len(i))])
+    return sorted_output
+        
+
+
+
+

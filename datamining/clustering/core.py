@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, Strin
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
 import pylab as pl
-from numpy import mean, average, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum, resize, shape, ndarray
+from numpy import mean, average, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum, resize, shape, ndarray, var
 from pyfusion.utils import r_lib
 from pyfusion.visual.core import PLOT_MARKERS
 from sqlalchemy import select,func
@@ -466,6 +466,15 @@ class Cluster(pyfusion.Base):
         data_t0 = map(lambda x: [x[0][0]]+list(x)[1:],data)
 
         return data_t0
+
+    def get_sin_cos_phases_mean_var(self):
+        """
+        return [m,v] where m(v) is a vector of mean(variance of) values of each sin, cos d_phase
+        taken across all fluctuation structures.
+        """
+        cs_phases = self.get_sin_cos_phases()
+        return [mean(cs_phases,axis=0),var(cs_phases,axis=0)]
+
 
 cluster_flucstrucs = Table('cluster_flucstrucs', pyfusion.Base.metadata,
                       Column('cluster_id', Integer, ForeignKey('dm_clusters.id')),

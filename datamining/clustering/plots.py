@@ -8,7 +8,7 @@ import pyfusion, os, pickle
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet, ClusterDataSet, Cluster, ClusterSet
 from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list, generic_cluster_input
-from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d, take,pi, arange, mat, cov,average, trace, log, sin,cos, ndarray, var, size
+from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d, take,pi, arange, mat, cov,average, trace, log, sin,cos, ndarray, var, size, identity
 from numpy.random import random_sample
 from pyfusion.visual.core import ScatterPlot, golden_ratio, datamap
 from numpy.random import rand
@@ -20,7 +20,7 @@ from tempfile import gettempdir
 from pyfusion.utils import remap_angle_negpi_pi
 
 
-def KL_dist(input_data0,input_data1,symmetric=True):
+def KL_dist(input_data0,input_data1,symmetric=True, min_var = pyfusion.settings.SMALL_FLOAT):
     """
     Compute the Kullback-Leibler divergence (~distance) between two normally distributed sets of data in the same space.
 
@@ -40,20 +40,25 @@ def KL_dist(input_data0,input_data1,symmetric=True):
     mu0 = mat(average(data0,axis=1))
     mu1 = mat(average(data1,axis=1))
     S0 = mat(cov(data0))
+        
     S1 = mat(cov(data1))
+    
+    for i in range(S0.shape[0]):
+        if S0[i,i] < min_var:
+            S0[i,i] = min_var
+        if S1[i,i] < min_var:
+            S1[i,i] = min_var
 
     N = shape(mu0)[1]
     m10 = mu1-mu0
-    
-    X = 0.5*( log(det(S1)/det(S0)) + trace(S1.I * S0) + m10.T * S1.I * m10 - N)
-    x = array(X)[0][0]
+    X = 0.5*( log(det(S1)/det(S0)) + trace(S1.I * S0) + m10.T * S1.I * m10 - N) 
+    x = array(X)[0][0] # should be positive - need to check why sometimes not!!
     if symmetric:
-        return 0.5*(x + KL_dist(input_data1,input_data0,symmetric=False))
+        return 0.5*(x + KL_dist(input_data1,input_data0,symmetric=False, min_var=min_var))
     else:
         return x
 
-
-def get_clusterset_net_data(cluster_input, phase_data_function=None):
+def get_clusterset_net_data(cluster_input, phase_data_function=None, min_var=pyfusion.settings.BIG_FLOAT):
     """
     get phases and distances for clusterset_net plot
     """
@@ -87,17 +92,16 @@ def get_clusterset_net_data(cluster_input, phase_data_function=None):
         for _tmp_counter, cluster2 in enumerate(cluster_list[cl1_i+1:]):
             print "cls:", cluster1.id, cluster2.id
             cl2_i = cl1_i+_tmp_counter+1
-            cl_kl_dist = KL_dist(cluster_phases[str(cluster1.id)], cluster_phases[str(cluster2.id)])
+            cl_kl_dist = KL_dist(cluster_phases[str(cluster1.id)], cluster_phases[str(cluster2.id)], min_var=min_var)
             # check for nan (cl_kl_dist is pos def)
-            if not cl_kl_dist <  pyfusion.settings.BIG_FLOAT:
-                cl_kl_dist =  sqrt(pyfusion.settings.BIG_FLOAT)
-            #if cl_kl_dist <  pyfusion.settings.BIG_FLOAT:
-            cluster_dist[str(cluster1.id)][str(cluster2.id)] = log(cl_kl_dist)
-            all_dists.append(cluster_dist[str(cluster1.id)][str(cluster2.id)])
-
+            if 0 < cl_kl_dist <  pyfusion.settings.BIG_FLOAT: # KL DIST SHOULD BE POSITIVE, need to check why sometimes is neg
+                #print cluster1.id, cluster2.id, cl_kl_dist, log(cl_kl_dist)
+                cluster_dist[str(cluster1.id)][str(cluster2.id)] = log(cl_kl_dist)
+                all_dists.append(cluster_dist[str(cluster1.id)][str(cluster2.id)])
+            
     return [cluster_dist,all_dists]
 
-def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=None, clusterplot_ylim=None, phase_data_function=None, show_cluster_id=True):
+def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=None, clusterplot_ylim=None, phase_data_function=None, show_cluster_id=True, min_var=pyfusion.settings.SMALL_FLOAT):
     """
     Plot the clusters in the given clusterset as a graph. 
     Distances between clusters are defined by the Kullback-Leibier distance.
@@ -115,7 +119,7 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
     
     cluster_list = generic_cluster_input(cluster_input)
 
-    [cluster_dist,all_dists] = get_clusterset_net_data(cluster_input, phase_data_function=phase_data_function)
+    [cluster_dist,all_dists] = get_clusterset_net_data(cluster_input, phase_data_function=phase_data_function, min_var=min_var)
 
     # initialise main plot (not subplot) axes
     main_axes = pl.axes([0,0.0,1,1])
@@ -150,10 +154,12 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
     if min(all_dists) == max(all_dists):
         raise ValueError, "cannot normalise distances between clusters"
     get_norm_dist = lambda x: (x-min(all_dists))/(max(all_dists)-min(all_dists))
-    linewidth_offset = 0.2 # we plot the linewidth as inverse of distance, so let's not let it reach zero
+    linewidth_offset = 0.5 # we plot the linewidth as inverse of distance, so let's not let it reach zero
     linewidth_scale = 5.0
     #min_alpha = 0.2
 
+
+    plot_data = []
     # plot graph edges
     for cl1 in cluster_dist.keys():
         for cl2 in cluster_dist[cl1].keys():
@@ -161,13 +167,20 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
             y0 = node_coord_list[clid_str_list.index(cl1)][1]
             x1 = node_coord_list[clid_str_list.index(cl2)][0]
             y1 = node_coord_list[clid_str_list.index(cl2)][1]
+            #print 'o: ', cluster_dist[cl1][cl2], min(all_dists), max(all_dists)
             norm_dist = get_norm_dist(cluster_dist[cl1][cl2])
             linewidth_val = 1./(linewidth_scale*norm_dist+linewidth_offset)
-            print 'norm_dist', norm_dist
+            #print 'norm_dist', norm_dist
             colour_val = colourmap(int(norm_dist*256))
             #alpha_val = (1-norm_dv)*(1-min_alpha)+min_alpha
-            pl.plot([x0,x1],[y0,y1],color=colour_val,lw=linewidth_val)
-            #pl.plot([x0,x1],[y0,y1],color=colour_val,alpha=0.5)
+            #pl.plot([x0,x1],[y0,y1],color=colour_val,lw=linewidth_val)
+            plot_data.append([x0,x1,y0,y1, colour_val, linewidth_val])
+    
+    pl_argsort = argsort([i[5] for i in plot_data])
+    
+    for plarg in pl_argsort:
+        pd = plot_data[plarg]
+        pl.plot([pd[0],pd[1]],[pd[2],pd[3]],color=pd[4],lw=pd[5])
 
     # plot node plots
     pl.axes(main_axes)
@@ -197,7 +210,8 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
         #local_axes = pl.axes([(nx-10)/main_dx,(ny-10)/main_dy,70./main_dx,70./main_dy])
         #local_axes = pl.axes([(nx-10)/main_dx,(ny-10)/main_dy,140./main_dx,140./main_dy])
         #local_axes = pl.axes([(nx-70)/main_dx,(ny-70)/main_dy,140./main_dx,140./main_dy])
-        local_axes = pl.axes([(nx+70)/main_dx,(ny+70)/main_dy,140./main_dx,140./main_dy])
+        #local_axes = pl.axes([(nx+70)/main_dx,(ny+70)/main_dy,140./main_dx,140./main_dy])
+        local_axes = pl.axes([(nx+140)/main_dx,(ny+140)/main_dy,35./main_dx,35./main_dy])
 
         cd_t = transpose(array(cluster_data,dtype='float'))
         pl.plot(cd_t[0],cd_t[1],'.')

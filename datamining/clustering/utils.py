@@ -287,6 +287,19 @@ def get_cluster_dists_for_fs_list(flucstruc_ids, clusters, min_var = 0.0):
     return sorted_output
         
 
+def find_closest_cluster(flucstruc_ids, clusters, min_var=0.0):
+    """
+    returns dictionary whose keys are the cluster ids, and values are list of flucstruc ids who are closest to the cluster
+    """
+    cl_dists = get_cluster_dists_for_fs_list(flucstruc_ids, clusters, min_var=min_var)
+    close_args = mat(cl_dists).argmax(axis=0).tolist()[0]
+    # inefficient hack method
+    output_dict = {}
+    for cl in clusters:
+        output_dict[str(cl.id)] = []
+    for i,arg_i in enumerate(close_args):
+        output_dict[str(clusters[arg_i].id)].append(flucstruc_ids[i])
+    return output_dict
 
 
 

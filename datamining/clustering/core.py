@@ -386,7 +386,10 @@ class Cluster(pyfusion.Base):
     __tablename__ = 'dm_clusters'
     id = Column('id', Integer, primary_key=True)
     clusterset_id = Column("clusterset_id", Integer, ForeignKey('dm_cluster_sets.id'))
+    mean = Column("mean", PicklType)
+    covariance = Column("covariance", PicklType)
     mean_phase_var = Column("mean_phase_var", Float)
+    
 
     def get_dphase_channel_ids(self):
         """

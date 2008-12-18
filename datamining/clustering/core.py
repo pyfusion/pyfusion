@@ -4,7 +4,7 @@ main clustering libs
 
 
 import pyfusion
-from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, String
+from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, String, PickleType
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
 import pylab as pl
@@ -386,8 +386,8 @@ class Cluster(pyfusion.Base):
     __tablename__ = 'dm_clusters'
     id = Column('id', Integer, primary_key=True)
     clusterset_id = Column("clusterset_id", Integer, ForeignKey('dm_cluster_sets.id'))
-    mean = Column("mean", PicklType)
-    covariance = Column("covariance", PicklType)
+    mean = Column("mean", PickleType, nullable=True))
+    covariance = Column("covariance", PickleType, nullable=True))
     mean_phase_var = Column("mean_phase_var", Float)
     
 

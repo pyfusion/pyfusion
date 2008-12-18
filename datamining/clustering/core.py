@@ -386,8 +386,8 @@ class Cluster(pyfusion.Base):
     __tablename__ = 'dm_clusters'
     id = Column('id', Integer, primary_key=True)
     clusterset_id = Column("clusterset_id", Integer, ForeignKey('dm_cluster_sets.id'))
-    mean = Column("mean", PickleType, nullable=True))
-    covariance = Column("covariance", PickleType, nullable=True))
+    mean = Column("mean", PickleType, nullable=True)
+    covariance = Column("covariance", PickleType, nullable=True)
     mean_phase_var = Column("mean_phase_var", Float)
     
 
@@ -586,7 +586,7 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
             pyfusion.session.save(clusterset)
             clusterdataset.clustersets.append(clusterset)
             pyfusion.session.flush()
-            clusters = [Cluster(clusterset=clusterset) for i in range(n_clusters)]
+            clusters = [Cluster(clusterset=clusterset, mean=MX['parameters']['mean'][:,i].tolist(), covariance=MX['parameters']['variance']['sigma'][:,:,i].tolist()) for i in range(n_clusters)]
             cluster_labels = unique(MX['classification']).tolist()
             if len(cluster_labels) != n_clusters:
                 raise ValueError, 'Clustering returned wrong number of clusters...'

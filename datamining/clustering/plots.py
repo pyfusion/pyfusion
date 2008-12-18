@@ -20,11 +20,11 @@ from tempfile import gettempdir
 from pyfusion.utils import remap_angle_negpi_pi
 
 
-def KL_dist(input_data0,input_data1,symmetric=True, min_var = pyfusion.settings.SMALL_FLOAT):
+def KL_dist(mean_cov_0,mean_cov_1,symmetric=True):
     """
     Compute the Kullback-Leibler divergence (~distance) between two normally distributed sets of data in the same space.
 
-    input_data0, input_data1 -- Ndp x Ndim arrays or matricies. Ndp is number of data points, Ndim is number of dimensions
+    mean_cov_0, mean_cov_1 are [mu,sigma] where mu is matrix of means, and sigma is covariance matrix (of numpy matrix type)
 
     We use the form of the KL divergence for normal distributions, if the data is far from normal do not expect a useful result.
     reference: http://en.wikipedia.org/wiki/Multivariate_normal_distribution#Kullback-Leibler_divergence
@@ -32,33 +32,25 @@ def KL_dist(input_data0,input_data1,symmetric=True, min_var = pyfusion.settings.
     By definition, the KL divergence is not symmetric (d_KL(a,b) != d_KL(b,a)). 
     If the symmetric argument = True, KL_dist will return (d_KL(a,b)+d_KL(b,a))/2
     """
-    # convert input data into numpy matrices
-    data0 = mat(input_data0).T
-    data1 = mat(input_data1).T
-
     # calulate means mu and covariance matrix S for input data
-    mu0 = mat(average(data0,axis=1))
-    mu1 = mat(average(data1,axis=1))
-    S0 = mat(cov(data0))
-        
-    S1 = mat(cov(data1))
-    
-    for i in range(S0.shape[0]):
-        if S0[i,i] < min_var:
-            S0[i,i] = min_var
-        if S1[i,i] < min_var:
-            S1[i,i] = min_var
+    [mu0, S0] = mean_cov_0
+    [mu1, S1] = mean_cov_1
+
+    if mu0.shape[0] == 1:
+        mu0 = mu0.T
+    if mu1.shape[0] == 1:
+        mu1 = mu1.T
 
     N = shape(mu0)[1]
     m10 = mu1-mu0
     X = 0.5*( log(det(S1)/det(S0)) + trace(S1.I * S0) + m10.T * S1.I * m10 - N) 
     x = array(X)[0][0] # should be positive - need to check why sometimes not!!
     if symmetric:
-        return 0.5*(x + KL_dist(input_data1,input_data0,symmetric=False, min_var=min_var))
+        return 0.5*(x + KL_dist(mean_cov_0, mean_cov_1,symmetric=False))
     else:
         return x
 
-def get_clusterset_net_data(cluster_input, phase_data_function=None, min_var=pyfusion.settings.BIG_FLOAT):
+def get_clusterset_net_data(cluster_input, phase_data_function=None):
     """
     get phases and distances for clusterset_net plot
     """
@@ -67,16 +59,13 @@ def get_clusterset_net_data(cluster_input, phase_data_function=None, min_var=pyf
     cluster_list = generic_cluster_input(cluster_input)
     
     # dictionary to hold phase info for cluster flucstrucs
-    cluster_phases = dict.fromkeys([str(cluster.id) for cluster in cluster_list])
+    cluster_mean_cov = dict.fromkeys([str(cluster.id) for cluster in cluster_list])
 
-    # get phase info for clusters
+    # get mean, covariance for clusters
     for cl_i, cluster in enumerate(cluster_list):
         if pyfusion.settings.VERBOSE>1:
-            print "getting phases for cluster %d, %d of %d" %(cluster.id, cl_i+1, len(cluster_list))
-        if phase_data_function == None:
-            cluster_phases[str(cluster.id)] = cluster.get_sin_cos_phases()
-        else:
-            cluster_phases[str(cluster.id)] = phase_data_function(cluster)
+            print "getting mean, covariance for cluster %d, %d of %d" %(cluster.id, cl_i+1, len(cluster_list))
+        cluster_mean_cov[str(cluster.id)] = [mat(cluster.mean), mat(cluster.covariance)]
 
     # dictionary to hold distances between clusters
     cluster_dist = dict.fromkeys([str(cluster.id) for cluster in cluster_list])
@@ -92,7 +81,7 @@ def get_clusterset_net_data(cluster_input, phase_data_function=None, min_var=pyf
         for _tmp_counter, cluster2 in enumerate(cluster_list[cl1_i+1:]):
             print "cls:", cluster1.id, cluster2.id
             cl2_i = cl1_i+_tmp_counter+1
-            cl_kl_dist = KL_dist(cluster_phases[str(cluster1.id)], cluster_phases[str(cluster2.id)], min_var=min_var)
+            cl_kl_dist = KL_dist(cluster_mean_cov[str(cluster1.id)], cluster_mean_cov[str(cluster2.id)])
             # check for nan (cl_kl_dist is pos def)
             if 0 < cl_kl_dist <  pyfusion.settings.BIG_FLOAT: # KL DIST SHOULD BE POSITIVE, need to check why sometimes is neg
                 #print cluster1.id, cluster2.id, cl_kl_dist, log(cl_kl_dist)
@@ -101,7 +90,7 @@ def get_clusterset_net_data(cluster_input, phase_data_function=None, min_var=pyf
             
     return [cluster_dist,all_dists]
 
-def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=None, clusterplot_ylim=None, phase_data_function=None, show_cluster_id=True, min_var=pyfusion.settings.SMALL_FLOAT):
+def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=None, clusterplot_ylim=None, phase_data_function=None, show_cluster_id=True, savefig=None):
     """
     Plot the clusters in the given clusterset as a graph. 
     Distances between clusters are defined by the Kullback-Leibier distance.
@@ -109,7 +98,7 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
     Kamada-Kawai model for energy minimisation)
 
     arguments:
-    clusterset -- a ClusterSet instance
+    cluster_input -- can be a ClusterSet instance, list of clusters or list of cluster ids
     clusterplot_func - an optional function which takes a Cluster instance as its only arument and returns
         data [[x0,y0],[x1,y1]] for plotting for the given cluster
     clusterplot_xlim -- [min,max] for x axis of cluster subplots
@@ -119,7 +108,7 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
     
     cluster_list = generic_cluster_input(cluster_input)
 
-    [cluster_dist,all_dists] = get_clusterset_net_data(cluster_input, phase_data_function=phase_data_function, min_var=min_var)
+    [cluster_dist,all_dists] = get_clusterset_net_data(cluster_input, phase_data_function=phase_data_function)
 
     # initialise main plot (not subplot) axes
     main_axes = pl.axes([0,0.0,1,1])
@@ -224,7 +213,10 @@ def plot_clusterset_net(cluster_input, clusterplot_func=None, clusterplot_xlim=N
             pl.title(clid_str, size=12)
 
     pl.setp(main_axes, xticks=[], yticks=[])
-    pl.show()
+    if not savefig == None:
+        pl.savefig(savefig)
+    else:
+        pl.show()
 
 
 class DendrogramLink(pyfusion.Base):

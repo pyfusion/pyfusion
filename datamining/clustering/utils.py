@@ -237,20 +237,11 @@ def gaussian(x, mean_vec, covariance):
     return diag(front_factor*exp(exp_arg))
         
 
-def get_cluster_dists_for_fs_list(flucstruc_ids, clusters, min_var = 0.0):
+def get_cluster_prob_for_fs_list(flucstruc_ids, clusters):
     """
-    for a list of fluctuation structures, find distances to listed clusters 
+    for a list of fluctuation structures, find probability of belonging to cluster
     """
-    clusters_mean_var = [cl.get_sin_cos_phases_mean_var() for cl in clusters]
-
-    if min_var > 0:
-        # yukky code
-        for i in range(len(clusters_mean_var)):
-            _tmp = clusters_mean_var[i]
-            for j,jj in enumerate(_tmp[1]):
-                if jj < min_var:
-                    _tmp[1][j]=min_var
-            clusters_mean_var[i] = _tmp
+    clusters_mean_cov = [[mat(cl.mean), mat(cl.covariance)] for cl in clusters]
 
     fs_dphase_list = []
 
@@ -275,8 +266,8 @@ def get_cluster_dists_for_fs_list(flucstruc_ids, clusters, min_var = 0.0):
 
     output = []
 
-    for i,clmv in enumerate(clusters_mean_var):
-        output.append(gaussian(fs_cs_phases,clmv[0], clmv[1]))
+    for i,[mu,sigma] in enumerate(clusters_mean_cov):
+        output.append(gaussian(fs_cs_phases,mu, sigma))
 
     # must be neater way to do this...
     _tmp_as = argsort(flucstruc_ids).tolist()
@@ -291,7 +282,7 @@ def find_closest_cluster(flucstruc_ids, clusters, min_var=0.0):
     """
     returns dictionary whose keys are the cluster ids, and values are list of flucstruc ids who are closest to the cluster
     """
-    cl_dists = get_cluster_dists_for_fs_list(flucstruc_ids, clusters, min_var=min_var)
+    cl_dists = get_cluster_prob_for_fs_list(flucstruc_ids, clusters)
     close_args = mat(cl_dists).argmax(axis=0).tolist()[0]
     # inefficient hack method
     output_dict = {}

@@ -7,7 +7,7 @@ yes, it's a mess.
 import pyfusion, os, pickle
 import pylab as pl
 from pyfusion.datamining.clustering.core import FluctuationStructure,FluctuationStructureSet, ClusterDataSet, Cluster, ClusterSet
-from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list, generic_cluster_input
+from pyfusion.datamining.clustering.utils import get_phase_info_for_fs_list, generic_cluster_input, get_fs_for_shot, find_closest_cluster
 from numpy import array,transpose, argsort, min, max, average, shape, mean, cumsum, unique, sqrt, intersect1d, take,pi, arange, mat, cov,average, trace, log, sin,cos, ndarray, var, size, identity
 from numpy.random import random_sample
 from pyfusion.visual.core import ScatterPlot, golden_ratio, datamap
@@ -739,3 +739,20 @@ def cluster_phase_histograms(cluster_input, n_bins = 30, overplot=False):
                 
     pl.show()
         
+def plot_fs_cluster_for_shot(shot_number, cluster_list, energy_range=[None, None], frequency_range=[None, None]):
+    """
+    for a shot, plot flucstrucs according to which cluster they are most probably associated with
+    
+    horribly inefficient - gets list of fluctrucs from sql twice!
+    """
+    fs_list = get_fs_for_shot(shot_number, energy_range=energy_range, frequency_range = frequency_range)
+    fsid_list = [i.id for i in fs_list]
+    print fsid_list
+    fs_close_cl = find_closest_cluster(fsid_list, cluster_list)
+    for clid in fs_close_cl.keys():
+        if len(fs_close_cl[clid]) > 0:
+            fslist = [pyfusion.q(FluctuationStructure).get(i) for i in fs_close_cl[clid]]
+            pl.plot([i.tmid for i in fslist], [i.frequency for i in fslist],'o', label=clid)
+    pl.legend()
+    pl.show()
+

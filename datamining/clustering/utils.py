@@ -293,4 +293,46 @@ def find_closest_cluster(flucstruc_ids, clusters, min_var=0.0):
     return output_dict
 
 
+# these get_fs_for_xxx seem quite inefficient... - 
+# there muct be a good way to do this through sql rather than loops (though not by joining massive tables)
+
+def get_fs_for_svd(svd_x, energy_range = [None,None], frequency_range = [None, None]):
+    fs_q = pyfusion.q(FluctuationStructure).filter_by(svd_id = svd_x.id)
+    if energy_range[0] != None:
+        fs_q = fs_q.filter(FluctuationStructure.energy>=energy_range[0])
+    if energy_range[1] != None:
+        fs_q = fs_q.filter(FluctuationStructure.energy<=energy_range[1])
+    if frequency_range[0] != None:
+        fs_q = fs_q.filter(FluctuationStructure.frequency>=frequency_range[0])
+    if frequency_range[1] != None:
+        fs_q = fs_q.filter(FluctuationStructure.frequency<=frequency_range[1])
+    return fs_q.all()
+
+def get_fs_for_ts(ts, energy_range = [None,None], frequency_range = [None, None]):
+    fs_list = []
+    svd_list = ts.svd
+    for svd_x in svd_list:
+        _tmp = get_fs_for_svd(svd_x, energy_range=energy_range, frequency_range=frequency_range)
+        fs_list.extend(_tmp)
+    return fs_list
+
+def get_fs_for_shot(shot_number, energy_range = [None,None], frequency_range = [None, None]):
+    """
+    return list of flustuation structures for a given shot
+
+    shot_numer - shot number
+    energy_range = [min_energy, max_energy] -- if min_energy (max_energy) = None, no min (max) energy filtering is applied
+    frequency_range = [min_freq, max_freq] -- if min_freq (max_freq) = None, no min (max) freq filtering is applied
+    """
+    s = pyfusion.q(pyfusion.Shot).filter(pyfusion.Shot.shot==shot_number).one()
+
+    # timesegs for shot
+    ts_list = pyfusion.q(pyfusion.TimeSegment).filter(pyfusion.TimeSegment.shot_id == s.id).all()
+    fs_list = []
+
+    for ts in ts_list:
+        _tmp = get_fs_for_ts(ts, energy_range=energy_range, frequency_range=frequency_range)
+        fs_list.extend(_tmp)
+    return fs_list
+
 

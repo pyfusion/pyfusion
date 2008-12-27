@@ -7,3 +7,4 @@
 *.o
 # emacs hash filenames
 \#*
+pyfusion_database.txt

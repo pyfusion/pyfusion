@@ -537,7 +537,12 @@ def get_clusters(fs_list, channel_pairs, clusterdatasetname,  n_cluster_list = r
     really a performance hit, as we only get a flush when saving a clusters, which takes
     much time.
     """
-    from rpy import r, RVER
+    try:
+        from rpy2.robjects import robjects
+        r = robjects.r
+        RVER = 2080 # hack
+    except ImportError:
+        from rpy import r, RVER
     from numpy import unique  #bdb added
     
     r_lib(r,'mclust')
@@ -607,7 +612,11 @@ def use_clustvarsel(fs_list, channel_pairs,  max_clusters = 10,max_iterations=10
     """
     returns new set of channel_pairs as determined by clustvarsel
     """
-    from rpy import r
+    try:
+        from rpy2.robjects import robjects
+        r = robjects.r
+    except ImportError:
+        from rpy import r
     r_lib(r, 'clustvarsel')
 
     [data_array, used_fs] = get_sin_cos_phase_for_channel_pairs(fs_list, channel_pairs)

@@ -1,5 +1,6 @@
 """
 From wid_specgram - intention is a point-and-click shot overview
+This version only works for shots in the pyfusion database.
 
 David suggests Qt is better for interactive use
 Advantage of this simple version is it is toolkit independent.
@@ -17,6 +18,7 @@ from pyfusion.visual import ShotOverview
 # defaults
 global shot_number, ch_list, fft_list
 shot_number=58123
+shot_number=18993
 cmap=None
 xextent=None
 NFFT=512
@@ -42,6 +44,8 @@ axcolor = 'lightgoldenrodyellow'
 #define the box where the buttons live
 rax = axes([0.05, 0.75, 0.15, 0.2], axisbg=axcolor)
 radio = RadioButtons(rax, ('win 128', '256', '512', '1024','2048','4096'))
+radio.active=2  # only for  display -  doesn't mean the value is consistent
+
 def hzfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
     hzdict = {'win 128':128, '256':256, '512':512, '1024':1024,
@@ -133,8 +137,9 @@ class IntegerCtl:
 
     def wid_showsigs(self, event):
         import os 
+# windows seems to want a real windows exe, not a bash script
         if os.name=='nt':
-            os.spawnl(os.P_NOWAIT, 'c:/cygwin/usr/local/bin/ipython', 
+            os.spawnl(os.P_NOWAIT, 'ipython', 
                       '-pylab', 'examples/Boyds/wid_showsigs.py', 
                       str("shot_number=%d" % self.shot))
         else: 
@@ -146,7 +151,7 @@ class IntegerCtl:
     def wid_showallsigs(self, event):
         import os 
         if os.name=='nt':
-            os.spawnl(os.P_NOWAIT, 'c:/cygwin/usr/local/bin/ipython', '-pylab', 
+            os.spawnl(os.P_NOWAIT, 'ipython', '-pylab', 
                        'examples/Boyds/wid_showsigs.py',
                       "diag_name='mirnov_coils'",
                       str("shot_number=%d" % self.shot))

@@ -1,6 +1,6 @@
 """
 All time axes are glued together with sharex
-
+This works without requiring that the shot be in the pyfusion database
 From wid_specgram - intention is a point-and-click shot overview
 
 David suggests Qt is better for interactive use
@@ -205,12 +205,12 @@ class IntegerCtl:
 
     def wid_specgram(self, event):
         import os 
-        os.spawnlp(os.P_NOWAIT, 'ipython', '-pylab',  'examples/Boyds/wid_specgram.py')
+        os.spawnl(os.P_NOWAIT, 'ipython', '-pylab',  'examples/Boyds/wid_specgram.py')
         self.redraw()
 
     def wid_showsigs(self, event):
         import os 
-        os.spawnlp(os.P_NOWAIT, 'ipython', '-pylab',  'examples/Boyds/wid_showsigs.py')
+        os.spawnl(os.P_NOWAIT, 'ipython', '-pylab',  'examples/Boyds/wid_showsigs.py')
         self.redraw()
 
 

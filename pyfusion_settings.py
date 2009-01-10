@@ -132,6 +132,8 @@ H1_MDS_SERVER = 'h1data.anu.edu.au'
 
 # TJ-II
 RPCLIB = "$HOME/libs/libRpcC.a.linux.3.1"
+#COMPILE_COMMAND = "gcc  -g -IC:/python25/include -c tjiidata.c -o tjiidata.o"
+# the above line has not been used seriously - just testing windows compilers
 COMPILE_COMMAND = "gcc  -g -I/usr/include/python2.5 -c tjiidata.c -o tjiidata.o"
 LINKING_COMMAND = "ld -shared -o tjiidata.so  tjiidata.o %s" %RPCLIB
 def compile_tjiidata(current_dir, comp_command = COMPILE_COMMAND, link_command = LINKING_COMMAND):
@@ -151,7 +153,7 @@ try:
 		print('importing pyfusion_local_settings')
 
 except:
-	print "Local settings not found (looking for pyfusion_local_settings.py in python path!!)"
+	print "Error in local settings or file not found (looking for pyfusion_local_settings.py in python path!!)"
 
 
 # Allow overriding of these settings with environment variables.

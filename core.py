@@ -3,7 +3,9 @@ The core components of PyFusion.
 The classes and functions here are imported by pyfusion/__init__.py
 """
 
-from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted, load, version as numpy_version, sqrt
+from numpy import array,mean,ravel,transpose,arange,var,log, take, shape, ones, searchsorted, version as numpy_version, sqrt
+# rarely any need to use the old load, it will be incompatible with new data
+# so only for very negative OPT!
 from numpy.dual import svd
 if int(numpy_version.version.replace('.','')) >= 110: from numpy import savez
 
@@ -11,6 +13,15 @@ from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Floa
 from sqlalchemy.orm import relation, synonym
 
 import pyfusion
+
+# OPT=-10 to supress all new save/load code, OPT=0 suppresses new save,
+#    uses old load.
+if pyfusion.settings.OPT > -9:
+    from pyfusion.data_acq.save_compress import newload as loadz, \
+         discretise_signal as savez_new
+else:
+    from numpy import load as loadz
+
 from pyfusion.coords import Coordinates
 from pyfusion.utils import local_import, get_conditional_select, check_same_timebase, delta_t, linear_interpolate_resample
 
@@ -230,6 +241,7 @@ def last_shot():
 
 def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, allow_null_return=False, ignore_shot_lims = False):
     from os.path import exists
+    from os import getcwd
     if ignore_shot_lims:
         ignorelocal=True
         savelocal=False
@@ -237,10 +249,17 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
         pyfusion.settings.SHOT_T_MIN = -pyfusion.settings.BIG_FLOAT
         pyfusion.settings.SHOT_T_MAX = pyfusion.settings.BIG_FLOAT
         
-    ch = pyfusion.session.query(Channel).filter_by(name=channel_name)[0]
+    chqry = pyfusion.session.query(Channel).filter_by(name=channel_name)
+    if chqry.count() == 0: 
+        raise(str("Channel %s not in database" % channel_name))
+    else:
+        ch=chqry[0]
     localfilename = pyfusion.settings.getlocalfilename(shot_number, channel_name)
+    if pyfusion.settings.VERBOSE>2: 
+        print(getcwd())
+        print("%s local file %s " % ((["No","found"])[int(exists(localfilename))] ,localfilename))
     if exists(localfilename) and not ignorelocal:
-        localdata = load(localfilename)
+        localdata = loadz(localfilename)
         # allow for tiny rounding errors
         eps=(localdata['timebase'][-1] - localdata['timebase'][0])/len(localdata['timebase'])
         if pyfusion.settings.SHOT_T_MIN < (localdata['timebase'][0]-eps) \
@@ -264,17 +283,6 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
     #  - Solution - for mid-high VERBOSE levels, try again without handling by "try"
     try:
         _tmp = _ProcessData.load_channel(ch, shot_number)
-        if savelocal:
-            print ("savelocal to file %s") % (localfilename)
-            if int(numpy_version.version.replace('.','')) >= 110:
-                savez(localfilename,timebase=_tmp.timebase,
-                      signal=_tmp.signals[channel_name],
-                      parent_element=_tmp.parent_element)
-            else: print("**Warning - not saving - need numpy 1.1.0 or higher!!")
-        if ignore_shot_lims:
-            pyfusion.settings.SHOT_T_MIN = tmp_lims[0]
-            pyfusion.settings.SHOT_T_MAX = tmp_lims[1]
-        return _tmp
     except:
         msg=str('Failed to retrieve data from %s, shot %d') % (ch.name, shot_number)
         if allow_null_return:
@@ -291,6 +299,28 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
                 pyfusion.settings.SHOT_T_MIN = tmp_lims[0]
                 pyfusion.settings.SHOT_T_MAX = tmp_lims[1]
             raise LookupError, msg
+## end of exception handler
+    if savelocal:
+        if pyfusion.settings.VERBOSE>0: 
+            print ("savelocal to file %s") % (localfilename)
+        if int(numpy_version.version.replace('.','')) >= 110:
+            if pyfusion.settings.OPT>1:
+                savez_new(filename=localfilename, timebase=_tmp.timebase,
+                          signal=_tmp.signals[channel_name],
+                          parent_element=_tmp.parent_element, 
+                          verbose=pyfusion.settings.VERBOSE)
+            else:
+                savez(localfilename,timebase=_tmp.timebase,
+                      signal=_tmp.signals[channel_name],
+                      parent_element=_tmp.parent_element)
+                
+        else: print("**Warning - not saving - need numpy 1.1.0 or higher!!")
+    if ignore_shot_lims:
+        pyfusion.settings.SHOT_T_MIN = tmp_lims[0]
+        pyfusion.settings.SHOT_T_MAX = tmp_lims[1]
+
+    return _tmp
+
         
 class MultiChannelTimeseries(object):
     """
@@ -336,7 +366,6 @@ class MultiChannelTimeseries(object):
                 resampled_sig = linear_interpolate_resample(multichanneldata.signals[channel_name], multichanneldata.timebase, self.timebase, zeropad=zeropad)
                 self.add_channel(resampled_sig, channel_name)
         else:
-            
             if skip_timebase_check or check_same_timebase(self, multichanneldata):
                 allow_add = True
             else:

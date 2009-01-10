@@ -260,13 +260,17 @@ ne_centre = MDSPlusChannel(name = 'ne_centre', mds_server = H1_MDS_SERVER, mds_t
                                  mds_path='.electr_dens.ne_het:ne_centre')
 
 
+mirnovbean1 = pyfusion.Diagnostic(name='mirnovbean1')
+
+for ch in [mirnov_1_1, mirnov_1_2,mirnov_1_3,mirnov_1_4,mirnov_1_7,mirnov_1_8,mirnov_1_9,mirnov_1_10, mirnov_1_15 ,mirnov_1_16 ,mirnov_1_17,mirnov_1_18]:
+    mirnovbean1.add_channel(ch)
+
 mirnovbeans = pyfusion.Diagnostic(name='mirnovbeans')
 mirnov_all = pyfusion.Diagnostic(name='mirnov_all')
 density_diag = pyfusion.Diagnostic(name='density_diag')
 
 for ch in [ne_centre]:
     density_diag.add_channel(ch)
-
 
 for ch in [mirnov_1_1, mirnov_1_2,mirnov_1_3,mirnov_1_4,mirnov_1_7,mirnov_1_8,mirnov_1_9,mirnov_1_10, mirnov_1_15 ,mirnov_1_16 ,mirnov_1_17,mirnov_1_18, mirnov_2_1, mirnov_2_2, mirnov_2_3, mirnov_2_5, mirnov_2_7, mirnov_2_8, mirnov_2_9, mirnov_2_10, mirnov_2_15, mirnov_2_17, mirnov_2_18, mirnov_2_19, mirnov_2_20]:
     mirnovbeans.add_channel(ch)
@@ -275,16 +279,18 @@ for ch in [mirnov_1_1, mirnov_1_2,mirnov_1_3,mirnov_1_4,mirnov_1_7,mirnov_1_8,mi
 for ch in [mirnov_linear_2,mirnov_linear_4,mirnov_linear_5]:
     mirnov_all.add_channel(ch)
 
-mirnovbean1 = pyfusion.Diagnostic(name='mirnovbean1')
-
-for ch in [mirnov_1_1, mirnov_1_2,mirnov_1_3,mirnov_1_4,mirnov_1_7,mirnov_1_8,mirnov_1_9,mirnov_1_10, mirnov_1_15 ,mirnov_1_16 ,mirnov_1_17,mirnov_1_18]:
-    mirnovbean1.add_channel(ch)
-
 # just the really strong ones, also speeds up code for debugging
 mirnov_small = pyfusion.Diagnostic(name='mirnov_small')
 
 for ch in [mirnov_1_4xx,mirnov_1_7xx,mirnov_1_8xx,mirnov_1_9xx]:
     mirnov_small.add_channel(ch)
+
+mirnov_linear = pyfusion.Diagnostic(name='mirnov_linear')
+
+for ch in [mirnov_linear_2,mirnov_linear_4,mirnov_linear_5]:
+    mirnov_linear.add_channel(ch)
+
+
 
 """
 testchannel_1 = MDSPlusChannel(name = 'testchannel_1',  mds_server = H1_MDS_SERVER, mds_tree='H1DATA', mds_path='.operations.mirnov:a14_14:input_1')

@@ -291,6 +291,7 @@ def show_db(partial_name='', page_width=80):
             print (fs_sets)
         else:
             print('%s ... etc') % str(fs_sets[0:6])
+#    svs_tmp = pyfusion.session.query(pyfusion.datamining.svs)
 
 def shotrange(shot_numbers, max_width=30):
     """ Return a concise string representation of a numer of shots

@@ -1,4 +1,7 @@
 """
+usage = wid_specgram shot_number=58123 "chan_name='mirnov_1_8'"
+run examples/Boyds/wid_specgram.py shot_number=58043 "chan_name='mirnov_1_8'"
+
 Code to develop shot incrementing widget-like interface
 Primarily looks at spectrograms, but has built in test function and crude window inspector.
 
@@ -55,7 +58,7 @@ chan_name=''
 Fcentre=0
 detrend=mlab.detrend_none
 _window = local_none
-foverlap=0
+foverlap=0.75   # 0 is the cheapest, but 3/4 looks better
 _type='F'
 fmod=0
 # t_max=0.08
@@ -76,10 +79,12 @@ def call_spec():
         if chan_name=='':
             try:
                 ch=pyfusion.Session.query(pyfusion.Channel)
+                print("Choosing from", [chn.name for chn in ch])
                 name=ch[0].name
             except:
                 print "Failed to open channel database - try mirnov_1_8"
                 name='mirnov_1_8'
+                name='mirnov_linear_2'
         else:        
             name=chan_name
 
@@ -105,7 +110,7 @@ axcolor = 'lightgoldenrodyellow'
 
 #define the box where the buttons live
 rax = axes([0.05, 0.75, 0.15, 0.2], axisbg=axcolor)
-radio = RadioButtons(rax, ('win 128', '256', '512', '1024','2048','4096'))
+radio = RadioButtons(rax, ('win 128', '256', '512', '1024','2048','4096'),active=2)
 def hzfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
     hzdict = {'win 128':128, '256':256, '512':512, '1024':1024,
@@ -116,7 +121,8 @@ def hzfunc(label):
 radio.on_clicked(hzfunc)
 
 rax = axes([0.05, 0.5, 0.15, 0.2], axisbg=axcolor)
-radio = RadioButtons(rax, ('overlap 0', '1/4', '1/2', '3/4','7/8','15/16'))
+radio = RadioButtons(rax, ('overlap 0', '1/4', '1/2', '3/4','7/8','15/16'),active=3)
+
 def ovlfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
     ovldict = {'overlap 0':0, '1/4':0.25, '1/2':0.5, '3/4':0.75, '7/8':0.875,
@@ -193,6 +199,11 @@ class IntegerCtl:
         self.shot += 10
         self.redraw()
 
+# extra fast fwd is 100+
+    def Xffwd(self, event):
+        self.shot += 100
+        self.redraw()
+
 
 callback = IntegerCtl()
 axcolor = 'lightgoldenrodyellow'
@@ -202,6 +213,7 @@ axrew  = axes([x0+0.045, y0+0.02, 0.02, but_h], axisbg=axcolor)
 axshot = axes([x0+0.070, y0+0.02, 0.1,  but_h], axisbg=axcolor)
 axfwd  = axes([x0+0.175, y0+0.02, 0.02, but_h], axisbg=axcolor)
 axffwd = axes([x0+0.2,   y0+0.02, 0.03, but_h], axisbg=axcolor)
+axXffwd = axes([x0+0.235,   y0+0.02, 0.035, but_h], axisbg=axcolor)
 
 #radio = RadioButtons(rax, ('2 Hz', '4 Hz', '8 Hz'))
 bfrew=Button(axfrew,'<<')
@@ -217,6 +229,9 @@ bfwd.on_clicked(callback.fwd)
 
 bffwd=Button(axffwd,'>>')
 bffwd.on_clicked(callback.ffwd)
+
+bXffwd=Button(axXffwd,'>>>')
+bXffwd.on_clicked(callback.Xffwd)
 
 callback.redraw()
 show()

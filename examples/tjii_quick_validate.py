@@ -23,11 +23,12 @@ from pyfusion.utils import delta_t
 #pyfusion.settings.SQL_SERVER='sqlite:///:memory:'
 
 # about the minimum data that will cluster, maybe not enough to make sense
-diag_name = 'mirnov_small'
-shot_number = 58122  # shot in CPC paper
+diag_name = 'mirnov_coils'
+shot_number = 18993 
 min_energy = 0.2
-t_min=0.02
-t_max=0.06
+
+t_min=1.030*1000
+t_max=1.290*1000
 
 # Note - as of r124, needed 20-60ms instead of 40-60ms to get >4 clusters
 

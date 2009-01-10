@@ -17,7 +17,7 @@ if not(plot_only):
         try:
             s = pyfusion.get_shot(sn)
             s.load_diag(diag_name)
-            generate_flucstrucs(s, diag_name, flucstruc_set_name, store_chronos=True)
+            generate_flucstrucs(s, diag_name, flucstruc_set_name, store_chronos=False,normalise=False)
         except:
             print ('failed on shot %s') % sn
 

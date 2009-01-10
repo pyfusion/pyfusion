@@ -1,6 +1,11 @@
 from numpy import max, std, array, min, sort, diff, unique, size, mean, mod,\
-    log10
-#""
+    log10, int16, int8, uint16, uint8
+try: 
+    from pyfusion.hacked_numpy_io import savez
+except:
+    print("Couldn't load pyfusion.hacked_numpy_io.py, compression much less effective")
+    from numpy import savez
+
 def discretise_array(arr, eps=0, bits=0, maxcount=0, verbose=0):
     """
     Return an integer array and scales etc in a dictionary 
@@ -123,11 +128,30 @@ def try_discretise_array(arr, eps=0, bits=0, deltar=None, verbose=0):
     remain=iarr-((arr-min(arr))/deltar)
     remainck=mod((arr-min(arr))/deltar, 1)
 
-# remain is relative to unit step, need to scale back down
+# remain is relative to unit step, need to scale back down, over whole array
     maxerr=max(abs(remain))*deltar/max(arr)
 # not clear what the max expected error is - small for 12 bits, gets larger quicly
     if (verbose>2) and maxerr<eps: print("appears to be successful")
     if verbose>0: print('maximum error with eps = %g, is %g, %.3g x eps' % (eps,maxerr,maxerr/eps))
+
+    if min(iarr>=0):
+        if max(iarr)<256: 
+            iarr=iarr.astype(uint8)
+            if verbose>1: print('using 8 bit uints')
+            
+        elif max(iarr)<16384: 
+            iarr=iarr.astype(uint16)
+            if verbose>1: print('using 16 bit uints')
+                
+    else:
+        if max(iarr)<128: 
+            iarr=iarr.astype(int8)
+            if verbose>1: print('using 8 bit ints')
+            
+        elif max(iarr)<8192: 
+            iarr=iarr.astype(int16)
+            if verbose>1: print('using 16 bit ints')
+                
     return({'iarr':iarr, 'maxerror':maxerr, 'deltar':deltar, 'minarr':min(arr),
             'intmax':max(iarr)})
 
@@ -146,7 +170,7 @@ def discretise_signal(timebase=None, signal=None, parent_element=None,
     """
     from numpy import remainder, mod, min, max, \
         diff, mean, unique, append
-    from pyfusion.hacked_numpy_io import savez
+
     dat=discretise_array(signal,eps=eps,verbose=verbose)
 #    signalexpr=str("signal=%g+rawsignal*%g" % (dat['minarr'], dat['deltar']))
 # this version works here and now - need a different version to work in loadz
@@ -181,7 +205,7 @@ def discretise_signal(timebase=None, signal=None, parent_element=None,
         if verbose>0: print('Saving as %s' % filename)
         savez(filename, timebaseexpr=timebaseexpr, signalexpr=signalexpr,
               parent_element=parent_element,
-              rawsignal=dat['iarr'], rawtimebase=rawtimebase, version=1)    
+              rawsignal=dat['iarr'], rawtimebase=rawtimebase, version=100)    
 
 
 def newload(filename):

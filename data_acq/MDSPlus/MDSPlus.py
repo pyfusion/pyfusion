@@ -19,9 +19,8 @@ def _loadmds(mdsch,shot, invert=False):
     # This exception handler seems to be intercepted by the one in load_diag
     #   so we print the message as well!
 
-# this try/exceot covers too much - need to break it up
-#    try:
-    if 1==1:
+# this try/except covers too much - need to break it up
+    try:
         if MDSmod=='pmds':  
             pmds.mdsconnect(mdsch.mds_server)
             pmds.mdsopen(mdsch.mds_tree, int(shot))
@@ -58,7 +57,7 @@ def _loadmds(mdsch,shot, invert=False):
         else:
             M.TreeClose(mdsch.mds_tree, int(shot))
 
-    else: #    except:
+    except:
   # using the jScope/mdsdcl convention for "full path" here - hope it is right!
   #  mirnov_dtacq ideally should be preceded by a : 
   # (dgp: mirnov_dtacq is H-1 specific - any mirnov_dtacq customisations would go in devices/H1)

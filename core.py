@@ -264,8 +264,9 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
         eps=(localdata['timebase'][-1] - localdata['timebase'][0])/len(localdata['timebase'])
         if pyfusion.settings.SHOT_T_MIN < (localdata['timebase'][0]-eps) \
            or pyfusion.settings.SHOT_T_MAX > (localdata['timebase'][-1]+eps):
-            print("localdatatimebase = %g to %g") % (
-                localdata['timebase'][0], localdata['timebase'][-1])
+            print("localdatatimebase = %g to %g, SHOT_T_MIN/MAX= %g, %g") % (
+                localdata['timebase'][0], localdata['timebase'][-1],
+                pyfusion.settings.SHOT_T_MIN, pyfusion.settings.SHOT_T_MAX)
             raise ValueError, "SHOT_T_MIN/MAX lie outside the timebase of locally saved data. Either use ignorelocal=True or change pyfusion.settings.SHOT_T_MIN / MAX. While you decide what to do, I'm going to raise an exception and find myself some sangria...!!"
         t_lim = searchsorted(localdata['timebase'],[pyfusion.settings.SHOT_T_MIN,pyfusion.settings.SHOT_T_MAX])            
         loaded_MCT = MultiChannelTimeseries(localdata['timebase'][t_lim[0]:t_lim[1]],parent_element=int(localdata['parent_element']+t_lim[0]))

@@ -1,12 +1,15 @@
-""" This is a script file with procedures inline to develop and test a 
-compressed save routine mainly for pyfusion.  The idea is to extend the
-dictionary in Dave's original code so that it contains a version number,
-and most importantly, expressions for obtaining the data from the compressed 
-form.  For simplicity, the compression used is discretization into integer 
-arrays, which will compress well with pkzip etc.  Unfortunately, as of python 
-2.5 and the assoicated numpy, savez does not use the built in compress feature, 
-so a  slighly modified copy of io.py (hacked_numpy_io_savez.py) is needed.
-A try/except clause should quielt default to no compression.
+""" This is a script file with procedures inline to develop and test a
+compressed save routine mainly for pyfusion.  The idea is to extend
+the dictionary in Dave's original code so that it contains a version
+number, and most importantly, expressions for obtaining the data from
+the compressed form.  For simplicity, the compression used is
+discretization into integer arrays, which will compress well with
+pkzip etc.  Unfortunately, as of python 2.5 and the assoicated numpy,
+savez does not use the built in compress feature, so a slighly
+modified copy of io.py (hacked_numpy_io_savez.py) is needed.  A
+try/except clause on import of hacked_numpy_io.py should quietly
+default to no compression.
+
 Plan:
 Original:  dictionary contained timebase, signal and internal info 
         in parent_element

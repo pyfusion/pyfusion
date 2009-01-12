@@ -6,56 +6,63 @@ pmds: OK, but hard to find new version, hard to compile on W32
 MDSplus: superseded embryonic object implementation by Tom Fredian
      Advantage: Should be faster, links to standard MDSplus distro.
      In principle should be able to do thin client, but I didn't test it.
+
+
 """
 
 import pyfusion
 from sqlalchemy import Column, Integer, String, ForeignKey
 from numpy import array, searchsorted
 
+
+def _loadmds_pmds(mdsch, shot):
+    from mdsutils import pmds
+    pmds.mdsconnect(mdsch.mds_server)
+    pmds.mdsopen(mdsch.mds_tree, int(shot))
+    data = array(pmds.mdsvalue(mdsch.mds_path))
+    dim_data = array(pmds.mdsvalue('dim_of(' + mdsch.mds_path+')'))
+    pmds.mdsclose(mdsch.mds_tree, shot)
+    pmds.mdsdisconnect()
+    return [dim_data, data]
+            
+def _loadmds_MDSplus(mdsch, shot):
+    import MDSplus as M
+    # at present, only access local data through the library 
+    print('W: module MDSplus accessing local MDS only, request was %s ' % 
+          mdsch.mds_server)
+    M.TreeOpen(mdsch.mds_tree, int(shot))
+    bounds=str("[%f:%f]") % (pyfusion.settings.SHOT_T_MIN, 
+                             pyfusion.settings.SHOT_T_MAX)
+    print mdsch.mds_path+bounds
+    sig = M.TdiExecute(mdsch.mds_path+bounds)
+    if pyfusion.settings.VERBOSE>4: print sig
+    data = sig.data()
+    if pyfusion.settings.VERBOSE>10: 
+        import pylab as pl
+        pl.plot(sig.data())
+        pl.title('mdsch.mds_path+bounds')
+        pl.show()
+    sigdim = M.TdiExecute('dim_of(' + mdsch.mds_path+bounds+')')
+    dim_data = sigdim.data()
+    M.TreeClose(mdsch.mds_tree, int(shot))
+    return [dim_data, data]
+
+def _loadmds_MDSplus_dev(mdsch, shot):
+    pass
+
+MDSPLUS_PYTHON_MODULE_DICT = {
+    'pmds':_loadmds_pmds,
+    'MDSPlus':_loadmds_MDSplus,
+    'MDSPlus_dev':_loadmds_MDSplus_dev
+    }
+
 def _loadmds(mdsch,shot, invert=False):
     MDSmod=pyfusion.settings.MDSPLUS_PYTHON_MODULE
-    if MDSmod=='pmds': from mdsutils import pmds
-    else: import MDSplus as M
-    # This exception handler seems to be intercepted by the one in load_diag
-    #   so we print the message as well!
+    mds_func = MDSPLUS_PYTHON_MODULE_DICT[MDSmod]
 
-# this try/except covers too much - need to break it up
+    # this try/except covers too much - need to break it up
     try:
-        if MDSmod=='pmds':  
-            pmds.mdsconnect(mdsch.mds_server)
-            pmds.mdsopen(mdsch.mds_tree, int(shot))
-        else:
-            # at present, only access local data through the library 
-            print('W: module MDSplus accessing local MDS only, request was %s ' % 
-                  mdsch.mds_server)
-            M.TreeOpen(mdsch.mds_tree, int(shot))
-        
-        if MDSmod=='pmds':
-            data = array(pmds.mdsvalue(mdsch.mds_path))
-        else:
-            bounds=str("[%f:%f]") % (pyfusion.settings.SHOT_T_MIN, 
-                                     pyfusion.settings.SHOT_T_MAX)
-            print mdsch.mds_path+bounds
-            sig = M.TdiExecute(mdsch.mds_path+bounds)
-            if pyfusion.settings.VERBOSE>4: print sig
-            data = sig.data()
-            if pyfusion.settings.VERBOSE>10: 
-                import pylab as pl
-                pl.plot(sig.data())
-                pl.title('mdsch.mds_path+bounds')
-                pl.show()
-
-        if MDSmod=='pmds':
-            sigdim = array(pmds.mdsvalue('dim_of(' + mdsch.mds_path+bounds))
-        else:
-            sigdim = M.TdiExecute('dim_of(' + mdsch.mds_path+bounds+')')
-
-        dim_data = sigdim.data()
-        if MDSmod=='pmds':
-            pmds.mdsclose(mdsch.mds_tree, shot)
-            pmds.mdsdisconnect()
-        else:
-            M.TreeClose(mdsch.mds_tree, int(shot))
+        [dim_data, data] = mds_func(mdsch, shot)
 
     except:
   # using the jScope/mdsdcl convention for "full path" here - hope it is right!

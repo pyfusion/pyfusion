@@ -125,6 +125,9 @@ SEGMENT_OVERLAP = 0
 SV_GROUPING_THRESHOLD = 0.7
 ENERGY_THRESHOLD = 0.99 
 
+# Data acq specific:
+MDSPLUS_PYTHON_MOD = 'MDSPlus' # must be either 'MdsPlus' or 'pmds'
+
 # Device specific:
 
 # H1

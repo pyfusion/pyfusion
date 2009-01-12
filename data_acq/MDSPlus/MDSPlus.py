@@ -13,7 +13,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from numpy import array, searchsorted
 
 def _loadmds(mdsch,shot, invert=False):
-    MDSmod='MDSplus'
+    MDSmod=pyfusion.settings.MDSPLUS_PYTHON_MODULE
     if MDSmod=='pmds': from mdsutils import pmds
     else: import MDSplus as M
     # This exception handler seems to be intercepted by the one in load_diag

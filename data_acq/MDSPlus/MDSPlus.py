@@ -48,8 +48,13 @@ def _loadmds_MDSplus(mdsch, shot):
     return [dim_data, data]
 
 def _loadmds_MDSplus_dev(mdsch, shot):
-    pass
-
+    import MDSplus as M
+    mdstree = M.Tree(mdsch.mds_tree, int(shot))
+    mdsnode = mdstree.getNode(mdsch.mds_path)
+    mdsnode.getData()
+    data = mdsnode.data()
+    raise NotImplementedError, "Can't figure out how to get dim_of..."
+    
 MDSPLUS_PYTHON_MODULE_DICT = {
     'pmds':_loadmds_pmds,
     'MDSPlus':_loadmds_MDSplus,

@@ -70,9 +70,9 @@ def _loadmds(mdsch,shot, invert=False):
         [dim_data, data] = mds_func(mdsch, shot)
 
     except:
-  # using the jScope/mdsdcl convention for "full path" here - hope it is right!
-  #  mirnov_dtacq ideally should be preceded by a : 
-  # (dgp: mirnov_dtacq is H-1 specific - any mirnov_dtacq customisations would go in devices/H1)
+        # using the jScope/mdsdcl convention for "full path" here - hope it is right!
+        #  mirnov_dtacq ideally should be preceded by a : 
+        # (dgp: mirnov_dtacq is H-1 specific - any mirnov_dtacq customisations would go in devices/H1)
         msg=str(('Error accessing server %s: Shot %d, \\%s::top%s') % 
                 (mdsch.mds_server, shot, mdsch.mds_tree, mdsch.mds_path))
         print(msg)

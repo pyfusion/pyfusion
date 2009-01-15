@@ -116,7 +116,7 @@ class Shot(pyfusion.Base):
         except:
             print 'Failed to get date/time for shot using "get_shot_datetime" in device module!!'
 
-    def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False,ignorelocal=False, allow_null_return=False, downsample=None):
+    def load_diag(self, diagnostic, ignore_channels=[], skip_timebase_check = False,savelocal=False,ignorelocal=False, allow_null_return=False, downsample=None, custom_processdata=None):
         if pyfusion.settings.VERBOSE > 0:
             print "Only MultiChannel Timeseries data works for now" 
         diag = pyfusion.session.query(Diagnostic).filter(Diagnostic.name==diagnostic)[0]
@@ -130,17 +130,17 @@ class Shot(pyfusion.Base):
             if ch not in ignore_channels:
                 channel_list.append(ch)
         for chi, chn in enumerate(channel_list):
-            _tmp = load_channel(self.shot,chn,savelocal=savelocal,ignorelocal=ignorelocal, allow_null_return=allow_null_return)
+            _tmp = load_channel(self.shot,chn,savelocal=savelocal,ignorelocal=ignorelocal, allow_null_return=allow_null_return, custom_processdata=custom_processdata)
             if chi==0:
                 channel_MCT = _tmp
             else:
                 channel_MCT.add_multichannel(_tmp,skip_timebase_check=skip_timebase_check, downsample=downsample)
         self.data[diagnostic] = channel_MCT
 
-    def load_ch(self, chn, skip_timebase_check = False,savelocal=False,ignorelocal=False,allow_null_return=False):
+    def load_ch(self, chn, skip_timebase_check = False,savelocal=False,ignorelocal=False,allow_null_return=False, custom_processdata=None):
         if pyfusion.settings.VERBOSE > 0:
             print "Only MultiChannel Timeseries data works for now" 
-        _tmp = load_channel(self.shot,chn,savelocal=savelocal,ignorelocal=ignorelocal,allow_null_return=allow_null_return)
+        _tmp = load_channel(self.shot,chn,savelocal=savelocal,ignorelocal=ignorelocal,allow_null_return=allow_null_return, custom_processdata=custom_processdata)
         channel_MCT = _tmp
         self.channels[chn] = channel_MCT
         
@@ -239,7 +239,7 @@ def get_shot(shot_number,shot_class = None):
 def last_shot():
     return pyfusion._device_module.last_shot()
 
-def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, allow_null_return=False, ignore_shot_lims = False):
+def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, allow_null_return=False, ignore_shot_lims = False, custom_processdata=None):
     from os.path import exists
     from os import getcwd
     if ignore_shot_lims:
@@ -273,7 +273,9 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
         loaded_MCT.add_channel(localdata['signal'][t_lim[0]:t_lim[1]],channel_name)
         return loaded_MCT
 
-    if ch.processdata_override:
+    if not custom_processdata == None:
+        _ProcessData = custom_processdata
+    elif ch.processdata_override:
         _ProcessData = pyfusion._device_module.ProcessData(data_acq_type = ch.data_acq_type, processdata_override = ch.processdata_override)
     else:
         _ProcessData = __import__('pyfusion.data_acq.%s.%s' %(ch.data_acq_type,ch.data_acq_type), globals(), locals(), ['ProcessData']).ProcessData()

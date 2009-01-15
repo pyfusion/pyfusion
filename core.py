@@ -273,8 +273,8 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
         loaded_MCT.add_channel(localdata['signal'][t_lim[0]:t_lim[1]],channel_name)
         return loaded_MCT
 
-    if not custom_processdata == None:
-        _ProcessData = custom_processdata
+    if custom_processdata != None:
+        _ProcessData = custom_processdata(data_acq_type = ch.data_acq_type, processdata_override = ch.processdata_override)
     elif ch.processdata_override:
         _ProcessData = pyfusion._device_module.ProcessData(data_acq_type = ch.data_acq_type, processdata_override = ch.processdata_override)
     else:

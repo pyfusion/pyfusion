@@ -16,11 +16,17 @@ Should really try to modularise this
 Display updates are 90% right now - still one step behind in adjusting FFT params
 """
 from matplotlib.widgets import RadioButtons, Button
-from pylab import *
+import pylab as pl
+from numpy import sin, pi, ones, hanning, hamming, bartlett, kaiser, arange
+
 import pyfusion
 
-# local definitions for a few windows. mlab.windows are defined differently,
-# and the returned value is multiplied by the input data already.
+# local definitions for a few windows. mlab.windows are defined
+# differently, and the returned value is multiplied by the input data
+# already.  There are only two of the mlab.window_hanning and
+# mlab.window_none.  However, to be useful to David's function, they
+# need to be exported I think.
+
 def local_none(vec):
     return(ones(len(vec)))
 
@@ -51,12 +57,12 @@ def local_flat_top_freq(vec):
 global shot_number, chan_name
 shot_number=58123
 cmap=None
-xextent=None
+#xextent=None  # was here, really belongs in data.spectrogram
 NFFT=512
 Fsamp=2
 chan_name=''
 Fcentre=0
-detrend=mlab.detrend_none
+detrend=pl.detrend_none
 _window = local_none
 foverlap=0.75   # 0 is the cheapest, but 3/4 looks better
 _type='F'
@@ -71,7 +77,7 @@ y=sin((2e5 + 5e3*sin(fmod*2*pi*tm))*2*pi*tm)
 def call_spec():
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod, chan_name
     print len(y), NFFT,foverlap, _type, fmod
-    ax = subplot(111)
+    ax = pl.subplot(111)
     z=_window(y)
     if _type=='F': 
         shot=callback.get_shot()
@@ -89,27 +95,31 @@ def call_spec():
             name=chan_name
 
         data = pyfusion.load_channel(shot,name)
-        data.spectrogram(NFFT=NFFT,noverlap=foverlap*NFFT,colorbar=True)
-#        colorbar() # comes up on a separate page, leave for now
+        if _window==local_none: windowfn=pl.window_none 
+        else: windowfn=pl.window_hanning
+
+        data.spectrogram(NFFT=NFFT, windowfn=windowfn, noverlap=foverlap*NFFT,
+                         colorbar=True)
+#        colorbar() # used to come up on a separate page, fixed, but a little clunky - leave for now
 
     elif _type == 'T':
 # some matplotlib versions don't know about Fc
         specgram(z*y, NFFT=NFFT, Fs=Fsamp, detrend=detrend,
 #                 window = _window
-                 noverlap=foverlap*NFFT, cmap=cmap, xextent=xextent)
+                 noverlap=foverlap*NFFT, cmap=cmap)
     elif _type == 'L':
-        plot(20*log10(abs(fft(y*z))))
+        pl.plot(20*log10(abs(fft(y*z))))
     elif _type == 'W':
-        plot(z)
+        pl.plot(z)
     else: raise ' unknown plot type "' + _type +'"'
-ax = subplot(111)
-subplots_adjust(left=0.3)
+ax = pl.subplot(111)
+pl.subplots_adjust(left=0.3)
 #call_spec()
 
 axcolor = 'lightgoldenrodyellow'
 
 #define the box where the buttons live
-rax = axes([0.05, 0.75, 0.15, 0.2], axisbg=axcolor)
+rax = pl.axes([0.05, 0.75, 0.15, 0.2], axisbg=axcolor)
 radio = RadioButtons(rax, ('win 128', '256', '512', '1024','2048','4096'),active=2)
 def hzfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
@@ -120,7 +130,7 @@ def hzfunc(label):
 
 radio.on_clicked(hzfunc)
 
-rax = axes([0.05, 0.5, 0.15, 0.2], axisbg=axcolor)
+rax = pl.axes([0.05, 0.5, 0.15, 0.2], axisbg=axcolor)
 radio = RadioButtons(rax, ('overlap 0', '1/4', '1/2', '3/4','7/8','15/16'),active=3)
 
 def ovlfunc(label):
@@ -132,7 +142,7 @@ def ovlfunc(label):
 
 radio.on_clicked(ovlfunc)
 
-rax = axes([0.05, 0.25, 0.15, 0.2], axisbg=axcolor)
+rax = pl.axes([0.05, 0.25, 0.15, 0.2], axisbg=axcolor)
 radio = RadioButtons(rax, ('no window',  'Bartlett', 'Hanning', 'Hamming',
                            'Blackman', 'Kaiser3','Flat-top-F'))
 def winfunc(label):
@@ -146,7 +156,7 @@ def winfunc(label):
 
 radio.on_clicked(winfunc)
 
-rax = axes([0.05, 0.1, 0.15, 0.1], axisbg=axcolor)
+rax = pl.axes([0.05, 0.1, 0.15, 0.1], axisbg=axcolor)
 radio = RadioButtons(rax, ('f-t plot', 'test data', 'log-spect', 'window'))
 def typfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
@@ -181,7 +191,7 @@ class IntegerCtl:
     def redraw(self):
         bshot.label.set_text(str(self.shot))
         call_spec()
-        draw()
+        pl.draw()
 
     def frew(self, event):
         self.shot -= 10
@@ -208,12 +218,12 @@ class IntegerCtl:
 callback = IntegerCtl()
 axcolor = 'lightgoldenrodyellow'
 but_h = 0.05
-axfrew = axes([x0+0.01,  y0+0.02, 0.03, but_h], axisbg=axcolor)
-axrew  = axes([x0+0.045, y0+0.02, 0.02, but_h], axisbg=axcolor)
-axshot = axes([x0+0.070, y0+0.02, 0.1,  but_h], axisbg=axcolor)
-axfwd  = axes([x0+0.175, y0+0.02, 0.02, but_h], axisbg=axcolor)
-axffwd = axes([x0+0.2,   y0+0.02, 0.03, but_h], axisbg=axcolor)
-axXffwd = axes([x0+0.235,   y0+0.02, 0.035, but_h], axisbg=axcolor)
+axfrew = pl.axes([x0+0.01,  y0+0.02, 0.03, but_h], axisbg=axcolor)
+axrew  = pl.axes([x0+0.045, y0+0.02, 0.02, but_h], axisbg=axcolor)
+axshot = pl.axes([x0+0.070, y0+0.02, 0.1,  but_h], axisbg=axcolor)
+axfwd  = pl.axes([x0+0.175, y0+0.02, 0.02, but_h], axisbg=axcolor)
+axffwd = pl.axes([x0+0.2,   y0+0.02, 0.03, but_h], axisbg=axcolor)
+axXffwd = pl.axes([x0+0.235,   y0+0.02, 0.035, but_h], axisbg=axcolor)
 
 #radio = RadioButtons(rax, ('2 Hz', '4 Hz', '8 Hz'))
 bfrew=Button(axfrew,'<<')
@@ -234,5 +244,5 @@ bXffwd=Button(axXffwd,'>>>')
 bXffwd.on_clicked(callback.Xffwd)
 
 callback.redraw()
-show()
+pl.show()
 

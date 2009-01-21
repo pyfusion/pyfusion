@@ -1,5 +1,5 @@
 """
-Settings for PyFusion. 
+Settings for PyFusion: See the current values at the end.
 To keep customisations outside of revision control, local settings should be in a seperate file 'pyfusion_local_settings.py' located somewhere in your python path.
 
 Here, we define default settings used throughout pyfusion which should be replaced by local settings.

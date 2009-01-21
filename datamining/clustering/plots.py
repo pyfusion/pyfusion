@@ -533,8 +533,9 @@ def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency
     singles = (data[3]==0).nonzero()
     if size(singles)>0: 
         inds=singles
-        print "singles************",inds, data[2,inds].flatten()
-        print data[2]
+        if pyfusion.settings.VERBOSE>5: 
+            print "singles************",inds, data[2,inds].flatten()
+            print data[2]
         pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),size_factor*data[2,inds].flatten(),
                    colour_factor*data[2,inds].flatten(),marker=vertline)
         
@@ -544,28 +545,28 @@ def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency
     if size(circs)>0: 
         inds=circs
         remain_a12[inds]=0  # take these out of futher consideration
-        print "************",inds, data[2,inds].flatten(),data[2]
+        if pyfusion.settings.VERBOSE>5: print "strong: ********",inds, data[2,inds].flatten(),data[2]
         pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),size_factor*data[2,inds].flatten(), 
                    colour_factor*data[2,inds].flatten(),marker='o') #circles
 
     midrange = (remain_a12>0.4).nonzero()
     if size(midrange)>0: 
         inds=midrange
-        remain_a12[inds]=0  # take these out of futher consideration
-        print "************",inds, data[2,inds].flatten(),data[2]
+        remain_a12[inds]=0  # take these out of further consideration
+        if pyfusion.settings.VERBOSE>5: print "midrange: ******",inds, data[2,inds].flatten(),data[2]
         pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),0.4*size_factor*data[2,inds].flatten(), 
                    colour_factor*data[2,inds].flatten(), marker=ellipse)
 
     rest = (remain_a12 > 0).nonzero()
     if size(rest)>0: 
         inds=rest
-        print "rest************",inds, data[0,inds].flatten()
+        if pyfusion.settings.VERBOSE>5: print "rest:  *********",inds, data[0,inds].flatten()
         pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),0.45*size_factor*data[2,inds].flatten(), 
                    colour_factor*data[2,inds].flatten(), marker=thin_ellipse)
 
     if number:
         ndata=len(data[0])
-        print "ndata=", ndata
+        if pyfusion.settings.VERBOSE>3: print "ndata=", ndata
         for i in range(0,pyfusion.utils.smaller(number, ndata)): 
             interact=pl.isinteractive()
             if interact: pl.ioff()
@@ -589,9 +590,9 @@ def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency
     if not time_range[1]:
         time_range[1] = max(data[0])
     pl.xlim(time_range[0], time_range[1])
-# need to write a function str_shot_range to compress long sequences of 
+#  a function str_shot_range to compress long sequences of 
 #  shot numbers....  --> [58123-26,39-45], but could do [58123...58245] 
-# as a short-cut
+# as a short-cut - but need to get the shot range - not in arg list!
     pl.title(str(
         ' %d Fluctuation structures, %s') % (
         len(fs_list), ' '))  #pyfusion.utils.shotrange(shot_numbers))

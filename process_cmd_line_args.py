@@ -12,7 +12,7 @@ from numpy import arange, array
 if pyfusion.settings.VERBOSE>2: print ('%d args found') % (len(_sys.argv))
 for _i in range(1,len(_sys.argv)):
     _expr = _sys.argv[_i]
-    print('executing %s') % _expr
+    if pyfusion.settings.VERBOSE>0: print('assigning %s from command line') % _expr
     _words=_expr.split('=')
     _firstw=_words[0]
     _lhs=_firstw.strip()

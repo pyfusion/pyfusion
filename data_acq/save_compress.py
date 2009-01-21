@@ -4,6 +4,12 @@ try:
     from pyfusion.hacked_numpy_io import savez
 except:
     print("Couldn't load pyfusion.hacked_numpy_io.py, compression much less effective")
+try:
+    from pyfusion.pyfusion_settings import VERBOSE as verbose
+except: 
+    verbose=1
+    print("assuming verbose output")
+
     from numpy import savez
 
 def discretise_array(arr, eps=0, bits=0, maxcount=0, verbose=0):
@@ -208,7 +214,7 @@ def discretise_signal(timebase=None, signal=None, parent_element=None,
               rawsignal=dat['iarr'], rawtimebase=rawtimebase, version=100)    
 
 
-def newload(filename):
+def newload(filename, verbose=verbose):
     """ Intended to replace load() in numpy
     """
     from numpy import load as loadz
@@ -217,12 +223,12 @@ def newload(filename):
 #    if dic['version'] != None:
 #    if len((dic.files=='version').nonzero())>0:
     if len(dic.files)>3:
-        print ("version %d" % (dic['version']))
+        if verbose>0: print ("version %d" % (dic['version']))
     else: 
-        print("version 0: simple")
-        return(dic)
+        if verbose>0: print("version 0: simple")
+        return(dic)  # quick, minimal return
 
-    print('file contains %s' % dic.files)
+    if verbose>0: print('file contains %s' % dic.files)
     signalexpr=dic['signalexpr']
     timebaseexpr=dic['timebaseexpr']
 # savez saves ARRAYS always, so have to turn array back into scalar    

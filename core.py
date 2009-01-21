@@ -339,6 +339,9 @@ class MultiChannelTimeseries(object):
         if min(timebase[1:]-timebase[:-1]) <= 0:
             raise ValueError, "timebase is not monotonically increasing!!"
         self.timebase = timebase
+# bdb - this is to allow the use of milliseconds mainly - hope it
+# doesn't break too much!
+        self.time_unit_in_seconds = 1e-3
         self.len_timebase = len(timebase)
         self.nyquist = 0.5/mean(self.timebase[1:]-self.timebase[:-1])
         self.signals = {}
@@ -467,19 +470,38 @@ class MultiChannelTimeseries(object):
             pl.show()
 
 
-    def spectrogram(self, max_freq = -1, noverlap=0, NFFT=1024, title="",
-                    saveas="", funits='kHz', colorbar=False, figure=None, **kwargs):
+    def spectrogram(self, windowfn=None, max_freq = -1, noverlap=0, NFFT=1024,
+                    title="", saveas="", funits='kHz', colorbar=False,
+                    figure=None, **kwargs):
+        """ Interface to matplotlib.specgram, passes through many
+        keywords.  NFFT is the length of the FFT including overlapped
+        points.  Data length is doubled if noverlap=1/2 NFFT.  Window
+        defaults to Hanning, and funits ("kHz", "MHz" or "Hz")
+        interacts correctly with timebase using time_unit_in_seconds.
+        """ 
         import pylab as pl
         if funits == 'kHz': ffact=1e-3; tunits='ms'
         elif funits == 'MHz': ffact=1e-6; tunits='us'
         else: ffact=1; tunits='sec'
+        ffact=ffact/self.time_unit_in_seconds
         if (figure): figure(figure.number)
         for ch_i, ch in enumerate(self.ordered_channel_list):
             pl.subplot(len(self.ordered_channel_list),1,ch_i+1)
-            Pxx, freqs, bins, im = pl.specgram(self.signals[ch], NFFT=NFFT,
+# note: xextent does not take into account overlap.... small effect.
+            xextent=(min(self.timebase),max(self.timebase))
+            sig=self.signals[ch]            
+# default to hanning window to copy behaviour of specgram
+            if windowfn == None: windowfn=pl.window_hanning
+            Pxx, freqs, bins, im = pl.specgram(sig, NFFT=NFFT, window=windowfn,
                                                Fs=2.*self.nyquist*ffact,
-                                               noverlap=noverlap, **kwargs)
-            pl.ylabel(ch+' ('+funits+')')
+                                               noverlap=noverlap, 
+                                               xextent=xextent, **kwargs)
+
+            wfn=""
+            if windowfn==pl.window_hanning: wfn=",HW"
+            if windowfn==pl.window_none: wfn=",NW"
+            
+            pl.ylabel(ch+' ('+funits+wfn+')')
             if max_freq> 0:
                 pl.ylim(0,max_freq)
             pl.xlabel('('+tunits+')')

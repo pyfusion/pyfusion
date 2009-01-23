@@ -23,9 +23,14 @@ if not(plot_only):
         try:
             s = pyfusion.get_shot(sn)
             s.load_diag(diag_name)
+        except:
+            print(' failed to retrieve shot %s') % sn
+        try:
             generate_flucstrucs(s, diag_name, flucstruc_set_name, store_chronos=True,normalise=False)
         except:
-            print ('failed on shot %s') % sn
+            print ('generate flucstrucs failed on shot %s') % sn
+            if pyfusion.pyfusion_settings.VERBOSE>2:
+                generate_flucstrucs(s, diag_name, flucstruc_set_name, store_chronos=True,normalise=False)
 
 # if desired, overplot the spectrogram
 if plot_spec:

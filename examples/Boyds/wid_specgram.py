@@ -17,7 +17,7 @@ Display updates are 90% right now - still one step behind in adjusting FFT param
 """
 from matplotlib.widgets import RadioButtons, Button
 import pylab as pl
-from numpy import sin, pi, ones, hanning, hamming, bartlett, kaiser, arange
+from numpy import sin, pi, ones, hanning, hamming, bartlett, kaiser, arange, blackman, cos, log10, fft
 
 import pyfusion
 
@@ -104,22 +104,28 @@ def call_spec():
 
     elif _type == 'T':
 # some matplotlib versions don't know about Fc
-        specgram(z*y, NFFT=NFFT, Fs=Fsamp, detrend=detrend,
+        pl.specgram(z*y, NFFT=NFFT, Fs=Fsamp, detrend=detrend,
 #                 window = _window
                  noverlap=foverlap*NFFT, cmap=cmap)
     elif _type == 'L':
-        pl.plot(20*log10(abs(fft(y*z))))
+        pl.plot(20*log10(abs(fft.fft(y*z))))
     elif _type == 'W':
         pl.plot(z)
+    elif _type =='C':
+        pl.plot(hold=0)
     else: raise ' unknown plot type "' + _type +'"'
 ax = pl.subplot(111)
 pl.subplots_adjust(left=0.3)
 #call_spec()
 
+#Buttons
+
+bxl=0.02
+bw=0.12  # width (for most)
 axcolor = 'lightgoldenrodyellow'
 
 #define the box where the buttons live
-rax = pl.axes([0.05, 0.75, 0.15, 0.2], axisbg=axcolor)
+rax = pl.axes([bxl, 0.73, bxl+bw, 0.2], axisbg=axcolor)
 radio = RadioButtons(rax, ('win 128', '256', '512', '1024','2048','4096'),active=2)
 def hzfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
@@ -130,7 +136,7 @@ def hzfunc(label):
 
 radio.on_clicked(hzfunc)
 
-rax = pl.axes([0.05, 0.5, 0.15, 0.2], axisbg=axcolor)
+rax = pl.axes([bxl, 0.51, bxl+bw, 0.2], axisbg=axcolor)
 radio = RadioButtons(rax, ('overlap 0', '1/4', '1/2', '3/4','7/8','15/16'),active=3)
 
 def ovlfunc(label):
@@ -142,9 +148,9 @@ def ovlfunc(label):
 
 radio.on_clicked(ovlfunc)
 
-rax = pl.axes([0.05, 0.25, 0.15, 0.2], axisbg=axcolor)
-radio = RadioButtons(rax, ('no window',  'Bartlett', 'Hanning', 'Hamming',
-                           'Blackman', 'Kaiser3','Flat-top-F'))
+rax = pl.axes([bxl, 0.25, bxl+bw, 0.24], axisbg=axcolor)
+radio = RadioButtons(rax, ('no window',  'Bartlett', 'Hamming', 'Hanning',
+                           'Blackman', 'Kaiser3','Flat-top-F'), active=0)
 def winfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
     windict = {'no window':local_none, 'Hanning':local_hanning, 
@@ -156,11 +162,11 @@ def winfunc(label):
 
 radio.on_clicked(winfunc)
 
-rax = pl.axes([0.05, 0.1, 0.15, 0.1], axisbg=axcolor)
-radio = RadioButtons(rax, ('f-t plot', 'test data', 'log-spect', 'window'))
+rax = pl.axes([bxl, 0.09, bxl+bw, 0.14], axisbg=axcolor)
+radio = RadioButtons(rax, ('f-t plot', 'test data', 'log-spect', 'window', 'clear'))
 def typfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
-    typdict = {'f-t plot':'F', 'test data':'T', 'log-spect':'L', 'window':'W'}
+    typdict = {'f-t plot':'F', 'test data':'T', 'log-spect':'L', 'window':'W', 'clear':'C'}
     _type = typdict[label]
     call_spec()
 

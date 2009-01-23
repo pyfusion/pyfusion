@@ -4,7 +4,7 @@ Code for the Heliotron J data aquisition system
 
 import pyfusion, tempfile, os
 from numpy import array, shape, zeros
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, ForeignKey
 try:
     if os.name != 'nt': 
         import gethjdata
@@ -31,7 +31,14 @@ class HJChannel(pyfusion.Channel):
     id = Column('id', Integer, ForeignKey('channels.id'), primary_key=True)
     name = Column('name', String(50), unique=True)
     length = Column('length', Integer)
+    time_unit_in_seconds = Column('time_unit_in_seconds', Float)
 
+    # had to add to allow time unit to default - silly!
+    def __init__(self, name=None, length=None):
+        print("init HJCHannel")
+        self.time_unit_in_seconds=.001
+        self.length=length
+        self.name=name
 
 class ProcessData:
     def load_channel(self, hjch, shot):

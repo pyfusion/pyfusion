@@ -83,7 +83,7 @@ class Channel(pyfusion.Base):
     processdata_override = Column('processdata_override', PickleType, nullable=True)
     coord_id = Column('coord_id', Integer, ForeignKey('coords.id'))
     coords = relation(Coordinates, primaryjoin=coord_id==Coordinates.id)    
-
+    time_unit_in_seconds = Column('time_unit_in_seconds', Float)
 
 class Shot(pyfusion.Base):
     """
@@ -254,6 +254,8 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
         raise(str("Channel %s not in database" % channel_name))
     else:
         ch=chqry[0]
+
+    if ch.time_unit_in_seconds==None: ch.time_unit_in_seconds=1. ## better in machine specific code - but beware load from file...
     localfilename = pyfusion.settings.getlocalfilename(shot_number, channel_name)
     if pyfusion.settings.VERBOSE>2: 
         print(getcwd())
@@ -271,6 +273,7 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
         t_lim = searchsorted(localdata['timebase'],[pyfusion.settings.SHOT_T_MIN,pyfusion.settings.SHOT_T_MAX])            
         loaded_MCT = MultiChannelTimeseries(localdata['timebase'][t_lim[0]:t_lim[1]],parent_element=int(localdata['parent_element']+t_lim[0]))
         loaded_MCT.add_channel(localdata['signal'][t_lim[0]:t_lim[1]],channel_name)
+        loaded_MCT.time_unit_in_seconds=ch.time_unit_in_seconds
         return loaded_MCT
 
     if custom_processdata != None:
@@ -345,7 +348,7 @@ class MultiChannelTimeseries(object):
         self.timebase = timebase
 # bdb - this is to allow the use of milliseconds mainly - hope it
 # doesn't break too much!
-        self.time_unit_in_seconds = 1e-3
+####        self.time_unit_in_seconds = 0   was here, Dave didn't like it. (problem referring from seg_svd)
         self.len_timebase = len(timebase)
         self.nyquist = 0.5/mean(self.timebase[1:]-self.timebase[:-1])
         self.signals = {}
@@ -528,6 +531,7 @@ class TimeSegment(pyfusion.Base):
     n_samples = Column('n_samples', Integer)
     data = {}
     channel_data = {}
+    time_unit_in_seconds = 1.  # this is not required to be in a table, it is copied from the channel
     def get_primary_diagnostic(self):
         return pyfusion.session.query(Diagnostic).get(self.primary_diagnostic_id)
     def _load_data(self, diag = None, channel=None, all_diags=False,savelocal=False,ignorelocal=False):
@@ -539,8 +543,10 @@ class TimeSegment(pyfusion.Base):
         #print "-------", self.shot
         loaded_diags = self.shot.data.keys()
         loaded_channels = self.shot.channels.keys()
-        #print 'loaded_diags', loaded_diags
-        #print 'loaded_channels',loaded_channels
+        if pyfusion.settings.VERBOSE>1:
+            print 'loading_diags', loaded_diags
+            print 'loading_channels',loaded_channels
+
         if diag:
             if not diag in loaded_diags:
                 self.shot.load_diag(diag, allow_null_return=True)
@@ -585,6 +591,11 @@ class TimeSegment(pyfusion.Base):
             reference_timebase = self.shot.data[pd.name].timebase
             self.channel_data[channel] = self.shot.channels[channel].timesegment(self.parent_min_sample, 
                                                                                  self.n_samples, use_samples=use_samples, reference_timebase=reference_timebase)
+
+        # - hope that the first channel is loaded by now, so that time_unit_in_seconds is not None
+        self.time_unit_in_seconds = (pd.channels[0]).time_unit_in_seconds
+
+
             
     def generate_data_summary(self,diag_name,channel=False, savelocal=False,ignorelocal=False,save=True):
         """

@@ -17,7 +17,7 @@ Display updates are 90% right now - still one step behind in adjusting FFT param
 """
 from matplotlib.widgets import RadioButtons, Button
 import pylab as pl
-from numpy import sin, pi, ones, hanning, hamming, bartlett, kaiser, arange, blackman, cos, log10, fft
+from numpy import sin, pi, ones, hanning, hamming, bartlett, kaiser, arange, blackman, cos, sqrt, log10, fft
 
 import pyfusion
 
@@ -45,6 +45,18 @@ def local_bartlett(vec):
 # not sure about this, but it is pretty right.
 def local_kaiser3(vec):
     return(kaiser(len(vec),3*pi))
+
+
+def local_wider(vec):
+    """ Flat top in middle, cos at edges - meant to be narrower in f
+    but not as good in the wings
+    """
+    N=len(vec)
+    k=arange(N)
+    w = sqrt(sqrt(1 - cos(2*pi*k/(N-1))))
+#    w = (1 - 1.93*cos(2*pi*k/(N-1)) + 1.29*cos(4*pi*k/(N-1)) 
+#         -0.388*cos(6*pi*k/(N-1)) +0.032*cos(8*pi*k/(N-1)))
+    return(w)
 
 def local_flat_top_freq(vec):
     N=len(vec)
@@ -96,10 +108,13 @@ def call_spec():
 
         data = pyfusion.load_channel(shot,name)
         if _window==local_none: windowfn=pl.window_none 
-        else: windowfn=pl.window_hanning
+#        else: windowfn=pl.window_hanning
+        elif _window==local_hanning: windowfn=pl.window_hanning
+        else: windowfn=_window(arange(NFFT))
+        clim=(-60,20)   # eventually make this adjustable
 
         data.spectrogram(NFFT=NFFT, windowfn=windowfn, noverlap=foverlap*NFFT,
-                         colorbar=True)
+                         colorbar=True, clim=clim)
 #        colorbar() # used to come up on a separate page, fixed, but a little clunky - leave for now
 
     elif _type == 'T':
@@ -114,8 +129,12 @@ def call_spec():
     elif _type =='C':
         pl.plot(hold=0)
     else: raise ' unknown plot type "' + _type +'"'
+
+# ------  END of call_spec
+
 ax = pl.subplot(111)
-pl.subplots_adjust(left=0.3)
+pl.subplots_adjust(left=0.25)
+pl.subplots_adjust(right=0.95)  # see also the colorbar params in core.py
 #call_spec()
 
 #Buttons
@@ -149,11 +168,12 @@ def ovlfunc(label):
 radio.on_clicked(ovlfunc)
 
 rax = pl.axes([bxl, 0.25, bxl+bw, 0.24], axisbg=axcolor)
-radio = RadioButtons(rax, ('no window',  'Bartlett', 'Hamming', 'Hanning',
+radio = RadioButtons(rax, ('no window',  'Wider', 'Bartlett','Hamming', 'Hanning',
                            'Blackman', 'Kaiser3','Flat-top-F'), active=0)
 def winfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
     windict = {'no window':local_none, 'Hanning':local_hanning, 
+               'Wider': local_wider,
                'Hamming':local_hamming, 'Blackman':local_blackman, 
                'Bartlett':local_bartlett, 'Kaiser3':local_kaiser3,
                'Flat-top-F':local_flat_top_freq}
@@ -183,19 +203,36 @@ radio.on_clicked(typfunc)
 x0=0
 y0=0
 
+try:
+    import Tix
+    HaveTix=True
+except:
+    print("Tix module not available: shot button inactive")
+
+
+
 class IntegerCtl:
-# these really should be in an init
+    """ provides an environment for button on_clicked functions to
+    share variables with each other and plotting routines, rather than
+    trying to access everythin back through the events passed.
+    """
+# these maybe should be in an init, but this is OK python code.
+    global shot_number
     shot=shot_number
 
     def set_shot(s):
-        shot=s
+        shots
 
     def get_shot(self):
         return(self.shot)
     
 # probably need to redraw the whole graph
     def redraw(self):
+        global shotbox, HaveTix
         bshot.label.set_text(str(self.shot))
+        if HaveTix:
+            shotbox.set_silent(str(self.shot))
+            shotbox.add_history(str(self.shot))
         call_spec()
         pl.draw()
 
@@ -219,17 +256,41 @@ class IntegerCtl:
     def Xffwd(self, event):
         self.shot += 100
         self.redraw()
+#-------- End of class IntegerCtl:
+
+if HaveTix:
+    global shot_string, do_shot, shotbox
+    shot_string= Tix.StringVar()
+    def do_shot(sstr=None):
+        print('sstr=', sstr)
+        callback.shot=int(sstr)
+        callback.redraw()
+
+    def ShotWid():
+        """ this simple widget accepts a shot and sets the current one
+        """
+        global shotbox
+        root=Tix.Tk(className='shot')
+        top = Tix.Frame(root, bd=1, relief=Tix.RAISED)
+        shotbox=Tix.ComboBox(top, label="Shot", editable=1, history=1,
+                             variable=shot_string, command=do_shot,
+                             options='entry.width 8 listbox.height 20 ')
+        shotbox.pack(side=Tix.TOP, anchor=Tix.W)
+        shotbox.set_silent('33373')
+        shotbox.insert(Tix.END, '99999')
+        top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
+# no need in pylab            root.mainloop()
 
 
 callback = IntegerCtl()
 axcolor = 'lightgoldenrodyellow'
-but_h = 0.05
-axfrew = pl.axes([x0+0.01,  y0+0.02, 0.03, but_h], axisbg=axcolor)
-axrew  = pl.axes([x0+0.045, y0+0.02, 0.02, but_h], axisbg=axcolor)
-axshot = pl.axes([x0+0.070, y0+0.02, 0.1,  but_h], axisbg=axcolor)
-axfwd  = pl.axes([x0+0.175, y0+0.02, 0.02, but_h], axisbg=axcolor)
-axffwd = pl.axes([x0+0.2,   y0+0.02, 0.03, but_h], axisbg=axcolor)
-axXffwd = pl.axes([x0+0.235,   y0+0.02, 0.035, but_h], axisbg=axcolor)
+but_h = 0.045
+axfrew = pl.axes([x0+0.01,  y0+0.02, 0.035, but_h], axisbg=axcolor)
+axrew  = pl.axes([x0+0.05, y0+0.02, 0.02, but_h], axisbg=axcolor)
+axshot = pl.axes([x0+0.075, y0+0.02, 0.1,  but_h], axisbg=axcolor)
+axfwd  = pl.axes([x0+0.18, y0+0.02, 0.02, but_h], axisbg=axcolor)
+axffwd = pl.axes([x0+0.205,   y0+0.02, 0.035, but_h], axisbg=axcolor)
+axXffwd = pl.axes([x0+0.245,   y0+0.02, 0.052, but_h], axisbg=axcolor)
 
 #radio = RadioButtons(rax, ('2 Hz', '4 Hz', '8 Hz'))
 bfrew=Button(axfrew,'<<')
@@ -249,6 +310,8 @@ bffwd.on_clicked(callback.ffwd)
 bXffwd=Button(axXffwd,'>>>')
 bXffwd.on_clicked(callback.Xffwd)
 
+if HaveTix: ShotWid()
 callback.redraw()
+
 pl.show()
 

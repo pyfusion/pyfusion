@@ -123,8 +123,8 @@ def _bk_generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chrono
         if len(sv_group)>2: a13 = sv_group[2].value/sv_group[0].value
         else:               a13=0
         if pyfusion.settings.VERBOSE>2: 
-            fact=seg.time_unit_in_seconds
-            print("factor is %g" % fact)
+            fact=1/seg.time_unit_in_seconds
+#            print("factor is %g" % fact)
             print 'svg_i %d, len=%d, fr=%.3gkHz, t0=%.3gms,' % (
                 svg_i, len(sv_group), fact*freq/1000, 1000/fact*seg_svd.timebase[0]),
             print 'SV=[%s]'%','.join([str("%.3g") % sv.value for sv in sv_group])
@@ -169,8 +169,8 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
         if len(sv_group)>2: a13 = sv_group[2].value/sv_group[0].value
         else:               a13=0
         if pyfusion.settings.VERBOSE>2: 
-            fact=seg.time_unit_in_seconds
-            print("factor is %g" % fact)
+            fact=1/seg.time_unit_in_seconds
+#            print("factor is %g" % fact)
             print 'svg_i %d, len=%d, fr=%.3gkHz, t0=%.3gms,' % (
                 svg_i, len(sv_group), fact*freq/1000, 1000/fact*seg_svd.timebase[0]),
             print 'SV=[%s]'%','.join([str("%.3g") % sv.value for sv in sv_group])

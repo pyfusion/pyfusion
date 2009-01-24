@@ -479,12 +479,14 @@ class MultiChannelTimeseries(object):
 
     def spectrogram(self, windowfn=None, max_freq = -1, noverlap=0, NFFT=1024,
                     title="", saveas="", funits='kHz', colorbar=False,
-                    figure=None, **kwargs):
+                    clim=None, figure=None, **kwargs):
         """ Interface to matplotlib.specgram, passes through many
         keywords.  NFFT is the length of the FFT including overlapped
         points.  Data length is doubled if noverlap=1/2 NFFT.  Window
         defaults to Hanning, and funits ("kHz", "MHz" or "Hz")
         interacts correctly with timebase using time_unit_in_seconds.
+        avoid double render if colorbar.  clim keyword e.g. [-60,20]
+        specifies the range of signals in DB, for clipping.
         """ 
         import pylab as pl
         if funits == 'kHz': ffact=1e-3; tunits='ms'
@@ -497,16 +499,20 @@ class MultiChannelTimeseries(object):
 # note: xextent does not take into account overlap.... small effect.
             xextent=(min(self.timebase),max(self.timebase))
             sig=self.signals[ch]            
+# this version of specgram (pylab) uses draw_if_interactive 
+            delay_plot =  (colorbar and pl.isinteractive()) 
+            if delay_plot: pl.ioff()
 # default to hanning window to copy behaviour of specgram
-            if windowfn == None: windowfn=pl.window_hanning
+#            if windowfn == None: windowfn=pl.window_hanning
             Pxx, freqs, bins, im = pl.specgram(sig, NFFT=NFFT, window=windowfn,
                                                Fs=2.*self.nyquist*ffact,
                                                noverlap=noverlap, 
                                                xextent=xextent, **kwargs)
 
             wfn=""
-            if windowfn==pl.window_hanning: wfn=",HW"
-            if windowfn==pl.window_none: wfn=",NW"
+            if not(pl.is_numlike(windowfn)):   # label those known to mlib
+                if windowfn==pl.window_hanning: wfn=",HW"
+                if windowfn==pl.window_none: wfn=",NW"
             
             pl.ylabel(ch+' ('+funits+wfn+')')
             if max_freq> 0:
@@ -515,7 +521,12 @@ class MultiChannelTimeseries(object):
         if title:
             pl.title(title)
         if colorbar:
-            pl.colorbar()
+            pl.colorbar(pad=0.05, fraction=0.08)
+            if clim != None: pl.clim(clim)
+        if delay_plot: 
+            pl.ion()
+            pl.draw_if_interactive()
+
         if saveas:
             pl.savefig(saveas)
         else:

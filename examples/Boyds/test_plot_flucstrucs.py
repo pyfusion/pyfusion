@@ -8,4 +8,4 @@ execfile('process_cmd_line_args.py')
 s = pyfusion.get_shot(shot_number)
 s.load_diag(diag_name)
 from pyfusion.datamining.clustering.plots import plot_flucstrucs_for_shot
-plot_flucstrucs_for_shot(s.shot, diag_name, savefile='',number=10)
+plot_flucstrucs_for_shot(s.shot, diag_name=diag_name, savefile='',number=10)

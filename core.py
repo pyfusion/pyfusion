@@ -175,7 +175,8 @@ class Shot(pyfusion.Base):
         len_timebase = len(self.data[diag].timebase)
         overlapped_samples = int((overlap*n_samples)/2)
         if pyfusion.settings.VERBOSE >0: 
-            print ("%d samples, %d overlapped") % (n_samples, overlapped_samples)
+            print ("FFT/SVD on %d samples, %d overlapping") % (
+                    n_samples, overlapped_samples)
 #        element_list = range(0,len_timebase,n_samples)
 # should check the routine that uses the following list (get_time_segment)
 # and make sure index error not possible on the last segment
@@ -302,6 +303,7 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
                 pyfusion.settings.SHOT_T_MIN = tmp_lims[0]
                 pyfusion.settings.SHOT_T_MAX = tmp_lims[1]
             return _tmp
+        msg=msg+', try allowing Null return'
         if pyfusion.settings.VERBOSE>2:
             print (msg + ': Trying again without catching exception!!')
             _tmp = _ProcessData.load_channel(ch, shot_number)
@@ -309,6 +311,7 @@ def load_channel(shot_number,channel_name,savelocal=False,ignorelocal=False, all
                 pyfusion.settings.SHOT_T_MIN = tmp_lims[0]
                 pyfusion.settings.SHOT_T_MAX = tmp_lims[1]
             raise LookupError, msg
+        else: raise LookupError, msg
 ## end of exception handler
     if savelocal:
         if pyfusion.settings.VERBOSE>0: 
@@ -492,18 +495,21 @@ class MultiChannelTimeseries(object):
         if funits == 'kHz': ffact=1e-3; tunits='ms'
         elif funits == 'MHz': ffact=1e-6; tunits='us'
         else: ffact=1; tunits='sec'
-        ffact=ffact/self.time_unit_in_seconds
+        try: 
+            1/self.time_unit_in_seconds
+            ffact=ffact/self.time_unit_in_seconds
+        except: print("database not up to date: assuming time unit is seconds")
         if (figure): figure(figure.number)
         for ch_i, ch in enumerate(self.ordered_channel_list):
             pl.subplot(len(self.ordered_channel_list),1,ch_i+1)
 # note: xextent does not take into account overlap.... small effect.
-            xextent=(min(self.timebase),max(self.timebase))
+            xextent=(min(self.timebase)/ffact,max(self.timebase)/ffact)
             sig=self.signals[ch]            
 # this version of specgram (pylab) uses draw_if_interactive 
             delay_plot =  (colorbar and pl.isinteractive()) 
             if delay_plot: pl.ioff()
 # default to hanning window to copy behaviour of specgram
-#            if windowfn == None: windowfn=pl.window_hanning
+            if windowfn == None: windowfn=pl.window_hanning
             Pxx, freqs, bins, im = pl.specgram(sig, NFFT=NFFT, window=windowfn,
                                                Fs=2.*self.nyquist*ffact,
                                                noverlap=noverlap, 
@@ -522,7 +528,8 @@ class MultiChannelTimeseries(object):
             pl.title(title)
         if colorbar:
             pl.colorbar(pad=0.05, fraction=0.08)
-            if clim != None: pl.clim(clim)
+
+        if clim != None: pl.clim(clim)
         if delay_plot: 
             pl.ion()
             pl.draw_if_interactive()
@@ -604,7 +611,7 @@ class TimeSegment(pyfusion.Base):
                                                                                  self.n_samples, use_samples=use_samples, reference_timebase=reference_timebase)
 
         # - hope that the first channel is loaded by now, so that time_unit_in_seconds is not None
-        self.time_unit_in_seconds = (pd.channels[0]).time_unit_in_seconds
+        if len(pd.channels)>0 : self.time_unit_in_seconds = (pd.channels[0]).time_unit_in_seconds
 
 
             

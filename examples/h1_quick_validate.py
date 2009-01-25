@@ -45,7 +45,7 @@ generate_flucstrucs(s, diag_name, 'test_flucstrucs', store_chronos=True)
 print "flucstrucs -> "+ delta_t("flucstrucs", total=True)
 
 from pyfusion.datamining.clustering.plots import plot_flucstrucs_for_shot
-plot_flucstrucs_for_shot(s.shot, diag_name, savefile='')
+plot_flucstrucs_for_shot(s.shot, diag_name=diag_name, savefile='')
 info=str("shot %d %s" % (shot_number, pyfusion.utils.get_revision() ))
 import pylab as pl
 try:    pl.suptitle(info)

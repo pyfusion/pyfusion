@@ -8,7 +8,7 @@ from sqlalchemy import Column, Integer, ForeignKey, Numeric, Float, Table, Strin
 from sqlalchemy.orm import relation
 from sqlalchemy.orm import eagerload
 import pylab as pl
-from numpy import mean, average, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum, resize, shape, ndarray, var
+from numpy import mean, average, array, fft, conjugate, arange, searchsorted, argsort, dot, diag, transpose, arctan2, pi, sin, cos, take, argmin, cumsum, resize, shape, ndarray, var, mod
 from pyfusion.utils import r_lib
 from pyfusion.visual.core import PLOT_MARKERS
 from sqlalchemy import select,func
@@ -112,7 +112,12 @@ def _bk_generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chrono
     E = seg_svd.energy
     # sv_groupings = group_svs(seg_svd, threshold=threshold)
     sv_groupings = _new_group_svs(seg_svd)
+    loops=0
     for svg_i, sv_group in enumerate(sv_groupings):
+        loops+=1
+        if mod(loops,100)==0: 
+            print("=============flushing after %d sv loops" % loops)
+            pyfusion.session.flush()
         energy = float(sum([sv.value**2 for sv in sv_group])/E)
         raw_energy=0 # not sure how yet
         freq = float(peak_freq(sv_group[0].chrono, seg_svd.timebase))
@@ -125,7 +130,7 @@ def _bk_generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chrono
         if pyfusion.settings.VERBOSE>2: 
             fact=1/seg.time_unit_in_seconds
 #            print("factor is %g" % fact)
-            print 'svg_i %d, len=%d, fr=%.3gkHz, t0=%.3gms,' % (
+            print 'svgr_i %d, num=%d, fr=%.3gkHz, t0=%.3gms,' % (
                 svg_i, len(sv_group), fact*freq/1000, 1000/fact*seg_svd.timebase[0]),
             print 'SV=[%s]'%','.join([str("%.3g") % sv.value for sv in sv_group])
         fs = FluctuationStructure(svd=seg_svd, frequency=freq, 
@@ -158,7 +163,13 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
     E = seg_svd.energy
     # sv_groupings = group_svs(seg_svd, threshold=threshold)
     sv_groupings = _new_group_svs(seg_svd)
+    loops=0
     for svg_i, sv_group in enumerate(sv_groupings):
+        loops+=1
+        if mod(loops,100)==0: 
+            print("=============flushing after %d sv loops" % loops)
+            pyfusion.session.flush()
+
         energy = float(sum([sv.value**2 for sv in sv_group])/E)
         raw_energy=0 # not sure how yet
         freq = float(peak_freq(sv_group[0].chrono, seg_svd.timebase))
@@ -171,7 +182,7 @@ def generate_flucstrucs_for_time_segment(seg,diag_inst, fs_set, store_chronos=Fa
         if pyfusion.settings.VERBOSE>2: 
             fact=1/seg.time_unit_in_seconds
 #            print("factor is %g" % fact)
-            print 'svg_i %d, len=%d, fr=%.3gkHz, t0=%.3gms,' % (
+            print 'svgr_i %d, num=%d, fr=%.3gkHz, t0=%.3gms,' % (
                 svg_i, len(sv_group), fact*freq/1000, 1000/fact*seg_svd.timebase[0]),
             print 'SV=[%s]'%','.join([str("%.3g") % sv.value for sv in sv_group])
         fs = FluctuationStructure(svd=seg_svd, frequency=freq, 

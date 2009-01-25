@@ -75,7 +75,7 @@ Fsamp=2
 chan_name=''
 Fcentre=0
 detrend=pl.detrend_none
-_window = local_none
+_window = local_wider # none causes math errors in specgram sometimes 
 foverlap=0.75   # 0 is the cheapest, but 3/4 looks better
 _type='F'
 fmod=0
@@ -107,7 +107,7 @@ def call_spec():
             name=chan_name
 
         data = pyfusion.load_channel(shot,name)
-        if _window==local_none: windowfn=pl.window_none 
+        if _window==local_none: windowfn=pl.window_none
 #        else: windowfn=pl.window_hanning
         elif _window==local_hanning: windowfn=pl.window_hanning
         else: windowfn=_window(arange(NFFT))
@@ -169,7 +169,7 @@ radio.on_clicked(ovlfunc)
 
 rax = pl.axes([bxl, 0.25, bxl+bw, 0.24], axisbg=axcolor)
 radio = RadioButtons(rax, ('no window',  'Wider', 'Bartlett','Hamming', 'Hanning',
-                           'Blackman', 'Kaiser3','Flat-top-F'), active=0)
+                           'Blackman', 'Kaiser3','Flat-top-F'), active=1)
 def winfunc(label):
     global y,NFFT,Fsamp,Fcentre,foverlap,detrend,_window, _type, fmod
     windict = {'no window':local_none, 'Hanning':local_hanning, 
@@ -266,18 +266,36 @@ if HaveTix:
         callback.shot=int(sstr)
         callback.redraw()
 
+    def get_local_shot_numbers(partial_name=None, verbose=0, local_path=
+                               pyfusion.settings.LOCAL_SAVEFILE_DIR):
+        """ get shots present in path py extracting numbers from matching names
+        """
+        from os import walk
+        if partial_name==None: partial_name="_MP1"
+        shotlist=[]
+        for root, dirs, files in walk(local_path):
+            for f in files:
+                if f.find(partial_name)>=0: 
+                    if verbose>0: print root,dirs,f
+                    if root==local_path: shotlist.append(f[0:5])
+        return(shotlist)
+
+
     def ShotWid():
         """ this simple widget accepts a shot and sets the current one
         """
         global shotbox
-        root=Tix.Tk(className='shot')
+        root=Tix.Tk(className='ShotWid')
         top = Tix.Frame(root, bd=1, relief=Tix.RAISED)
         shotbox=Tix.ComboBox(top, label="Shot", editable=1, history=1,
                              variable=shot_string, command=do_shot,
                              options='entry.width 8 listbox.height 20 ')
         shotbox.pack(side=Tix.TOP, anchor=Tix.W)
         shotbox.set_silent('33373')
-        shotbox.insert(Tix.END, '99999')
+        shotlist=get_local_shot_numbers()
+        if len(shotlist)==0: shotbox.insert(Tix.END, '99999')
+        else: 
+            for s in shotlist: shotbox.insert(Tix.END, s)
         top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
 # no need in pylab            root.mainloop()
 

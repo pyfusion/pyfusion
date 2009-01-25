@@ -496,13 +496,13 @@ def cluster_detail_plot(cluster, d_names, savefig=False, tfargs={}, dfargs={}):
         pl.show()
 
 
-def plot_flucstrucs_for_set(set_name, size_factor = 40.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False):
+def plot_flucstrucs_for_set(set_name, size_factor = 40.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False, **kwargs):
     #fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(FluctuationStructureSet.name == set_name).all()
     fs_list = pyfusion.session.query(FluctuationStructure).join(['set']).filter(FluctuationStructureSet.name == set_name).all()
-    plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile, number=number)
+    plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile, number=number, **kwargs)
     
 
-def plot_flucstrucs_for_shot(shot_number, diag_name, size_factor = 40.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False):
+def plot_flucstrucs_for_shot(shot_number, diag_name="", size_factor = 40.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False, **kwargs):
     """
     TO DO: need to be able to separate flucstrucs from different runs, etc...
     quick fix to allow multiple shot_numbers
@@ -513,11 +513,19 @@ def plot_flucstrucs_for_shot(shot_number, diag_name, size_factor = 40.0, colour_
         if len(diag_name) == 0: diag_name="%"    # null name returns all.....
 #    fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot == shot).filter(pyfusion.Diagnostic.name == diag_name).all()
     fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot.in_(shot_number)).filter(pyfusion.Diagnostic.name.like(diag_name)).all()
-    plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile, number=number)
+    plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile, number=number, **kwargs)
 
-def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False, dither=0.001):
+def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency_range = [False,False], time_range=[False,False], savefile = '', number=False, dither=0.001, funits='kHz'):
     data = transpose(array([[f.svd.timebase[0], f.frequency, f.energy, f.a12] for f in fs_list]))
     if len(data)==0: raise LookupError, ' no data found for fs list'
+    if funits == 'kHz': ffact=1e-3; tunits='ms'
+    elif funits == 'MHz': ffact=1e-6; tunits='us'
+    else: ffact=1; tunits='sec'
+    try: 
+        1/self.time_unit_in_seconds
+        ffact=ffact/self.time_unit_in_seconds
+    except: print("database not up to date: assuming time unit is seconds")
+
 #    pl.scatter(data[0],data[1],size_factor*data[2], colour_factor*data[2])
 #    pl.figure()
 # Use three different symbols according to a12 - side effect is to rescale the colors for
@@ -536,7 +544,8 @@ def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency
         if pyfusion.settings.VERBOSE>5: 
             print "singles************",inds, data[2,inds].flatten()
             print data[2]
-        pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),size_factor*data[2,inds].flatten(),
+        pl.scatter(data[0,inds].flatten()/ffact,data[1,inds].flatten()*ffact,
+                   size_factor*data[2,inds].flatten(),
                    colour_factor*data[2,inds].flatten(),marker=vertline)
         
     remain_a12 = data[3]
@@ -546,7 +555,8 @@ def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency
         inds=circs
         remain_a12[inds]=0  # take these out of futher consideration
         if pyfusion.settings.VERBOSE>5: print "strong: ********",inds, data[2,inds].flatten(),data[2]
-        pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),size_factor*data[2,inds].flatten(), 
+        pl.scatter(data[0,inds].flatten()/ffact,data[1,inds].flatten()*ffact,
+                   size_factor*data[2,inds].flatten(), 
                    colour_factor*data[2,inds].flatten(),marker='o') #circles
 
     midrange = (remain_a12>0.4).nonzero()
@@ -554,14 +564,16 @@ def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency
         inds=midrange
         remain_a12[inds]=0  # take these out of further consideration
         if pyfusion.settings.VERBOSE>5: print "midrange: ******",inds, data[2,inds].flatten(),data[2]
-        pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),0.4*size_factor*data[2,inds].flatten(), 
+        pl.scatter(data[0,inds].flatten()/ffact,data[1,inds].flatten()*ffact,
+                   0.4*size_factor*data[2,inds].flatten(), 
                    colour_factor*data[2,inds].flatten(), marker=ellipse)
 
     rest = (remain_a12 > 0).nonzero()
     if size(rest)>0: 
         inds=rest
         if pyfusion.settings.VERBOSE>5: print "rest:  *********",inds, data[0,inds].flatten()
-        pl.scatter(data[0,inds].flatten(),data[1,inds].flatten(),0.45*size_factor*data[2,inds].flatten(), 
+        pl.scatter(data[0,inds].flatten()/ffact,data[1,inds].flatten()*ffact,
+                   0.45*size_factor*data[2,inds].flatten(), 
                    colour_factor*data[2,inds].flatten(), marker=thin_ellipse)
 
     if number:
@@ -584,12 +596,12 @@ def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency
     if not frequency_range[1]:
         nyquist = 0.5/(fs_list[0].svd.timebase[1]-fs_list[0].svd.timebase[0])
         frequency_range[1] = max(data[1]) ## was nyquist
-    pl.ylim(frequency_range[0],frequency_range[1])
+    pl.ylim(frequency_range[0]*ffact,frequency_range[1]*ffact)
     if not time_range[0]:
         time_range[0] = min(data[0])
     if not time_range[1]:
         time_range[1] = max(data[0])
-    pl.xlim(time_range[0], time_range[1])
+    pl.xlim(time_range[0]/ffact, time_range[1]/ffact)
 #  a function str_shot_range to compress long sequences of 
 #  shot numbers....  --> [58123-26,39-45], but could do [58123...58245] 
 # as a short-cut - but need to get the shot range - not in arg list!
@@ -597,8 +609,8 @@ def plot_flucstrucs(fs_list, size_factor = 40.0, colour_factor = 30.0, frequency
         ' %d Fluctuation structures, %s') % (
         len(fs_list), ' '))  #pyfusion.utils.shotrange(shot_numbers))
     # shot_numbers not defined here
-    pl.xlabel('Time')
-    pl.ylabel('Frequency')
+    pl.xlabel(str('Time (%s)' % tunits))
+    pl.ylabel(str('Frequency (%s)' % funits))
     if savefile != '':
         try:
             pl.savefig(savefile)

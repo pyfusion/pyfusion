@@ -34,7 +34,7 @@ generate_flucstrucs(s, diag_name, flucstruc_set_name, store_chronos=True)
 
 from pyfusion.datamining.clustering.plots import plot_flucstrucs_for_shot
 
-plot_flucstrucs_for_shot(s.shot, diag_name, savefile='')
+plot_flucstrucs_for_shot(s.shot, diag_name=diag_name, savefile='')
 
 from pyfusion.datamining.clustering.core import get_clusters_for_fs_set
 

@@ -31,13 +31,13 @@ class HJChannel(pyfusion.Channel):
     id = Column('id', Integer, ForeignKey('channels.id'), primary_key=True)
     name = Column('name', String(50), unique=True)
     length = Column('length', Integer)
-    time_unit_in_seconds = Column('time_unit_in_seconds', Float)
-    # had to add to allow time unit to default - silly!
-    def __init__(self, name=None, length=None):
-        if pyfusion.settings.VERBOSE>4: print("init HJChannel %s" % name)
-        self.time_unit_in_seconds=.001
-        self.length=length
-        self.name=name
+    time_unit_in_seconds = Column('time_unit_in_seconds', Float, default = 0.001)
+#    # had to add to allow time unit to default - silly!
+#    def __init__(self, name=None, length=None):
+#        if pyfusion.settings.VERBOSE>4: print("init HJChannel %s" % name)
+#        self.time_unit_in_seconds=.001
+#        self.length=length
+#        self.name=name
 
 class ProcessData:
     def load_channel(self, hjch, shot):

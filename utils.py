@@ -175,8 +175,15 @@ def timestamp(fstr = '%y%m%d%H%M'):
     
 def check_same_timebase(a,b):
     if len(a.timebase) != len(b.timebase):
+        if  pyfusion.settings.VERBOSE>0: 
+            print ("Timebases different lengths %d, %d" % 
+                   (len(a.timebase), len(b.timebase)))
         return False
-    return max(abs(array(a.timebase) - array(b.timebase))) < pyfusion.settings.TIMEBASE_DIFFERENCE_TOLERANCE
+    maxdt = max(abs(array(a.timebase) - array(b.timebase)))
+    result = maxdt < pyfusion.settings.TIMEBASE_DIFFERENCE_TOLERANCE
+    if (result==False and pyfusion.settings.VERBOSE>0): 
+        print ("Timebase difference is %g", maxdt)
+    return result
 
 from time import time
 timelast=time()

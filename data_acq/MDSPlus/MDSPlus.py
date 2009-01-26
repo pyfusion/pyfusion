@@ -11,7 +11,7 @@ MDSplus: superseded embryonic object implementation by Tom Fredian
 """
 
 import pyfusion
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from numpy import array, searchsorted
 
 
@@ -27,10 +27,12 @@ def _loadmds_pmds(mdsch, shot):
             
 def _loadmds_MDSplus(mdsch, shot):
     import MDSplus as M
-    # at present, only access local data through the library 
-    print('W: module MDSplus accessing local MDS only, request was %s ' % 
+    # at present, only access local data through the dynamic library 
+    print('W: module MDSplus accessing local MDS server only, request was %s ' % 
           mdsch.mds_server)
     M.TreeOpen(mdsch.mds_tree, int(shot))
+# in this implementation, specifying bounds can provide a big speed up 
+# if the data interval is a small part of the total interval
     bounds=str("[%f:%f]") % (pyfusion.settings.SHOT_T_MIN, 
                              pyfusion.settings.SHOT_T_MAX)
     print mdsch.mds_path+bounds
@@ -98,4 +100,4 @@ class MDSPlusChannel(pyfusion.Channel):
     mds_server = Column('mds_server', String(50))
     mds_tree = Column('mds_tree', String(50))
     mds_path = Column('mds_path', String(50))
-
+    time_unit_in_seconds = Column('time_unit_in_seconds', Float, default = 1)

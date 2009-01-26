@@ -67,7 +67,18 @@ def local_flat_top_freq(vec):
 
 # defaults
 global shot_number, chan_name
-shot_number=58123
+# this should be more automatic
+device=pyfusion.settings.DEVICE
+if device=='H1':
+    chan_name='mirnov_1_8'
+    shot_number=58123
+elif device=='HeliotronJ': 
+    chan_name='MP1'
+    shot_number=33911
+elif device=='TJII': 
+    chan_name='mirnov_5p_105'
+    shot_number=18991
+
 cmap=None
 #xextent=None  # was here, really belongs in data.spectrogram
 NFFT=512

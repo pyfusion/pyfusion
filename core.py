@@ -11,6 +11,7 @@ if int(numpy_version.version.replace('.','')) >= 110: from numpy import savez
 
 from sqlalchemy import Column, Integer, ForeignKey, exceptions, PickleType, Float, Boolean, String, DateTime
 from sqlalchemy.orm import relation, synonym
+from datetime import datetime
 
 import pyfusion
 
@@ -96,6 +97,7 @@ class Shot(pyfusion.Base):
     device = relation(Device, primaryjoin=device_id==Device.id, backref="shots")    
     shot_type = Column('shot_type', String(50)) ## want something to map...
     date = Column('date',DateTime, default=pyfusion.settings.DEFAULT_SHOT_DATE)
+    proc_date = Column('proc_date',DateTime, default=datetime.now())
     pulse_start = Column('pulse_start',Float, default=pyfusion.settings.SHOT_PULSE_START)
     __mapper_args__ = {'polymorphic_on':shot_type}
     data = {}
@@ -357,8 +359,8 @@ class MultiChannelTimeseries(object):
         self.signals = {}
         self.parent_element = parent_element
         self.t0 = min(timebase)
-        if pyfusion.settings.VERBOSE>4: print('timebase from %g, nyq=%g' % (
-                self.t0, self.nyquist))
+        if pyfusion.settings.VERBOSE>4: print('timebase from %g, nyq=%g, len=%d' % (
+                self.t0, self.nyquist, self.len_timebase))
         self.norm_info = {} # raw (not normalised) data has empty dict.
         self.ordered_channel_list = [] # keep the order in which channels are added - use this ordering for SVD, etc
 
@@ -379,6 +381,7 @@ class MultiChannelTimeseries(object):
         """
         if downsample != None and multichanneldata.nyquist != self.nyquist:
             for channel_name in multichanneldata.ordered_channel_list:
+                if  pyfusion.settings.VERBOSE>0: print("Resampling %s" % channel_name)
                 resampled_sig = linear_interpolate_resample(multichanneldata.signals[channel_name], multichanneldata.timebase, self.timebase, zeropad=zeropad)
                 self.add_channel(resampled_sig, channel_name)
         else:
@@ -390,7 +393,7 @@ class MultiChannelTimeseries(object):
                 for channel_name in multichanneldata.ordered_channel_list:
                     self.add_channel(multichanneldata.signals[channel_name], channel_name)
             else:
-                print "Timebase not the same. Not joining multichannel data!!"
+                print "Timebase not the same. Not joining multichannel data!!!"
     
     def export(self, filename, compression = 'bzip2', filetype = 'csv'):
         if compression != 'bzip2':

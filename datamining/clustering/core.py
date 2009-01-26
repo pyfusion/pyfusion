@@ -73,6 +73,7 @@ class FluctuationStructureSet(pyfusion.Base):
     __tablename__ = 'dm_fs_set'
     id = Column('id', Integer, primary_key=True)
     name = Column("name", String(100), unique=True)
+    description = Column("description", String(1000))
     flucstrucs = relation("FluctuationStructure", backref='set')
 
 
@@ -327,6 +328,7 @@ class ClusterDataSet(pyfusion.Base):
     __tablename__ = 'dm_cluster_datasets'
     id = Column('id', Integer, primary_key=True)
     name = Column("name", String(500), unique=True)
+    description = Column("description", String(1000))
     clustersets = relation("ClusterSet", backref="clusterdataset")
     def plot_BIC(self, loglik=False,log_ncl=False, grid=True):
         import pylab as pl

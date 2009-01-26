@@ -2,7 +2,7 @@
 data acquisition library for the TJ-II heliac
 """
 import pyfusion
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from numpy import searchsorted, array
 # import the python binding to the TJ-II data aquisition library
 # try to import the module, if this fails, try to compile it
@@ -46,3 +46,4 @@ class TJIIChannel(pyfusion.Channel):
     __mapper_args__ = {'polymorphic_identity':'TJII'}
     id = Column('id', Integer, ForeignKey('channels.id'), primary_key=True)
     senal = Column('senal',String(50))
+    time_unit_in_seconds = Column('time_unit_in_seconds', Float, default = 0.001)

@@ -510,8 +510,11 @@ def plot_flucstrucs_for_shot(shot_number, diag_name="", size_factor = 40.0, colo
     """
     if len(shape(shot_number)) == 0:
         shot_number=[shot_number]        
-        if len(diag_name) == 0: diag_name="%"    # null name returns all.....
+    if len(diag_name) == 0: diag_name="%"    # null name returns all.....
 #    fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot == shot).filter(pyfusion.Diagnostic.name == diag_name).all()
+    if pyfusion.settings.VERBOSE>1: 
+        print("searching for flucstruc set %s, shots %s" %
+              (diag_name, shot_number))
     fs_list = pyfusion.session.query(FluctuationStructure).join(['svd','timesegment','shot']).join(['svd','diagnostic']).filter(pyfusion.Shot.shot.in_(shot_number)).filter(pyfusion.Diagnostic.name.like(diag_name)).all()
     plot_flucstrucs(fs_list, size_factor = size_factor, colour_factor=colour_factor, frequency_range = frequency_range, time_range=time_range, savefile = savefile, number=number, **kwargs)
 

@@ -19,14 +19,29 @@ from pyfusion.visual import ShotOverview
 
 # defaults
 global shot_number, diag_name, t0, dt, _hold, x_auto, marker, markersize, linestyle
-shot_number=58123
-shot_number=18993
-#diag_name='mirnovbean1'
-#diag_name='mirnov_coils_original'
-diag_name=''
+# this should be more automatic
+device=pyfusion.settings.DEVICE
+
+if device=='H1':
+    t0=0.0
+    dt=0.1
+    chan_name='mirnov_1_8'
+    shot_number=58123
+    diag_name='mirnov_small'
+elif device=='HeliotronJ': 
+    t0=165
+    dt=130
+    chan_name='MP1'
+    shot_number=33911
+    diag_name='MP'
+elif device=='TJII': 
+    t0=1020
+    dt=280
+    chan_name='mirnov_5p_105'
+    shot_number=18991
+    diag_name='mirnov_small'
+
 # note that axes are ganged with sharex, so zoom applies to all.
-t0=0.0
-dt=0.1
 _hold=0
 marker=''
 markersize=0.15

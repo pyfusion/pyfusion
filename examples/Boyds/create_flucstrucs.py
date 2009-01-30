@@ -62,6 +62,6 @@ print("interactive is %s" % pl.isinteractive())
 from pyfusion.datamining.clustering.plots import plot_flucstrucs_for_shot, plot_flucstrucs_for_set
 
 # choose which is more appropriate
-#plot_flucstrucs_for_shot(shots, diag_name=diag_name, savefile=figure_filename)
-plot_flucstrucs_for_set(flucstruc_set_name,  savefile=figure_filename)
+plot_flucstrucs_for_shot(shots, diag_name=diag_name, savefile=figure_filename)
+#plot_flucstrucs_for_set(flucstruc_set_name,  savefile=figure_filename)
 

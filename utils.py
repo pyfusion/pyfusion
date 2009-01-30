@@ -281,6 +281,20 @@ def show_db(partial_name='', page_width=80):
         else:
             print('%s ... etc') % str(diags[0:6])
 
+    from pyfusion.core import MultiChannelSVD
+
+    qry = pyfusion.session.query(MultiChannelSVD).filter_by(normalised=True)
+    normcnt=qry.count()
+    qry = pyfusion.session.query(MultiChannelSVD)
+    totalcnt=qry.count()
+    if (normcnt==0): print('Not'),
+    elif (normcnt!=totalcnt): print("%.3g%%" % 100*normcnt/totalcnt),
+    print('normalised, '),
+
+    from pyfusion.core import SingularValue
+    qry = pyfusion.session.query(SingularValue).filter_by(store_chrono=True)
+    print("%d chronos stored" % qry.count())
+
     dmtmp = pyfusion.session.query(pyfusion.datamining.clustering.core.ClusterDataSet)
     print '%d cluster data set%s' % (int(dmtmp.count()), ['','s'][dmtmp.count()!=1]),
     if dmtmp.count():

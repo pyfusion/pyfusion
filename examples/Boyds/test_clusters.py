@@ -4,6 +4,7 @@ from pyfusion.datamining.clustering.core import FluctuationStructureSet, get_clu
 flucstruc_set_name = 'test_flucstrucs'
 diag_name = 'mirnovbeans'
 
+# tweak above parameters according to command line args
 execfile('process_cmd_line_args.py')
 
 #fs_set = pyfusion.session.query(FluctuationStructureSet).filter_by(name=flucstruc_set_name)

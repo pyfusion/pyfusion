@@ -91,6 +91,8 @@ foverlap=0.75   # 0 is the cheapest, but 3/4 looks better
 _type='F'
 fmod=0
 # t_max=0.08
+
+# tweak above parameters according to command line args
 execfile('process_cmd_line_args.py')
 
 # arrays for test signal

@@ -206,13 +206,14 @@ for ch in cbol_channels_no_sat:
 mirnov_filter_diag = pyfusion.Diagnostic('mirnov_filter')
 
 mirnov_small = pyfusion.Diagnostic('mirnov_small')
+small_chans=5  # keep it small
 
 for ch in [mirnov_5p_1]:
     mirnov_filter_diag.add_channel(ch)
     mirnov_small.add_channel(ch)
 
-for ch in mirnov_coils_channel_ordering_sin_102[0:4]:
-    mirnov_small.add_channel(ch)
+for c, ch in enumerate(mirnov_coils_channel_ordering_sin_102):
+    if c<small_chans: mirnov_small.add_channel(ch)
 
 
 class TJII(pyfusion.Device):

@@ -6,7 +6,7 @@ diag_name = 'mirnov_small'
 flucstruc_set_name = 'test_flucstrucs'
 figure_filename = 'test_shot_flucstrucs.png'
 
-# tweak parameters according to command line args
+# tweak above parameters according to command line args
 execfile('process_cmd_line_args.py')
 
 # below is a reminder of the full name for settings

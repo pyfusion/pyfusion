@@ -355,11 +355,14 @@ class MultiChannelTimeseries(object):
 # doesn't break too much!
 ####        self.time_unit_in_seconds = 0   was here, Dave didn't like it. (problem referring from seg_svd)
         self.len_timebase = len(timebase)
-        self.nyquist = 0.5/mean(self.timebase[1:]-self.timebase[:-1])
+#        self.nyquist = 0.5/mean(self.timebase[1:]-self.timebase[:-1])
+# the above is neat, but susceptible to (very small) discretization error 
+# especially if time base is offset from zero (TJII in particular (maybe))
+        self.nyquist = 0.5*(len(self.timebase)-1)/(self.timebase[-1]-self.timebase[0])
         self.signals = {}
         self.parent_element = parent_element
         self.t0 = min(timebase)
-        if pyfusion.settings.VERBOSE>4: print('timebase from %g, nyq=%g, len=%d' % (
+        if pyfusion.settings.VERBOSE>4: print('timebase from %g, nyq=%.8g, len=%d' % (
                 self.t0, self.nyquist, self.len_timebase))
         self.norm_info = {} # raw (not normalised) data has empty dict.
         self.ordered_channel_list = [] # keep the order in which channels are added - use this ordering for SVD, etc

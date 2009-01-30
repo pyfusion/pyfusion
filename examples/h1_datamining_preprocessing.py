@@ -11,6 +11,7 @@ import pyfusion
 diag_name = 'mirnovbeans'
 shot_number = 58048
 
+# tweak above parameters according to command line args
 execfile('process_cmd_line_args.py')
 
 s = pyfusion.get_shot(shot_number)

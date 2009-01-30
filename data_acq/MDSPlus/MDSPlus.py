@@ -3,7 +3,7 @@ Choice is MDSmod='MDSplus' or 'pmds'
 pmds: OK, but hard to find new version, hard to compile on W32 
      Advantage: thin client, so works on any MDSIP server
      Disavantage: Speed may be reduced because of client-server arch
-MDSplus: superseded embryonic object implementation by Tom Fredian
+MDSplus: Is a superseded embryonic object implementation by Tom Fredian
      Advantage: Should be faster, links to standard MDSplus distro.
      In principle should be able to do thin client, but I didn't test it.
 
@@ -31,10 +31,18 @@ def _loadmds_MDSplus(mdsch, shot):
     print('W: module MDSplus accessing local MDS server only, request was %s ' % 
           mdsch.mds_server)
     M.TreeOpen(mdsch.mds_tree, int(shot))
-# in this implementation, specifying bounds can provide a big speed up 
-# if the data interval is a small part of the total interval
+# This is an early version of the MDSplus pbject interface to python. There
+# is a much newer nicer version.  One day I will code it in to avoid the 
+# kludges.
+# In this implementation, specifying time bounds is used to force the TDI
+# interpreter to use a different evaluation path to avoid a bug, and
+# can provide a big speed up if the data interval is a small part of
+# the total interval: 
+# note: For dtacq shots in 58100 range, need delta>=30us, because less data
+#     is returned than expected (another bug?)
+    delta=1e-4
     bounds=str("[%f:%f]") % (pyfusion.settings.SHOT_T_MIN, 
-                             pyfusion.settings.SHOT_T_MAX)
+                             pyfusion.settings.SHOT_T_MAX+delta)
     print mdsch.mds_path+bounds
     sig = M.TdiExecute(mdsch.mds_path+bounds)
     if pyfusion.settings.VERBOSE>4: print sig
@@ -46,6 +54,14 @@ def _loadmds_MDSplus(mdsch, shot):
         pl.show()
     sigdim = M.TdiExecute('dim_of(' + mdsch.mds_path+bounds+')')
     dim_data = sigdim.data()
+    if len(dim_data)==1:  # ne_centre has this problem - try another tack
+        print(' using kludge #2'),
+        sig = M.TdiExecute('1.*'+mdsch.mds_path)
+        data=sig.data()
+        sigdim = M.TdiExecute('dim_of('+mdsch.mds_path+')')
+        dim_data=sigdim.data()
+        print('retrieved data lenght %d, timebase length %d' %
+              (len(data), len(dim_data)))
     M.TreeClose(mdsch.mds_tree, int(shot))
     return [dim_data, data]
 
@@ -68,17 +84,20 @@ def _loadmds(mdsch,shot, invert=False):
     mds_func = MDSPLUS_PYTHON_MODULE_DICT[MDSmod]
 
     # this try/except covers too much - need to break it up
-    try:
+    if pyfusion.settings.VERBOSE>4:
         [dim_data, data] = mds_func(mdsch, shot)
-
-    except:
+    else:
+        try:
+            [dim_data, data] = mds_func(mdsch, shot)
+        except:
         # using the jScope/mdsdcl convention for "full path" here - hope it is right!
         #  mirnov_dtacq ideally should be preceded by a : 
         # (dgp: mirnov_dtacq is H-1 specific - any mirnov_dtacq customisations would go in devices/H1)
-        msg=str(('Error accessing server %s: Shot %d, \\%s::top%s') % 
-                (mdsch.mds_server, shot, mdsch.mds_tree, mdsch.mds_path))
-        print(msg)
-        raise LookupError, msg
+            msg=str(('Error accessing server %s: Shot %d, \\%s::top%s') % 
+                    (mdsch.mds_server, shot, mdsch.mds_tree, mdsch.mds_path))
+            print(msg)
+            raise LookupError, msg
+
     if invert:
         data = -data
     return [dim_data,data]

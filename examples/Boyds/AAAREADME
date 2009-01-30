@@ -20,13 +20,14 @@ r324 and around:  Here are the fixups required to old data.
 As we have altered the Db structure fir time_unit_in_seconds, might as well
 add a couple of descriptions and a time stamp.
 
-alter table dm_fs_set add column description varchar(1000);
-alter table dm_cluster_datasets add column description varchar(1000);
-alter table shots add column proc_date datetime;
-alter table Channels add column time_unit_in_seconds float default 0.001; 
+ALTER TABLE dm_fs_set ADD COLUMN description VARCHAR(1000);
+ALTER TABLE dm_cluster_datasets ADD COLUMN description VARCHAR(1000);
+ALTER TABLE shots ADD COLUMN proc_date DATETIME;
+ALTER TABLE Channels ADD COLUMN time_unit_in_seconds FLOAT DEFAULT 0.001; 
 # ( default 1. for H1)
-alter table HJChannels add column time_unit_in_seconds float default 0.001; 
-alter table mdspluschannels add column time_unit_in_seconds float default 1.
+ALTER TABLE HJChannels ADD COLUMN time_unit_in_seconds FLOAT DEFAULT 0.001; 
+ALTER TABLE mdspluschannels ADD COLUMN time_unit_in_seconds FLOAT DEFAULT 1.;
+(sim for TJII)
 
 
 

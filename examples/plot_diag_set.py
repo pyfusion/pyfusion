@@ -7,6 +7,7 @@ shot_number = 58122
 t0 = 0.020
 dt = 0.001
 
+# tweak above parameters according to command line args
 execfile('process_cmd_line_args.py')
 
 s = pyfusion.get_shot(shot_number)

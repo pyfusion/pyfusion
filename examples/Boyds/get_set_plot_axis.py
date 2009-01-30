@@ -46,7 +46,7 @@ def get_set_plot_axis(xlim= None, ylim=None, axdict=None, fignum=None,
                   % (offset, len(chdn), ax.get_xlim(), ax.get_ylim()))
         except: 
             print('looks like child with offset %d is not a subplot' % offset)
-            print('Here is a list:', chdn)
+            print('Here is a list:' % chdn)
             return(None)
 
     xlt=ax.get_xlim()

@@ -316,13 +316,14 @@ def get_fs_for_ts(ts, energy_range = [None,None], frequency_range = [None, None]
         fs_list.extend(_tmp)
     return fs_list
 
-def get_fs_for_shot(shot_number, energy_range = [None,None], frequency_range = [None, None]):
+def get_fs_for_shot(shot_number, energy_range = [None,None], frequency_range = [None, None], time_range=[None, None]):
     """
     return list of flustuation structures for a given shot
 
     shot_numer - shot number
     energy_range = [min_energy, max_energy] -- if min_energy (max_energy) = None, no min (max) energy filtering is applied
     frequency_range = [min_freq, max_freq] -- if min_freq (max_freq) = None, no min (max) freq filtering is applied
+    time_range DAve - does it make sense to include a tme range?
     """
     s = pyfusion.q(pyfusion.Shot).filter(pyfusion.Shot.shot==shot_number).one()
 
@@ -331,8 +332,20 @@ def get_fs_for_shot(shot_number, energy_range = [None,None], frequency_range = [
     fs_list = []
 
     for ts in ts_list:
-        _tmp = get_fs_for_ts(ts, energy_range=energy_range, frequency_range=frequency_range)
-        fs_list.extend(_tmp)
+        get_this_one=False
+        if time_range == None:
+            get_this_one=True
+        else:
+            if len(ts.svd) > 0:
+                svd0=ts.svd[0]
+                if mean(svd0.timebase)>=time_range[0] and \
+                        mean(svd0.timebase)<=time_range[1]:
+                    get_this_one=True
+    
+        if get_this_one:
+            _tmp = get_fs_for_ts(ts, energy_range=energy_range, frequency_range=frequency_range)
+            fs_list.extend(_tmp)
+
     return fs_list
 
 

@@ -31,8 +31,9 @@ t_max=0.06
 
 # Note - as of r124, needed 20-60ms instead of 40-60ms to get >4 clusters
 
-# tweak parameters according to command line args
+# tweak above parameters according to command line args
 execfile('process_cmd_line_args.py')
+
 pyfusion.settings.SHOT_T_MIN=t_min
 pyfusion.settings.SHOT_T_MAX=t_max
 

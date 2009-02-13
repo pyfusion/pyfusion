@@ -1,4 +1,0 @@
-# ignore Sphinx build files
-.build
-.static
-.templates

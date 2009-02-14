@@ -2,12 +2,12 @@
 Test code for pyfusion
 """
 
-import unittest, random
+import unittest, random, string
 
 import pyfusion
 
 def randstr(string_length):
-    return ''.join([random.choice('ABCDEFGHIJKLMNOPQRSTUVWXYZ') for x in xrange(string_length)])
+    return ''.join([random.choice(string.letters) for x in xrange(string_length)]).capitalize()
 
 class TestRandStr(unittest.TestCase):
     def testRandStr(self):

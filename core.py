@@ -53,9 +53,3 @@ class Device():
         if remove_db != None:
             pyfusion._connected_databases.remove(remove_db)
             
-class Shot():
-    def __init__(self, shot_number):
-        self.shot = shot_number
-
-
-        

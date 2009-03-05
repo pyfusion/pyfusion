@@ -13,6 +13,7 @@ Contents:
    Tutorial <tutorial/index>
    Core components <core>
    Tests <tests/index>
+   Configuration files <config>
 
 Indices and tables
 ==================

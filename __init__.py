@@ -1,6 +1,6 @@
 import ConfigParser
  
-from core import Device, Shot
+from core import Device
 
 DEFAULT_CONFIG_FILE = 'pyfusion.cfg'
 

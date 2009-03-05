@@ -1,6 +1,10 @@
 import pyfusion
 
 class Device():
+    """Represent a laboratory device with ORM for processed data.
+
+    docs
+    """
     def __init__(self, device_name, database=None):
         self.name = device_name
         if database != None:

@@ -8,73 +8,101 @@ import pyfusion
 
 TEST_CONFIG_FILE = "test.cfg"
 
+CONFIG_TEST_DEVICE_NAME = "TestDevice"
+NONCONFIG_TEST_DEVICE_NAME = "UnlistedTestDevice"
+CONFIG_EMPTY_TEST_DEVICE_NAME = "TestEmptyDevice"
 
-def randstr(string_length):
-    return ''.join([random.choice(string.letters) for x in xrange(string_length)]).capitalize()
+class PyfusionTestCase(unittest.TestCase):
+    def __init__(self, *args):
+        self.listed_device = CONFIG_TEST_DEVICE_NAME
+        self.listed_empty_device = CONFIG_EMPTY_TEST_DEVICE_NAME
+        self.unlisted_device = NONCONFIG_TEST_DEVICE_NAME
 
-class TestRandStr(unittest.TestCase):
-    def testRandStr(self):
-        str_length = random.randint(1,10)
-        rand_str = randstr(str_length)
-        self.assertEqual(len(rand_str), str_length)
+        unittest.TestCase.__init__(self, *args)
 
-
-class TestDevice(unittest.TestCase):
-    """Test for the Device class in pyfusion.core"""
     def setUp(self):
-        """
-        Load test config file
-        """
-
         pyfusion.config.read(TEST_CONFIG_FILE)
+        
+
+class TestConfig(PyfusionTestCase):
+    """Check test config file is as we expect"""
+
+    def testListedDevices(self):
+        self.assertTrue(pyfusion.config.has_section(self.listed_device))
+        self.assertTrue(pyfusion.config.has_section(self.listed_empty_device))
+
+    def testListedDeviceDatabase(self):
+        self.assertTrue(
+            pyfusion.config.has_option(self.listed_device, 'database')
+            )
+
+    def testEmptyDevice(self):
+        self.assertEqual(len(pyfusion.config.options(self.listed_empty_device)),
+        0)
+        
+    def testUnlistedDevice(self):
+        self.assertFalse(pyfusion.config.has_section(self.unlisted_device))
+
+class TestDevice(PyfusionTestCase):
+    """Test for the Device class in pyfusion.core"""
     
     def testUnknownDevice(self):
         """
         If a device is not listed in the config file, it should fail
         if no database is specified
         """
-        device_name = randstr(random.randint(1,10))
         # invalid database name, but we can let sqlalchemy deal with that
         test_database = "mytestdatabase"
-        # randomly named device should raise error if no database specified
+        # Device unlisted in config should raise error if no database specified
         self.assertRaises(ConfigParser.NoSectionError,
-        pyfusion.Device, device_name)
+        pyfusion.Device, self.unlisted_device)
         # This one should work because we supply a database name...
-        test_device_2 = pyfusion.Device(device_name, test_database)
+        test_device_2 = pyfusion.Device(self.unlisted_device, test_database)
         self.assertEqual(test_device_2.database, test_database)
-        self.assertEqual(test_device_2.name, device_name)
+        self.assertEqual(test_device_2.name, self.unlisted_device)
         
-    def testKnownDevice(self):
-        """
-        If a device is listed in config file, it should use the
+    def testKnownDeviceWithListedDatabase(self):
+        """If a device is listed in config file, it should use the
         database listed there, if no database is supplied as an argument
         """
-        device_name = "TestDevice"
-        device_config_database = pyfusion.config.get(device_name, 'database')
-        
-        test_device = pyfusion.Device(device_name)
+        device_config_database = pyfusion.config.get(
+            self.listed_device, 'database')        
+        test_device = pyfusion.Device(self.listed_device)
         self.assertEqual(test_device.database, device_config_database)
-        self.assertEqual(test_device.name, device_name)
 
-        # now test that a supplied database is used in place of config
+    def testKnownDeviceWithSuppliedDatabase(self):
+        """Test that a supplied database is used in place of config"""
         dummy_database = "dummy_database"
-        test_device_2 = pyfusion.Device(device_name, database=dummy_database)
-        self.assertEqual(test_device_2.database, dummy_database)
+        test_device = pyfusion.Device(
+            self.listed_device, database=dummy_database)
+        self.assertEqual(test_device.database, dummy_database)
 
-        # device in config with no specified database should raise
-        # exception when no database specified
-        empty_device_name = "TestDeviceEmpty"
+    def testKnownEmptyDevice(self):
+        """device in config with no specified database should raise
+        exception when no database specified
+        """
         self.assertRaises(ConfigParser.NoOptionError,
-        pyfusion.Device, empty_device_name)
+                          pyfusion.Device, self.listed_empty_device)
 
-        # Should fail if we connect a second device to same database (dummy_database)
+    def testFailMultipleDeviceWithSameDatabase(self):
+        """Should fail if we connect a second device to same
+        database (dummy_database).
+
+        If we delete the first instance, we should be able to create another
+        device instance with same database.
+        """
         from pyfusion.exceptions import DatabaseInUseException
-        second_device_name = randstr(random.randint(1,10))
-        self.assertRaises(DatabaseInUseException, pyfusion.Device, second_device_name, database=dummy_database)
-        # if we delete the original test_device_2, then we should now
-        # be able to create a new device to the same database
-        del test_device_2
-        test_device_3 = pyfusion.Device(second_device_name, database=dummy_database)
+        dummy_database = "dummy_database"
+        
+        test_device_1 = pyfusion.Device(
+            self.listed_device, database=dummy_database)
+
+        self.assertRaises(DatabaseInUseException, pyfusion.Device,
+                          self.unlisted_device, database=dummy_database)
+
+        del test_device_1
+        test_device_2 = pyfusion.Device(self.unlisted_device,
+                                        database=dummy_database)
 
 if __name__ == "__main__":
     unittest.main()

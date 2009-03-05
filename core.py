@@ -3,7 +3,12 @@ import pyfusion
 class Device():
     """Represent a laboratory device with ORM for processed data.
 
-    docs
+    If a section [device_name] exists in the pyfusion configuration
+    file and the database argument is not used, then a database
+    specified by the configuration file will be used. Otherwise, a
+    database must be specified.
+
+    The same database cannot be used for multiple instances of Device.
     """
     def __init__(self, device_name, database=None):
         self.name = device_name

@@ -11,8 +11,8 @@ Contents:
    :maxdepth: 1
 
    Tutorial <tutorial/index>
-
    Core components <core>
+   Tests <tests/index>
 
 Indices and tables
 ==================

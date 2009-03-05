@@ -19,14 +19,14 @@ class TestRandStr(unittest.TestCase):
         self.assertEqual(len(rand_str), str_length)
 
 class TestShot(unittest.TestCase):
-    
+    """Test for the Shot class in pyfusion.core"""
     def testShotHasCorrectShotNumber(self):
         shot_number = random.randint(1,10)
         shot = pyfusion.Shot(shot_number)
         self.assertEqual(shot.shot, shot_number)
 
 class TestDevice(unittest.TestCase):
-
+    """Test for the Device class in pyfusion.core"""
     def setUp(self):
         """
         Load test config file

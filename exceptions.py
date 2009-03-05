@@ -1,0 +1,3 @@
+
+class DatabaseInUseException(Exception):
+    pass

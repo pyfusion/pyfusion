@@ -1,14 +1,52 @@
-
+import pyfusion
 
 class Device():
-    def __init__(self):
-        self.name = 'TestDevice'
+    def __init__(self, device_name, database=None):
+        self.name = device_name
+        if database != None:
+            self.database = database
+        else:
+            from ConfigParser import NoSectionError, NoOptionError
+            try:
+                self.database = pyfusion.config.get(self.name, 'database')
+            except NoSectionError:
+                print """
+                Device: No database specified and device
+                section '[%s]' not found in configuration file.
+                Raising NoSectionError...""" %(self.name)
+                raise
+            except NoOptionError:
+                print """
+                Device: No database specified and device
+                section '[%s]' in configuration file does not
+                contain database definition.
+                Raising NoOptionError...""" %(self.name)
+                raise
+        if self.database in pyfusion._connected_databases:
+            from pyfusion.exceptions import DatabaseInUseException
+            # even though database is in use, we add it again to the
+            # list. It is removed again straight away by __del__() -
+            # adding it here simplified the __del__ code.
+            pyfusion._connected_databases.append(self.database)
+            raise DatabaseInUseException("Database '%s' already being used."
+                             %(self.database))
+        else:
+            pyfusion._connected_databases.append(self.database)
 
+    def __del__(self):
+        # note - should add ref to parent __del__ when we specify parent
+        try:
+            remove_db = self.database
+        except AttributeError:
+            # there are cases when database is not defined, i.e. we
+            # are exiting due to an exception raised in __init__()
+            remove_db = None
+        if remove_db != None:
+            pyfusion._connected_databases.remove(remove_db)
+            
 class Shot():
     def __init__(self, shot_number):
         self.shot = shot_number
 
 
-def set_device(device_name):
-    pass
         

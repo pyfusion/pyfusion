@@ -11,13 +11,14 @@ TEST_CONFIG_FILE = "test.cfg"
 CONFIG_TEST_DEVICE_NAME = "TestDevice"
 NONCONFIG_TEST_DEVICE_NAME = "UnlistedTestDevice"
 CONFIG_EMPTY_TEST_DEVICE_NAME = "TestEmptyDevice"
+TEST_SHOT_NUMBER = 12345
 
 class PyfusionTestCase(unittest.TestCase):
     def __init__(self, *args):
         self.listed_device = CONFIG_TEST_DEVICE_NAME
         self.listed_empty_device = CONFIG_EMPTY_TEST_DEVICE_NAME
         self.unlisted_device = NONCONFIG_TEST_DEVICE_NAME
-
+        self.shot_number = TEST_SHOT_NUMBER
         unittest.TestCase.__init__(self, *args)
 
     def setUp(self):
@@ -104,6 +105,21 @@ class TestDevice(PyfusionTestCase):
         test_device_2 = pyfusion.Device(self.unlisted_device,
                                         database=dummy_database)
 
+class TestShot(PyfusionTestCase):
+    """Test the Shot class in pyfusion.core"""
+    def testShotDevice(self):
+        d = pyfusion.Device(self.listed_device)
+        s = pyfusion.Shot(d, self.shot_number)
+        self.assertEqual(s.device, d)
+        self.assertEqual(s.shot_number, self.shot_number)
+        
+    def testDeviceShotMethodIsShot(self):
+        d = pyfusion.Device(self.listed_device)
+        s1 = pyfusion.Shot(d, self.shot_number)
+        s2 = d.shot(self.shot_number)
+        self.assertEqual(s1.shot_number, s2.shot_number)
+        self.assertEqual(s1.device, s2.device)
+    
 if __name__ == "__main__":
     unittest.main()
 

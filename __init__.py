@@ -1,7 +1,7 @@
 import ConfigParser
 import os
 
-from core import Device
+from core import Device, Shot
 
 DEFAULT_CONFIG_FILE = 'pyfusion.cfg'
 USER_PYFUSION_DIR = os.path.join(os.path.expanduser('~'), '.pyfusion')

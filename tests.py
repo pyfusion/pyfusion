@@ -2,11 +2,12 @@
 Test code for pyfusion
 """
 
-import unittest, random, string, ConfigParser
+import unittest, random, string, ConfigParser, os
 
 import pyfusion
 
-TEST_CONFIG_FILE = "test.cfg"
+TEST_DATA_PATH = os.path.abspath(os.path.dirname(__file__))
+TEST_CONFIG_FILE = os.path.join(TEST_DATA_PATH, "test.cfg")
 
 CONFIG_TEST_DEVICE_NAME = "TestDevice"
 NONCONFIG_TEST_DEVICE_NAME = "UnlistedTestDevice"

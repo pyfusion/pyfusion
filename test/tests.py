@@ -86,25 +86,6 @@ class TestDevice(PyfusionTestCase):
         self.assertRaises(ConfigParser.NoOptionError,
                           pyfusion.Device, self.listed_empty_device)
 
-    def testFailMultipleDeviceWithSameDatabase(self):
-        """Should fail if we connect a second device to same
-        database (dummy_database).
-
-        If we delete the first instance, we should be able to create another
-        device instance with same database.
-        """
-        from pyfusion.exceptions import DatabaseInUseException
-        dummy_database = "dummy_database"
-        
-        test_device_1 = pyfusion.Device(
-            self.listed_device, database=dummy_database)
-
-        self.assertRaises(DatabaseInUseException, pyfusion.Device,
-                          self.unlisted_device, database=dummy_database)
-
-        del test_device_1
-        test_device_2 = pyfusion.Device(self.unlisted_device,
-                                        database=dummy_database)
 
 class TestShot(PyfusionTestCase):
     """Test the Shot class in pyfusion.core"""

@@ -3,7 +3,7 @@ Pyfusion tests
 ==============
 
 
-.. module:: pyfusion.tests
+.. module:: pyfusion.test.tests
 .. autoclass:: TestDevice
    :members:
 .. autoclass:: TestShot

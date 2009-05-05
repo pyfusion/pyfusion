@@ -2,8 +2,8 @@
 Example session
 ===============
 
-An example session::
+Load the pyfusion module:
 
    >>> import pyfusion
 
-the end.
+next, we create an instance of the :class:`pyfusion.core.Device` class

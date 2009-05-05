@@ -10,6 +10,7 @@ Contents:
 .. toctree::
    :maxdepth: 1
 
+   Introduction <introduction>
    Tutorial <tutorial/index>
    Core components <core>
    Tests <tests/index>

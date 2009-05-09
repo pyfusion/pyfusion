@@ -9,6 +9,7 @@ TEST_DATA_PATH = os.path.abspath(os.path.dirname(__file__))
 TEST_CONFIG_FILE = os.path.join(TEST_DATA_PATH, "test.cfg")
 
 CONFIG_TEST_DEVICE_NAME = "TestDevice"
+CONFIG_TEST_CHANNEL = "TestChannel"
 NONCONFIG_TEST_DEVICE_NAME = "UnlistedTestDevice"
 CONFIG_EMPTY_TEST_DEVICE_NAME = "TestEmptyDevice"
 TEST_SHOT_NUMBER = 12345
@@ -17,6 +18,7 @@ class BasePyfusionTestCase(unittest.TestCase):
     """Simple customisation of TestCase."""
     def __init__(self, *args):
         self.listed_device = CONFIG_TEST_DEVICE_NAME
+        self.listed_config_channel = CONFIG_TEST_CHANNEL
         self.listed_empty_device = CONFIG_EMPTY_TEST_DEVICE_NAME
         self.unlisted_device = NONCONFIG_TEST_DEVICE_NAME
         self.shot_number = TEST_SHOT_NUMBER

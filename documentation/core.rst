@@ -1,7 +1,9 @@
 :mod:`core` ---  Core components
 ================================
 
-.. module:: pyfusion.core
-   :synopsis: core components of pyfusion
+
+.. module:: pyfusion.core.devices
+
+.. autoclass:: BaseDevice
+
 .. autoclass:: Device
-   :members:

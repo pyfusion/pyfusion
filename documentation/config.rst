@@ -1,3 +1,4 @@
+.. _config-files:
 
 Pyfusion configuration files
 """"""""""""""""""""""""""""

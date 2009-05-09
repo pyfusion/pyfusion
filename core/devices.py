@@ -1,6 +1,8 @@
-import pyfusion
+"""Basic device class"""
 
-class Device():
+import pyfusion.conf
+
+class BaseDevice():
     """Represent a laboratory device with ORM for processed data.
 
 
@@ -15,7 +17,7 @@ class Device():
         else:
             from ConfigParser import NoSectionError, NoOptionError
             try:
-                self.database = pyfusion.config.get(self.name, 'database')
+                self.database = pyfusion.conf.config.get(self.name, 'database')
             except NoSectionError:
                 print """
                 Device: No database specified and device
@@ -33,7 +35,8 @@ class Device():
     def shot(self, shot_number):
         return Shot(self, shot_number)
 
-class Shot():
-    def __init__(self, device, shot_number):
-        self.device = device
-        self.shot_number = shot_number
+
+class Device(BaseDevice):
+    pass
+
+

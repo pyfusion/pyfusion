@@ -8,20 +8,27 @@ import pyfusion.conf
 TEST_DATA_PATH = os.path.abspath(os.path.dirname(__file__))
 TEST_CONFIG_FILE = os.path.join(TEST_DATA_PATH, "test.cfg")
 
+# These values must match those in test.cfg
+# TODO: test configuration data should be generated from these values,
+#       there is no reason to duplicate the information in a file.
 CONFIG_TEST_DEVICE_NAME = "TestDevice"
-CONFIG_TEST_CHANNEL = "TestChannel"
+CONFIG_TEST_DEVICE_SINGLE_CHANNEL_TIMESERIES = "TestSCTChannel"
+CONFIG_TEST_DEVICE_MULTIPLE_CHANNEL_TIMESERIES = "TestMCTChannel"
 NONCONFIG_TEST_DEVICE_NAME = "UnlistedTestDevice"
 CONFIG_EMPTY_TEST_DEVICE_NAME = "TestEmptyDevice"
 TEST_SHOT_NUMBER = 12345
+UNLISTED_CONFIG_SECTION_TYPE = "UnlistedType"
 
 class BasePyfusionTestCase(unittest.TestCase):
     """Simple customisation of TestCase."""
     def __init__(self, *args):
         self.listed_device = CONFIG_TEST_DEVICE_NAME
-        self.listed_config_channel = CONFIG_TEST_CHANNEL
+        self.listed_device_single_channel_timeseries = CONFIG_TEST_DEVICE_SINGLE_CHANNEL_TIMESERIES
+        self.listed_device_multiple_channel_timeseries = CONFIG_TEST_DEVICE_MULTIPLE_CHANNEL_TIMESERIES
         self.listed_empty_device = CONFIG_EMPTY_TEST_DEVICE_NAME
         self.unlisted_device = NONCONFIG_TEST_DEVICE_NAME
         self.shot_number = TEST_SHOT_NUMBER
+        self.unlisted_config_section_type = UNLISTED_CONFIG_SECTION_TYPE
         unittest.TestCase.__init__(self, *args)
 
     def setUp(self):
@@ -31,20 +38,22 @@ class TestConfig(BasePyfusionTestCase):
     """Check test config file is as we expect"""
 
     def testListedDevices(self):
-        self.assertTrue(pyfusion.conf.config.has_section(self.listed_device))
-        self.assertTrue(pyfusion.conf.config.has_section(self.listed_empty_device))
+        self.assertTrue(pyfusion.conf.config.pf_has_section('Device',self.listed_device))
+        self.assertTrue(pyfusion.conf.config.pf_has_section('Device', self.listed_empty_device))
 
     def testListedDeviceDatabase(self):
         self.assertTrue(
-            pyfusion.conf.config.has_option(self.listed_device, 'database')
+            pyfusion.conf.config.pf_has_option('Device', self.listed_device, 'database')
             )
 
     def testEmptyDevice(self):
-        self.assertEqual(len(pyfusion.conf.config.options(self.listed_empty_device)),
+        self.assertEqual(len(pyfusion.conf.config.pf_options('Device',
+        self.listed_empty_device)),
         0)
         
     def testUnlistedDevice(self):
-        self.assertFalse(pyfusion.conf.config.has_section(self.unlisted_device))
+        self.assertFalse(pyfusion.conf.config.pf_has_section('Device',
+        self.unlisted_device))
 
 
 class TestInitImports(BasePyfusionTestCase):

@@ -27,7 +27,7 @@ class TestDevice(BasePyfusionTestCase):
         """If a device is listed in config file, it should use the
         database listed there, if no database is supplied as an argument
         """
-        device_config_database = pyfusion.conf.config.get(
+        device_config_database = pyfusion.conf.config.pf_get('Device',
             self.listed_device, 'database')        
         test_device = Device(self.listed_device)
         self.assertEqual(test_device.database, device_config_database)

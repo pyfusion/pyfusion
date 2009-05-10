@@ -17,7 +17,7 @@ class BaseDevice():
         else:
             from ConfigParser import NoSectionError, NoOptionError
             try:
-                self.database = pyfusion.conf.config.get(self.name, 'database')
+                self.database = pyfusion.conf.config.pf_get('Device', self.name, 'database')
             except NoSectionError:
                 print """
                 Device: No database specified and device

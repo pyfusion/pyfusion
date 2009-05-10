@@ -13,9 +13,29 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         from pyfusion.acquisition.base import BaseAcquisition
         self.assertTrue(BaseAcquisition in FakeDataAcquisition.__bases__)
 
-    def testAcquisition(self):
+    def testSCTAcquisition(self):
+        """Test acquisition for single channel timeseries (SCT)."""
         from pyfusion.acquisition.fakedata import FakeDataAcquisition
-        from pyfusion.data.base import BaseData
-        test_fakedata_acq = FakeDataAcquisition(self.listed_device, self.shot_number, self.listed_config_channel)
+        from pyfusion.data.timeseries import SCTData
+        test_fakedata_acq = FakeDataAcquisition(self.listed_device,
+                                                self.shot_number,
+                                                self.listed_device_single_channel_timeseries,
+                                                SCTData)
         test_data = test_fakedata_acq.getdata()
+        self.assertEqual(test_data.__class__, SCTData)
+        self.assertEqual(len(test_data.timebase), len(test_data.signal))
+        self.assertEqual(self.listed_device, test_data.device_name)
+        self.assertEqual(self.shot_number, test_data.shot_number)
+        
+    def testMCTAcquisition(self):
+        """Test acquisition for multiple channel timeseries (MCT)."""
+        from pyfusion.acquisition.fakedata import FakeDataAcquisition
+        from pyfusion.data.timeseries import MCTData
+        test_fakedata_acq = FakeDataAcquisition(self.listed_device,
+                                                self.shot_number,
+                                                self.listed_device_multiple_channel_timeseries,
+                                                MCTData)
+        test_data = test_fakedata_acq.getdata()
+        self.assertEqual(test_data.__class__, MCTData)
+
         

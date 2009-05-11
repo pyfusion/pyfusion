@@ -1,12 +1,36 @@
+"""Tools for processing configuration files."""
+
 from ConfigParser import ConfigParser
 
 from pyfusion.conf.exceptions import DisallowedSectionType, ConfigSectionSyntaxError
 
+# This list contains allowed section types, i.e. [SectionType:Name] in
+# config files. Be sure to update the documentation (config.rst) when
+# adding to this list
 allowed_section_types = ['Device']
 
 class PyfusionConfigParser(ConfigParser):
-    """Customised parser to facilitate [Type:Name] config sections."""
+    """Customised parser to facilitate [Type:Name] config sections.
+    
+    Inherited ConfigParser methods are extended, and prefixed with pf_
+    to allow separate arguments for section type and section name,
+    for example:
 
+      ConfigParser.has_section(sectionname) ->
+      PyfusionConfigParser.pf_has_section(sectiontype, name)
+
+    The inherited ConfigParser methods are still available, so the
+    following are identical:
+
+      PyfusionConfigParser.has_section('Device:TJII')
+      PyfusionConfigParser.pf_has_section('Device','TJII')
+          
+    """
+
+    #####################################################
+    ## Extensions to ConfigParser methods (incomplete) ##
+    #####################################################
+    
     def pf_has_section(self, sectiontype, sectionname):
         return self.has_section("%s:%s"%(sectiontype, sectionname))
 
@@ -19,7 +43,12 @@ class PyfusionConfigParser(ConfigParser):
     def pf_has_option(self, sectiontype, sectionname, option):
         return self.has_option("%s:%s"%(sectiontype, sectionname), option)
 
+    #########################################
+    ## Custom PyfusionConfigParser methods ##
+    #########################################
+
     def check_section_syntax(self):
+        """Make sure config file sections follow [Type:Name] syntax."""
         for section in self.sections():
             split_name = section.split(':')
             if not len(split_name)==2:
@@ -28,6 +57,7 @@ class PyfusionConfigParser(ConfigParser):
                 raise ConfigSectionSyntaxError, section
 
     def check_section_types(self, type_list):
+        """Make sure section types listed in config file are allowed."""
         self.check_section_syntax()
         for section in self.sections():
             section_name = section.split(':')[0]

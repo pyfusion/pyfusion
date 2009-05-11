@@ -7,12 +7,14 @@ from pyfusion.test import BasePyfusionTestCase
 from pyfusion.core.devices import Device
 
 class TestDevice(BasePyfusionTestCase):
-    """Test for the Device class in pyfusion.core"""
+    """Test for the Device class in pyfusion.core."""
     
     def testUnknownDevice(self):
-        """
+        """Try creating a device without database argument.
+
         If a device is not listed in the config file, it should fail
-        if no database is specified
+        in the case where no database is specified
+        
         """
         # invalid database name, but we can let sqlalchemy deal with that
         test_database = "mytestdatabase"
@@ -24,8 +26,11 @@ class TestDevice(BasePyfusionTestCase):
         self.assertEqual(test_device_2.name, self.unlisted_device)
         
     def testKnownDeviceWithListedDatabase(self):
-        """If a device is listed in config file, it should use the
+        """Test case where database argument is read from config file.
+        
+        If a device is listed in config file, it should use the
         database listed there, if no database is supplied as an argument
+
         """
         device_config_database = pyfusion.conf.config.pf_get('Device',
             self.listed_device, 'database')        
@@ -33,15 +38,17 @@ class TestDevice(BasePyfusionTestCase):
         self.assertEqual(test_device.database, device_config_database)
 
     def testKnownDeviceWithSuppliedDatabase(self):
-        """Test that a supplied database is used in place of config"""
+        """Test that supplied database argument is used in place of config."""
         dummy_database = "dummy_database"
         test_device = Device(
             self.listed_device, database=dummy_database)
         self.assertEqual(test_device.database, dummy_database)
 
     def testKnownEmptyDevice(self):
-        """device in config with no specified database should raise
-        exception when no database specified
+        """Check that an error is raised if no database argument is available.
+
+        A device in config with no specified database should raise
+        exception when no database specified.
         """
         self.assertRaises(NoOptionError,Device, self.listed_empty_device)
 

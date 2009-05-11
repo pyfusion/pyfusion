@@ -7,6 +7,8 @@ from pyfusion.core.devices import Device
 VERSION = (0, 1, None, 'alpha', 0)
 
 def get_version():
+    """Human-readable version info."""
+    
     version = '%s.%s' % (VERSION[0], VERSION[1])
     if VERSION[2]:
         version = '%s.%s' % (version, VERSION[2])
@@ -26,12 +28,13 @@ def get_version():
     return version
 
 
-# load config files
+# find config files
 DEFAULT_CONFIG_FILE = 'pyfusion.cfg'
 USER_PYFUSION_DIR = os.path.join(os.path.expanduser('~'), '.pyfusion')
 if not os.path.exists(USER_PYFUSION_DIR):
     os.mkdir(USER_PYFUSION_DIR)
 USER_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'pyfusion.cfg')
 
+# read config files
 pyfusion.conf.config.read(DEFAULT_CONFIG_FILE)
 pyfusion.conf.config.read(USER_CONFIG_FILE)

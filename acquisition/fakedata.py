@@ -3,4 +3,5 @@
 from pyfusion.acquisition.base import BaseAcquisition
 
 class FakeDataAcquisition(BaseAcquisition):
+    """Generate fake data for testing code."""
     pass

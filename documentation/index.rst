@@ -3,15 +3,22 @@
    contain the root `toctree` directive.
 
 Pyfusion documentation
-====================================
+======================
 
-Contents:
-
+Overview
+--------
 .. toctree::
    :maxdepth: 1
 
    Introduction <introduction>
    Tutorial <tutorial/index>
+   Configuration files <config>
+
+Code
+----
+.. toctree::
+   :maxdepth: 1
+
    Core components <core>
    Tests <tests/index>
    Configuration files <config>

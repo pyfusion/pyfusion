@@ -40,3 +40,12 @@ class TestPyfusionConfigParser(BasePyfusionTestCase):
         self.assertFalse(config.pf_has_section('Device', self.unlisted_device))
 
 
+class TestImportSetting(BasePyfusionTestCase):
+    """Test import_setting function."""
+
+    def test_import_setting_with_fakedata_acquisition(self):
+        from pyfusion.conf.utils import import_setting
+        acq_from_config = import_setting('Acquisition',
+                                         'test_fakedata', 'acq_class')
+        from pyfusion.acquisition.fakedata import FakeDataAcquisition
+        self.assertTrue(acq_from_config == FakeDataAcquisition)

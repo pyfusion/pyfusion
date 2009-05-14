@@ -11,12 +11,10 @@ class BaseAcquisition:
     device_name -- name of device as specified in configuration file.
     shot --------- shot number. TODO: should work as iterator?
     channel ------ channel name: TODO: should work as iterator?
-    data_class --- a subclass of pyfusion.data.BaseData which will be returned
-                   by the getdata() method.
-                   
+
+    TODO: keyword arguments to override config settings...
     """
-    def __init__(self, device_name, shot, channel, data_class):
-        self.data_class = data_class
+    def __init__(self, device_name, shot, channel):
         self.device_name = device_name
         self.shot_number = shot
 

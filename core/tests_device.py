@@ -52,3 +52,15 @@ class TestDevice(BasePyfusionTestCase):
         """
         self.assertRaises(NoOptionError,Device, self.listed_empty_device)
 
+    def testDeviceAcquisition(self):
+        """Test that we can use an acquisition specified in config file."""
+        test_device = Device(self.listed_device)
+        # check that acquisition system is connected
+        acq_name = pyfusion.conf.config.pf_get('Device',
+                                              self.listed_device,
+                                              'acquisition')
+        from pyfusion.acquisition import get_acq_from_config
+        acq_class = get_acq_from_config(acq_name)
+        from pyfusion.acquisition.fakedata import FakeDataAcquisition
+        self.assertEqual(acq_class, FakeDataAcquisition)
+        #self.assertTrue(isinstance(acq_instance, FakeDataAcquisition))

@@ -63,4 +63,4 @@ class TestDevice(BasePyfusionTestCase):
         acq_class = get_acq_from_config(acq_name)
         from pyfusion.acquisition.fakedata import FakeDataAcquisition
         self.assertEqual(acq_class, FakeDataAcquisition)
-        #self.assertTrue(isinstance(acq_instance, FakeDataAcquisition))
+        

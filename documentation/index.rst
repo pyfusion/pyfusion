@@ -12,6 +12,7 @@ Overview
 
    Introduction <introduction>
    Tutorial <tutorial/index>
+   Data Acquisition <acquisition>
    Configuration files <config>
 
 Code

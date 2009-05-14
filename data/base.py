@@ -14,6 +14,11 @@ class BaseData:
     shot_number -- number of the shot from where he data was acquired.
     
     """
+    """
     def __init__(self, device_name, shot_number):
         self.device_name = device_name
         self.shot_number = shot_number
+    """
+    # until i decide what to do here...
+    pass
+    

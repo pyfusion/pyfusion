@@ -1,24 +1,21 @@
 """Base classes for pyfusion data acquisition."""
 
-from pyfusion.data.timeseries import SCTData
+from pyfusion.conf.utils import import_setting
 
 class BaseAcquisition:
     """Base class for data acquisition.
 
-    Usage: BaseAcquisition(device_name, shot, channel, data_class)
+    Usage: BaseAcquisition(acq_name, **kwargs)
     
     Arguments:
-    device_name -- name of device as specified in configuration file.
-    shot --------- shot number. TODO: should work as iterator?
-    channel ------ channel name: TODO: should work as iterator?
+    acq_name -- name of acquisition as specified in configuration file.
 
     TODO: keyword arguments to override config settings...
     """
-    def __init__(self, device_name, shot, channel):
-        self.device_name = device_name
-        self.shot_number = shot
+    def __init__(self, acq_name):
+        self.acq_name = acq_name
 
-    def getdata(self):
+    def getdata(self, shot, diag_name):
         """Get the data and return prescribed subclass of BaseData."""
-        return self.data_class(device_name=self.device_name,
-                               shot_number=self.shot_number)
+        data_class = import_setting('Diagnostic', diag_name, 'data_class')
+        return data_class()

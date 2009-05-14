@@ -20,12 +20,11 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         from pyfusion.acquisition.fakedata import FakeDataAcquisition
         from pyfusion import conf
         # make sure the requested data type is returned
-        test_acq = FakeDataAcquisition(self.listed_device,
-                                       self.shot_number, SCT_test_channel_name)
-        data_class = conf.utils.import_setting('Channel',
+        test_acq = FakeDataAcquisition('test_fakedata')
+        data_class = conf.utils.import_setting('Diagnostic',
                                                SCT_test_channel_name,
-                                               'dataclass')
-        #self.assertEqual()
+                                               'data_class')
+        data_instance = test_acq.getdata(self.shot_number, SCT_test_channel_name)
     """
     def testSCTAcquisitionDEPRECIATED(self):
         from pyfusion.acquisition.fakedata import FakeDataAcquisition

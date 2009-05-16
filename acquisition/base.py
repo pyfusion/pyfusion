@@ -10,7 +10,7 @@ class BaseAcquisition:
     Arguments:
     acq_name -- name of acquisition as specified in configuration file.
 
-    TODO: keyword arguments to override config settings...
+    Keyword arguments can be used to override configuration settings.
     """
     def __init__(self, acq_name):
         self.acq_name = acq_name

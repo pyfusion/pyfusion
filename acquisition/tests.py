@@ -16,7 +16,7 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         from pyfusion.acquisition.base import BaseAcquisition
         self.assertTrue(BaseAcquisition in FakeDataAcquisition.__bases__)
 
-    def testSCT(self):
+    def testGetDataReturnObject(self):
         from pyfusion.acquisition.fakedata import FakeDataAcquisition
         from pyfusion import conf
         # make sure the requested data type is returned
@@ -25,30 +25,15 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
                                                SCT_test_channel_name,
                                                'data_class')
         data_instance = test_acq.getdata(self.shot_number, SCT_test_channel_name)
-    """
-    def testSCTAcquisitionDEPRECIATED(self):
-        from pyfusion.acquisition.fakedata import FakeDataAcquisition
-        from pyfusion.data.timeseries import SCTData
-        test_fakedata_acq = FakeDataAcquisition(
-            self.listed_device,
-            self.shot_number,
-            self.listed_device_single_channel_timeseries,
-            SCTData)
-        test_data = test_fakedata_acq.getdata()
-        self.assertEqual(test_data.__class__, SCTData)
-        self.assertEqual(len(test_data.timebase), len(test_data.signal))
-        self.assertEqual(self.listed_device, test_data.device_name)
-        self.assertEqual(self.shot_number, test_data.shot_number)
+        self.assertTrue(isinstance(data_instance, data_class))
+
         
-    def testMCTAcquisitionDEPRECIATED(self):
-        from pyfusion.acquisition.fakedata import FakeDataAcquisition
-        from pyfusion.data.timeseries import MCTData
-        test_fakedata_acq = FakeDataAcquisition(
-            self.listed_device,
-            self.shot_number,
-            self.listed_device_multiple_channel_timeseries,
-            MCTData)
-        test_data = test_fakedata_acq.getdata()
-        self.assertEqual(test_data.__class__, MCTData)
-    """
+    def testDeviceConnection(self):
+        from pyfusion import Device
+        test_device = Device('TestDevice')
+        from pyfusion import conf
+        acq_name = conf.config.pf_get('Device', 'TestDevice', 'acquisition')
+        test_acq = conf.utils.import_setting('Acquisition', acq_name, 'acq_class')
+        # TMPCOMMENT self.assertTrue(isinstance(test_device.acquisition, test_acq))
+        #test_data = test_device.acquisition.getdata(SCT_test_channel_name)
         

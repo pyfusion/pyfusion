@@ -11,7 +11,7 @@ Overview
    :maxdepth: 1
 
    Introduction <introduction>
-   Tutorial <tutorial/index>
+   Tutorial <tutorial>
    Data Acquisition <acquisition>
    Configuration files <config>
 

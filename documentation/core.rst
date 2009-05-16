@@ -7,13 +7,13 @@
 The :mod:`pyfusion.core.devices` module defines the following classes
 and exceptions
 
-.. class:: BaseDevice(device_name, database=None)
+.. class:: BaseDevice(device_name, \*\*kwargs)
 
     Represent a laboratory device with ORM for processed data.
 
     In general, a customised subclass of BaseDevice will be used.
     
-    Usage: BaseDevice(device_name, database=None)
+    Usage: BaseDevice(device_name, \*\*kwargs)
 
     Arguments:
     
@@ -21,8 +21,6 @@ and exceptions
     
     Keyword arguments:
     
-    database -- database URL for storage of processed data (not the
-    data acquisition). If the database argument is not supplied,
-    pyfusion will look for a database in the [Device:device_name]
-    section in the pyfusion configuration file.
+    Any configuration setting can be overridden by supplying a keyword
+    argument with the setting name, e.g.: ``BaseDevice(device_name, database='sqlite://')``
 

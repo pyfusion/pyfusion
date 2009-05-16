@@ -24,11 +24,16 @@ acquisition setting, for example::
 
 In this case, FakeDataAcquistion is instantiated with parameters
 example_param_1, example_param_2, and is attached to the my_device at
-my_device.acquisition.
+my_device.acquisition. Note that for any class, such as Device here, which
+is instantiated with configuration settings, keyword arguments can be
+used to override the configuration file settings. For example, using
+``Device('my_configured_device', acquisition='some_other_acq')`` would instead
+attach an acquisition object defined in the
+``[Acquisition:some_other_acq]`` section of the configuration file.
 
 
 The acquisition class allows for a persistent connection to a data
-acquisition system. To access data, we call the getdata method with 2
+acquisition system. To access data, we call the ``getdata`` method with 2
 arguments [#getdataargs]_, the shot number and the name of a
 configured diagnostic. An example diagnostic configuration here might
 be::

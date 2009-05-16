@@ -49,3 +49,29 @@ class TestImportSetting(BasePyfusionTestCase):
                                          'test_fakedata', 'acq_class')
         from pyfusion.acquisition.fakedata import FakeDataAcquisition
         self.assertTrue(acq_from_config == FakeDataAcquisition)
+
+class TestKeywordArgConfigHandler(BasePyfusionTestCase):
+    """Test the function which chooses from kwargs oor config vars."""
+
+    def test_kwarg_config_handler(self):
+        from pyfusion.conf.utils import kwarg_config_handler
+        from pyfusion.conf import config
+        # config values should be overridden by kwargs
+        # test against [Device:TestDevice]
+        # take acquisition from config, and database from kwarsg
+        # give an additional kwarg not in config
+
+        test_kwargs = {'database': 'dummy_database',
+                       'other_var': 'other_val'}
+        output_vars = kwarg_config_handler('Device',
+                                           'TestDevice', **test_kwargs)
+        #make sure test_kwargs are returned
+        for kwarg_item in test_kwargs.items():
+            self.assertTrue(kwarg_item in output_vars.items())
+        # make sure that config vars not in test_kwargs are included in kwargs
+        for config_var in config.pf_options('Device', 'TestDevice'):
+            if not config_var in test_kwargs.keys():
+                self.assertEqual(output_vars[config_var],
+                                 config.pf_get('Device',
+                                               'TestDevice', config_var))
+

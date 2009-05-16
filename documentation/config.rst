@@ -7,7 +7,14 @@ Any custom configuration should be in a file "pyfusion.cfg" in a
 directory ".pyfusion" in your home directory.
 
 The sections in the configuration file have the syntax
-[Component:name], where Component is one of: Acquisition, Device, Diagnostic.
+[Component:name], where Component is one of: Acquisition, Device,
+Diagnostic. When instantiating a class, such as Device, Acquisition,
+Diagnostic, etc. which looks in the configuration file for settings,
+individual settings can be overridden using the corresponding keyword
+arguments. For example, ``Device('my_device')`` will use settings in
+the ``[Device:my_device]`` configuration section, and
+``Device('my_device', database='sqlite://')`` will override the
+database configuration setting with ``sqlite://`` (a temporary in-memory database).  
 
 
 [Device:name]

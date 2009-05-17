@@ -42,3 +42,9 @@ class TestDevice(BasePyfusionTestCase):
                                  config.pf_get('Device',
                                                'TestDevice', config_var))
         
+
+class TestEmptyDevice(BasePyfusionTestCase):
+    """Make sure things don't fail for device with no config settings."""
+    def test_empty_device(self):
+        test_device = Device(self.listed_empty_device)
+        

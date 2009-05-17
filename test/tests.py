@@ -69,6 +69,7 @@ class TestInitImports(BasePyfusionTestCase):
         from pyfusion import Device
 
 
+        
 # Run unit tests if this file is called explicitly
 if __name__ == "__main__":
     unittest.main()

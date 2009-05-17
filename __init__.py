@@ -1,7 +1,15 @@
-import os
+import os, logging
 
 import pyfusion.conf
 from pyfusion.core.devices import Device
+
+# set up logger
+import logging.config
+THIS_DIR = os.path.dirname(__file__)
+logging.config.fileConfig(os.path.join(THIS_DIR, "conf","logging.cfg"))
+logger = logging.getLogger("pyfusion")
+
+
 
 # version information
 VERSION = (0, 1, None, 'alpha', 0)

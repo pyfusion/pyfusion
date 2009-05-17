@@ -2,6 +2,7 @@
 
 from pyfusion.conf.utils import kwarg_config_handler, import_from_str
 from pyfusion.conf import config
+from pyfusion import logging
 
 class BaseDevice:
     """Represent a laboratory device with ORM for processed data.
@@ -25,9 +26,13 @@ class BaseDevice:
         kwargs = kwarg_config_handler('Device', self.name, **kwargs)
         self.__dict__.update(kwargs)
         #### attach acquisition
-        acq_class_str = config.pf_get('Acquisition',
-                                      self.acq_name, 'acq_class')
-        self.acquisition = import_from_str(acq_class_str)(self.acq_name)
+        if hasattr(self, 'acq_name'):
+            acq_class_str = config.pf_get('Acquisition',
+                                          self.acq_name, 'acq_class')
+            self.acquisition = import_from_str(acq_class_str)(self.acq_name)
+        else:
+            logging.warning(
+                "No acquisition class specified for device %s" %self.name)
 
 class Device(BaseDevice):
     """At present, there is no difference between Device and BaseDevice."""

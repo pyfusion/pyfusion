@@ -26,16 +26,23 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
                                                'data_class')
         data_instance = test_acq.getdata(self.shot_number, SCT_test_channel_name)
         self.assertTrue(isinstance(data_instance, data_class))
-
         
     def testDeviceConnection(self):
-        from pyfusion import Device
+        from pyfusion.core.devices import Device
         test_device = Device('TestDevice')
         from pyfusion import conf
         acq_name = conf.config.pf_get('Device', 'TestDevice', 'acq_name')
         test_acq = conf.utils.import_setting('Acquisition', acq_name, 'acq_class')
-        print test_device.acquisition
-        print test_acq
         self.assertTrue(isinstance(test_device.acquisition, test_acq))
         #test_data = test_device.acquisition.getdata(SCT_test_channel_name)
-        
+
+class TestGetAcquisition(BasePyfusionTestCase):
+    """test getAcquisition function."""
+
+    def test_get_acquistion(self):
+        from pyfusion.acquisition.utils import getAcquisition
+        test_acq_1 = getAcquisition('test_fakedata')
+        from pyfusion.acquisition.fakedata import FakeDataAcquisition
+        test_acq_2 = FakeDataAcquisition('test_fakedata')
+        self.assertEqual(test_acq_1.__class__, test_acq_2.__class__)
+

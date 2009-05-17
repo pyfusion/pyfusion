@@ -39,3 +39,7 @@ class Device(BaseDevice):
     pass
 
 
+def getDevice(device_name):
+    """Find and instantiate Device (sub)class from config."""
+    dev_class_str = config.pf_get('Device', device_name, 'dev_class')
+    return import_from_str(dev_class_str)(device_name)

@@ -48,3 +48,11 @@ class TestEmptyDevice(BasePyfusionTestCase):
     def test_empty_device(self):
         test_device = Device(self.listed_empty_device)
         
+class TestGetDevice(BasePyfusionTestCase):
+    """test getDevice."""
+
+    def test_getDevice(self):
+        from pyfusion.core.devices import getDevice
+        test_device_1 = getDevice(self.listed_device)
+        test_device_2 = Device(self.listed_device)
+        self.assertEqual(test_device_1.__class__, test_device_2.__class__)

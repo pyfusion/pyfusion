@@ -65,9 +65,11 @@ class TestConfig(BasePyfusionTestCase):
 class TestInitImports(BasePyfusionTestCase):
     """Make sure that imports from __init__ files are present"""
 
-    def testImportDevice(self):
-        from pyfusion import Device
+    def testImportgetDevice(self):
+        from pyfusion import getDevice
 
+    def testImportgetAcquisition(self):
+        from pyfusion import getAcquisition
 
         
 # Run unit tests if this file is called explicitly

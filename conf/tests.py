@@ -48,7 +48,16 @@ class TestImportSetting(BasePyfusionTestCase):
         acq_from_config = import_setting('Acquisition',
                                          'test_fakedata', 'acq_class')
         from pyfusion.acquisition.fakedata import FakeDataAcquisition
-        self.assertTrue(acq_from_config == FakeDataAcquisition)
+        self.assertEqual(acq_from_config, FakeDataAcquisition)
+
+class TestImportFromString(BasePyfusionTestCase):
+    """Test import_from_str fuction."""
+
+    def test_import_from_str(self):
+        from pyfusion.conf.utils import import_from_str
+        string_value = "pyfusion.acquisition.fakedata.FakeDataAcquisition"
+        from pyfusion.acquisition.fakedata import FakeDataAcquisition
+        self.assertEqual(import_from_str(string_value), FakeDataAcquisition)
 
 class TestKeywordArgConfigHandler(BasePyfusionTestCase):
     """Test the function which chooses from kwargs oor config vars."""

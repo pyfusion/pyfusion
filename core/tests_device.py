@@ -18,7 +18,7 @@ class TestDevice(BasePyfusionTestCase):
         # check that acquisition system is connected
         acq_name = pyfusion.conf.config.pf_get('Device',
                                               self.listed_device,
-                                              'acquisition')
+                                              'acq_name')
         from pyfusion.acquisition import get_acq_from_config
         acq_class = get_acq_from_config(acq_name)
         from pyfusion.acquisition.fakedata import FakeDataAcquisition

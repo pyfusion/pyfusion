@@ -1,6 +1,7 @@
 """Basic device class"""
 
-from pyfusion.conf.utils import kwarg_config_handler
+from pyfusion.conf.utils import kwarg_config_handler, import_from_str
+from pyfusion.conf import config
 
 class BaseDevice:
     """Represent a laboratory device with ORM for processed data.
@@ -23,6 +24,10 @@ class BaseDevice:
         self.name = device_name
         kwargs = kwarg_config_handler('Device', self.name, **kwargs)
         self.__dict__.update(kwargs)
+        #### attach acquisition
+        acq_class_str = config.pf_get('Acquisition',
+                                      self.acq_name, 'acq_class')
+        self.acquisition = import_from_str(acq_class_str)(self.acq_name)
 
 class Device(BaseDevice):
     """At present, there is no difference between Device and BaseDevice."""

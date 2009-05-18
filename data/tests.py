@@ -17,7 +17,7 @@ class TestMCTData(BasePyfusionTestCase):
 class TestTimebase(BasePyfusionTestCase):
     """Test Timebase class."""
 
-    def test_timebase_bases(self):
+    def test_timebase(self):
         from pyfusion.data.timeseries import Timebase
         from numpy import arange
         t0=0.3
@@ -26,3 +26,13 @@ class TestTimebase(BasePyfusionTestCase):
         test_tb = Timebase(t0=t0,n_samples=n_samples, sample_freq=sample_freq)
         local_tb = arange(t0, t0+n_samples/sample_freq, 1./sample_freq)
         self.assertTrue((test_tb.timebase == local_tb).all())
+
+class TestSignal(BasePyfusionTestCase):
+    """Test Signal class."""
+
+    def test_signal(self):
+        from pyfusion.data.timeseries import Signal
+        from numpy.random import random
+        test_input = random(size=100)
+        test_signal = Signal(test_input)
+        self.assertTrue((test_input == test_signal.signal).all())

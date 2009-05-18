@@ -13,3 +13,16 @@ class TestMCTData(BasePyfusionTestCase):
     """Tests for multiple-channel timeseries (MCT) data."""
     def testBaseClasses(self):
         self.assertTrue(BaseData in MCTData.__bases__)
+
+class TestTimebase(BasePyfusionTestCase):
+    """Test Timebase class."""
+
+    def test_timebase_bases(self):
+        from pyfusion.data.timeseries import Timebase
+        from numpy import arange
+        t0=0.3
+        n_samples=500
+        sample_freq=1.e6
+        test_tb = Timebase(t0=t0,n_samples=n_samples, sample_freq=sample_freq)
+        local_tb = arange(t0, t0+n_samples/sample_freq, 1./sample_freq)
+        self.assertTrue((test_tb.timebase == local_tb).all())

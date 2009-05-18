@@ -34,7 +34,13 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         acq_name = conf.config.pf_get('Device', 'TestDevice', 'acq_name')
         test_acq = conf.utils.import_setting('Acquisition', acq_name, 'acq_class')
         self.assertTrue(isinstance(test_device.acquisition, test_acq))
-        #test_data = test_device.acquisition.getdata(SCT_test_channel_name)
+
+    def test_get_data(self):
+        from pyfusion import getDevice
+        test_device = getDevice(self.listed_device)
+        test_data = test_device.acquisition.getdata(self.shot_number, SCT_test_channel_name)
+        from pyfusion.data.timeseries import SCTData
+        self.assertTrue(isinstance(test_data, SCTData))
 
 class TestGetAcquisition(BasePyfusionTestCase):
     """test getAcquisition function."""
@@ -46,3 +52,22 @@ class TestGetAcquisition(BasePyfusionTestCase):
         test_acq_2 = FakeDataAcquisition('test_fakedata')
         self.assertEqual(test_acq_1.__class__, test_acq_2.__class__)
 
+class TestFakeDataFetchers(BasePyfusionTestCase):
+    """test DataFetcher subclasses for fake data acquisition."""
+
+    def test_base_classes(self):
+        from pyfusion.acquisition.base import BaseDataFetcher
+        from pyfusion.acquisition.base import DataFetcher
+        self.assertTrue(BaseDataFetcher in DataFetcher.__bases__)
+        from pyfusion.acquisition.fakedata import SingleChannelSineDF
+        self.assertTrue(BaseDataFetcher in SingleChannelSineDF.__bases__)
+
+    def test_singlechannelsinedf(self):
+        from pyfusion.acquisition.fakedata import SingleChannelSineDF
+        output_data_fetcher = SingleChannelSineDF(sample_rate=1.e6, n_samples=1000,
+                                                  amplitude=1.0, frequency=3.e4)
+        output_data = output_data_fetcher.fetch()
+        from pyfusion.data.timeseries import SCTData
+        self.assertTrue(isinstance(output_data, SCTData))
+        #from numpy import arange
+        #self.assertEqual(output_data.timebase, arange())

@@ -19,3 +19,14 @@ class BaseAcquisition:
         """Get the data and return prescribed subclass of BaseData."""
         data_class = import_setting('Diagnostic', diag_name, 'data_class')
         return data_class()
+
+class BaseDataFetcher(object):
+    """Takes diagnostic/channel data and returns data object."""
+    def fetch(self):
+        pass
+
+
+class DataFetcher(BaseDataFetcher):
+    """No difference yet between this an BaseDataFetcher"""
+    pass
+

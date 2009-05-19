@@ -47,7 +47,7 @@ class PyfusionConfigParser(ConfigParser):
                 return self.getfloat("%s:%s"%(sectiontype, sectionname), option)
             elif output_type == 'int':
                 return self.getint("%s:%s"%(sectiontype, sectionname), option)
-            elif output_type == 'boolean':
+            elif output_type == 'bool':
                 return self.getboolean("%s:%s"%(sectiontype, sectionname), option)
             else:
                 raise UnknownVariableTypeError

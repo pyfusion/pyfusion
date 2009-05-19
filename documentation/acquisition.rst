@@ -1,19 +1,30 @@
 Data Acquisition
 ================
 
-Data acquisition is handled by a device-specific subclass of
+Data acquisition in pyfusion is handled by two classes, an Acquisition
+class which allows persistent connection to a data acquisition system
+(e.g. MDSPlus), and a DataFetcher which is used by the Acquisition
+class to fetch data from the data acquisition system and return a Data
+instance. 
+
+
+The acquisition class should be a device-specific subclass of
 pyfusion.acquisition.base.BaseAcquisition. In general, the acquisition
 class will be accessed through a configured device class::
 
   my_device = Device('my_configured_device')
   my_data = my_device.acquisition.getdata(12345, 'my_diagnostic')
 
+Here, my_device is an instance of Device, my_device.acquisition is an
+instance of an Acquisition class, and getdata is a method of the
+Acquisition class which returns a Data instance. 
+
 In this example, when Device is instantiated pyfusion will look in the
 configuration file section [Device:my_configured_device] and read the
-acquisition setting, for example::
+acquisition setting (acq_name), for example::
 
   [Device:my_configured_device]
-  acquisition = my_test_acq
+  acq_name = my_test_acq
 
 
   [Acquisition:my_test_acq]
@@ -32,6 +43,7 @@ attach an acquisition object defined in the
 ``[Acquisition:some_other_acq]`` section of the configuration file.
 
 
+
 The acquisition class allows for a persistent connection to a data
 acquisition system. To access data, we call the ``getdata`` method with 2
 arguments [#getdataargs]_, the shot number and the name of a
@@ -39,13 +51,14 @@ configured diagnostic. An example diagnostic configuration here might
 be::
 
   [Diagnostic:my_diagnostic]
-  data_class = pyfusion.data.timeseries.SCTData
-  some_parameter = some_value
+  data_fetcher = pyfusion.acquisition.fakedata.SingleChannelSineDF
+  sample_freq = 1.e6
+  n_samples = 1000
+  t0 = 0.0
 
-The data_class parameter sets the location of the class (subclass of
-pyfusion.data.base.BaseData) to be returned by the getdata
-method; here, SCTData is a single-channel timeseries data class. Other settings in the configuration file are used as keyword
-parameters to getdata, allowing easy manipulation of custom acquisition classes.
+When getdata(12345, 'my_diagnostic') is called, the acquisition class
+will look to the config file for the ``[Diagnostic:my_diagnostic]``
+section, and use the specified data fetcher class to return a data instance. 
 
 
 .. rubric:: Footnotes

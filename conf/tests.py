@@ -84,3 +84,25 @@ class TestKeywordArgConfigHandler(BasePyfusionTestCase):
                                  config.pf_get('Device',
                                                'TestDevice', config_var))
 
+
+class TestVariableTypes(BasePyfusionTestCase):
+    """Check that config parser returns correct types for settings."""
+    def test_return_correct_type(self):
+        from pyfusion.conf import config
+        # a setting of type float:
+        sample_freq = config.pf_get('Diagnostic', 'test_types', 'sample_freq')
+        self.assertTrue(type(sample_freq) == float)
+        # a setting of type int:
+        n_samples = config.pf_get('Diagnostic', 'test_types', 'n_samples')
+        self.assertTrue(type(n_samples) == int)
+        # a setting of type boolean:
+        test_bool = config.pf_get('Diagnostic', 'test_types', 'testboolean')
+        self.assertTrue(type(test_bool) == bool)
+        # test unknown type raises exception
+        from pyfusion.conf.exceptions import UnknownVariableTypeError
+        self.assertRaises(UnknownVariableTypeError,
+                          config.pf_get,
+                          'Diagnostic',
+                          'test_types',
+                          'unknowntype')
+        

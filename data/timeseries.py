@@ -6,7 +6,8 @@ from pyfusion.data.base import BaseData
 
 class SCTData(BaseData):
     """Single Channel Timeseries (SCT) data."""
-    timebase = []
+    def __init__(self, timebase):
+        self.timebase = timebase
     signal = []
     device_name = None
 

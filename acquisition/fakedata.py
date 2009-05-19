@@ -9,10 +9,16 @@ class FakeDataAcquisition(BaseAcquisition):
 
 class SingleChannelSineDF(BaseDataFetcher):
     """Data fetcher for single channel sine wave."""
-    def __init__(self, sample_rate=None, amplitude=None,
+    def __init__(self, t0=None, sample_freq=None, amplitude=None,
                  frequency=None, n_samples=None, **kwargs):
+        self.t0=t0
+        self.sample_freq=sample_freq
+        self.amplitude=amplitude
+        self.frequency=frequency
+        self.n_samples = n_samples
         super(SingleChannelSineDF, self).__init__(**kwargs)
 
     def fetch(self):
-        from pyfusion.data.timeseries import SCTData
-        return SCTData()
+        from pyfusion.data.timeseries import SCTData, Timebase, Signal
+        tb = Timebase(t0=self.t0, n_samples=self.n_samples, sample_freq=self.sample_freq)
+        return SCTData(timebase=tb)

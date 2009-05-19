@@ -21,11 +21,9 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         from pyfusion import conf
         # make sure the requested data type is returned
         test_acq = FakeDataAcquisition('test_fakedata')
-        data_class = conf.utils.import_setting('Diagnostic',
-                                               SCT_test_channel_name,
-                                               'data_class')
+        from pyfusion.data.timeseries import SCTData
         data_instance = test_acq.getdata(self.shot_number, SCT_test_channel_name)
-        self.assertTrue(isinstance(data_instance, data_class))
+        self.assertTrue(isinstance(data_instance, SCTData))
         
     def testDeviceConnection(self):
         from pyfusion.core.devices import Device
@@ -64,10 +62,19 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
 
     def test_singlechannelsinedf(self):
         from pyfusion.acquisition.fakedata import SingleChannelSineDF
-        output_data_fetcher = SingleChannelSineDF(sample_rate=1.e6, n_samples=1000,
-                                                  amplitude=1.0, frequency=3.e4)
+        n_samples = 1000
+        sample_freq=1.e6
+        amplitude = 1.0
+        frequency = 3.e4
+        t0 = 0.0
+        output_data_fetcher = SingleChannelSineDF(sample_freq=sample_freq,
+                                                  n_samples=n_samples,
+                                                  amplitude=amplitude,
+                                                  frequency=frequency,
+                                                  t0 = t0)
         output_data = output_data_fetcher.fetch()
         from pyfusion.data.timeseries import SCTData
         self.assertTrue(isinstance(output_data, SCTData))
-        #from numpy import arange
-        #self.assertEqual(output_data.timebase, arange())
+        from numpy import arange
+        test_timebase = arange(t0, t0+float(n_samples)/sample_freq, 1./sample_freq)
+        self.assertTrue((output_data.timebase.timebase == test_timebase).all())

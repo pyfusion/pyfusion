@@ -14,3 +14,7 @@ class ConfigSectionSyntaxError(Exception):
     def __str__(self):
         return repr(self.section_name)
 
+
+class UnknownVariableTypeError(Exception):
+    """Cannot recognise requested variable type in conifg."""
+    pass

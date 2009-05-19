@@ -1,6 +1,6 @@
 """Base classes for pyfusion data acquisition."""
 
-from pyfusion.conf.utils import import_setting
+from pyfusion.conf.utils import import_setting, kwarg_config_handler
 
 class BaseAcquisition:
     """Base class for data acquisition.
@@ -15,13 +15,16 @@ class BaseAcquisition:
     def __init__(self, acq_name):
         self.acq_name = acq_name
 
-    def getdata(self, shot, diag_name):
+    def getdata(self, shot, diag_name, **kwargs):
         """Get the data and return prescribed subclass of BaseData."""
-        data_class = import_setting('Diagnostic', diag_name, 'data_class')
-        return data_class()
+        fetcher_class = import_setting('Diagnostic', diag_name, 'data_fetcher')
+        conf_kwargs = kwarg_config_handler('Diagnostic', diag_name, **kwargs)
+        return fetcher_class(**conf_kwargs).fetch()
 
 class BaseDataFetcher(object):
     """Takes diagnostic/channel data and returns data object."""
+    def __init__(self, *args, **kwargs):
+        pass
     def fetch(self):
         pass
 

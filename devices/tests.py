@@ -1,13 +1,13 @@
-"""Test cases for pyfusion.core.devices."""
+"""Test cases for pyfusion.devices."""
 
 from ConfigParser import NoSectionError, NoOptionError
 
 import pyfusion.conf
 from pyfusion.test import BasePyfusionTestCase
-from pyfusion.core.devices import Device
+from pyfusion.devices.base import Device
 
 class TestDevice(BasePyfusionTestCase):
-    """Test for the Device class in pyfusion.core."""
+    """Test for the Device class in pyfusion.devices.base."""
     
         
 
@@ -52,7 +52,7 @@ class TestGetDevice(BasePyfusionTestCase):
     """test getDevice."""
 
     def test_getDevice(self):
-        from pyfusion.core.devices import getDevice
+        from pyfusion.devices.base import getDevice
         test_device_1 = getDevice(self.listed_device)
         test_device_2 = Device(self.listed_device)
         self.assertEqual(test_device_1.__class__, test_device_2.__class__)

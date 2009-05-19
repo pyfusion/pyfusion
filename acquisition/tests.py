@@ -26,7 +26,7 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         self.assertTrue(isinstance(data_instance, SCTData))
         
     def testDeviceConnection(self):
-        from pyfusion.core.devices import Device
+        from pyfusion.devices.base import Device
         test_device = Device('TestDevice')
         from pyfusion import conf
         acq_name = conf.config.pf_get('Device', 'TestDevice', 'acq_name')

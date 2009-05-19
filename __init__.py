@@ -1,7 +1,7 @@
 import os, logging
 
 import pyfusion.conf
-from pyfusion.core.devices import getDevice
+from pyfusion.devices.base import getDevice
 from pyfusion.acquisition.utils import getAcquisition
 
 # set up logger

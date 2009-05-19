@@ -7,7 +7,7 @@ Test code which doesn't have any other obvious home
 
 import unittest, random, string, ConfigParser, os
 
-from pyfusion.core.devices import Device
+from pyfusion.devices.base import Device
 from pyfusion.conf import config
 
 # Find location of test configuration file

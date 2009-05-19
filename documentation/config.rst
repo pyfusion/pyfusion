@@ -60,7 +60,7 @@ e.g.::
 dev_class
 ~~~~~~~~~
 
-Name of device class (subclass of pyfusion.core.devices.BaseDevice)
+Name of device class (subclass of pyfusion.devices.base.BaseDevice)
 to be used for this device. This is called when using the convenience
 function pyfusion.getDevice. For example, if the configuration file
 contains::

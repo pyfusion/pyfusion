@@ -5,7 +5,7 @@ Pyfusion tests
 
 .. module:: pyfusion.test.tests
 
-.. module:: pyfusion.core.tests_device
+.. module:: pyfusion.devices.tests
 .. autoclass:: TestDevice
    :members:
 

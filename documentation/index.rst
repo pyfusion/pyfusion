@@ -12,6 +12,7 @@ Overview
 
    Introduction <introduction>
    Tutorial <tutorial>
+   Devices <devices>
    Data Acquisition <acquisition>
    Configuration files <config>
 
@@ -20,9 +21,7 @@ Code
 .. toctree::
    :maxdepth: 1
 
-   Core components <core>
    Tests <tests/index>
-   Configuration files <config>
 
 Indices and tables
 ==================

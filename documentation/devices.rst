@@ -1,10 +1,10 @@
-:mod:`core` ---  Core components
+:mod:`devices` ---  Devices
 ================================
 
-:mod:`core.devices`
+:mod:`devices.base`
 -------------------
 
-The :mod:`pyfusion.core.devices` module defines the following classes
+The :mod:`pyfusion.devices.base` module defines the following classes
 and exceptions
 
 .. class:: BaseDevice(device_name, \*\*kwargs)
@@ -24,3 +24,5 @@ and exceptions
     Any configuration setting can be overridden by supplying a keyword
     argument with the setting name, e.g.: ``BaseDevice(device_name, database='sqlite://')``
 
+
+    see also: getDevice()

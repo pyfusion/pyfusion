@@ -18,11 +18,11 @@ Load the pyfusion module:
 
    >>> import pyfusion
 
-next, we create an instance of the Device class
-(:class:`pyfusion.core.devices.Device` is mapped to
-:class:`pyfusion.Device` for convenience).
+next, we use the getDevice convenience function to find the
+[Device:MyDevice] configuration section and return an instance of the
+appropriate customised subclass of BaseDevice
 
-   >>> mydevice = pyfusion.Device("MyDevice")
+   >>> mydevice = pyfusion.getDevice("MyDevice")
 
 
 Example session: with data processing

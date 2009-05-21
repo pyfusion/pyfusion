@@ -75,6 +75,8 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
         output_data = output_data_fetcher.fetch()
         from pyfusion.data.timeseries import SCTData
         self.assertTrue(isinstance(output_data, SCTData))
-        from numpy import arange
+        from numpy import arange, sin, pi
         test_timebase = arange(t0, t0+float(n_samples)/sample_freq, 1./sample_freq)
         self.assertTrue((output_data.timebase.timebase == test_timebase).all())
+        test_signal = amplitude*sin(2*pi*frequency*test_timebase)
+        self.assertTrue((output_data.signal.signal == test_signal).all())

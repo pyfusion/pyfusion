@@ -53,7 +53,7 @@ def read_config(config_files = [DEFAULT_CONFIG_FILE, USER_CONFIG_FILE]):
     """Read config files.
 
     Argument is either a single file object, or a list of filenames.
-    """.
+    """
     try:
         config.readfp(config_files)
     except:

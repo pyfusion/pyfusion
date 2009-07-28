@@ -26,8 +26,8 @@ see the configuration sections, type::
 
 
 
-[Loading config files]
-----------------------
+Loading config files
+--------------------
 When pyfusion is imported, will load the default configuration file
 provided in the source code followed by your custom configuration file
 in ``$HOME/.pyfusion/pyfusion.cfg``, if it exists. 

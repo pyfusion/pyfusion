@@ -76,19 +76,28 @@ class TestConfigLoaders(BasePyfusionTestCase):
     """Check pyfusion.read_config and pyfusion.refresh_config"""
 
     def testReadConfig(self):
-        # initially load config file, which would happen in
-        # __init__.py
+        """Check that new config is added but old retained"""
         import pyfusion
-        pyfusion.read_config()
         # check that unlisted device is not in config
         self.assertFalse(pyfusion.config.pf_has_section('Device', self.unlisted_device))
+        self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
         # create a simple file in memory
         import StringIO
         tmp_config = StringIO.StringIO("[Device:%s]\n"
                                        %(self.unlisted_device))
         pyfusion.read_config(tmp_config)
         self.assertTrue(pyfusion.config.pf_has_section('Device', self.unlisted_device))
+        self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
         
+
+    def testClearConfig(self):
+        """Check that pyfusion.clear_config works."""
+        import pyfusion
+        self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
+        
+        pyfusion.clear_config()
+        self.assertFalse(pyfusion.config.pf_has_section('Device', self.listed_device))
+        self.assertEqual(pyfusion.config.sections(), [])
         
 # Run unit tests if this file is called explicitly
 if __name__ == "__main__":

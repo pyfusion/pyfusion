@@ -50,13 +50,21 @@ USER_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'pyfusion.cfg')
 
 
 def read_config(config_files = [DEFAULT_CONFIG_FILE, USER_CONFIG_FILE]):
+    """Read config files.
+
+    Argument is either a single file object, or a list of filenames.
+    """.
     try:
         config.readfp(config_files)
     except:
         config.read(config_files)
         
 
+def clear_config():
+    """Clear pyfusion.config."""
+    import pyfusion
+    pyfusion.config = PyfusionConfigParser()
 
-"""
+
 read_config()
-"""
+

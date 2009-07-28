@@ -16,6 +16,44 @@ the ``[Device:my_device]`` configuration section, and
 ``Device('my_device', database='sqlite://')`` will override the
 database configuration setting with ``sqlite://`` (a temporary in-memory database).  
 
+
+The pyfusion configuration parser is a simple subclass of the `standard
+python configparser
+<http://docs.python.org/library/configparser.html>`_, for example, to
+see the configuration sections, type::
+
+    pyfusion.config.sections()
+
+
+
+[Loading config files]
+----------------------
+When pyfusion is imported, will load the default configuration file
+provided in the source code followed by your custom configuration file
+in ``$HOME/.pyfusion/pyfusion.cfg``, if it exists. 
+
+
+Additional config files can be loaded with ``pyfusion.read_config()``::
+
+	   pyfusion.read_config(["another_config_filename_1", "another_config_filename_2"])
+
+The ``read_config`` argument can either be a single file-like object
+(any object which has a ``readlines()`` method) or a list of
+filenames, as shown above. If you do not supply any argument,
+``read_config()`` will load the default configuration files (the same
+ones loaded when you import pyfusion). 
+
+To clear the loaded pyfusion configuration, use
+``pyfusion.clear_config()``. If you want to return the configuration
+to the default settings (the configuration you have when you import
+pyfusion), type::
+
+	   pyfusion.clear_config()
+	   pyfusion.read_config()
+
+
+
+
 [variabletypes]
 ---------------
 variabletypes is a section for defining the types (integer, float,

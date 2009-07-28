@@ -83,5 +83,5 @@ class PyfusionConfigParser(ConfigParser):
                 if not section_name in type_list:
                     raise DisallowedSectionType, section_name
 
-config = PyfusionConfigParser()
+#config = PyfusionConfigParser()
 

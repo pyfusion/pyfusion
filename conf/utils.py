@@ -1,6 +1,6 @@
 """ Useful functions for manipulating config files."""
 
-from pyfusion.conf import config
+from pyfusion import config
 
 def CannotImportFromConfigError(Exception):
     """Failed to import a module, class or method from config setting."""

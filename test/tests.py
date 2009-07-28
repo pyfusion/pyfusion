@@ -8,7 +8,8 @@ Test code which doesn't have any other obvious home
 import unittest, random, string, ConfigParser, os
 
 from pyfusion.devices.base import Device
-from pyfusion.conf import config
+#from pyfusion.conf import config
+import pyfusion
 
 # Find location of test configuration file
 TEST_DATA_PATH = os.path.abspath(os.path.dirname(__file__))
@@ -40,26 +41,26 @@ class BasePyfusionTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self, *args)
 
     def setUp(self):
-        config.read(TEST_CONFIG_FILE)
+        pyfusion.config.read(TEST_CONFIG_FILE)
 
 class TestConfig(BasePyfusionTestCase):
     """Check test config file is as we expect"""
 
     def testListedDevices(self):
-        self.assertTrue(config.pf_has_section('Device', self.listed_device))
-        self.assertTrue(config.pf_has_section('Device',
+        self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
+        self.assertTrue(pyfusion.config.pf_has_section('Device',
                                               self.listed_empty_device))
 
     def testListedDeviceDatabase(self):
-        self.assertTrue(config.pf_has_option('Device',
+        self.assertTrue(pyfusion.config.pf_has_option('Device',
                                              self.listed_device, 'database'))
 
     def testEmptyDevice(self):
-        self.assertEqual(len(config.pf_options('Device',
+        self.assertEqual(len(pyfusion.config.pf_options('Device',
                                                self.listed_empty_device)), 0)
         
     def testUnlistedDevice(self):
-        self.assertFalse(config.pf_has_section('Device', self.unlisted_device))
+        self.assertFalse(pyfusion.config.pf_has_section('Device', self.unlisted_device))
 
 
 class TestInitImports(BasePyfusionTestCase):
@@ -80,13 +81,13 @@ class TestConfigLoaders(BasePyfusionTestCase):
         import pyfusion
         pyfusion.read_config()
         # check that unlisted device is not in config
-        self.assertFalse(config.pf_has_section('Device', self.unlisted_device))
+        self.assertFalse(pyfusion.config.pf_has_section('Device', self.unlisted_device))
         # create a simple file in memory
         import StringIO
         tmp_config = StringIO.StringIO("[Device:%s]\n"
                                        %(self.unlisted_device))
         pyfusion.read_config(tmp_config)
-        self.assertTrue(config.pf_has_section('Device', self.unlisted_device))
+        self.assertTrue(pyfusion.config.pf_has_section('Device', self.unlisted_device))
         
         
 # Run unit tests if this file is called explicitly

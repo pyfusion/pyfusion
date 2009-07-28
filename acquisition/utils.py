@@ -1,6 +1,6 @@
 """Utilities for malipulating acquisition objects."""
 
-from pyfusion.conf import config
+from pyfusion import config
 from pyfusion.conf.utils import import_setting
 
 def get_acq_from_config(acq_name):

@@ -11,7 +11,8 @@ class TestConfigFileSectionNames(BasePyfusionTestCase):
 
     """
     def testSectionNames(self):
-        from pyfusion.conf import allowed_section_types, config
+        from pyfusion.conf import allowed_section_types
+        from pyfusion import config
         from pyfusion.conf.exceptions import DisallowedSectionType, ConfigSectionSyntaxError
         config.check_section_types(allowed_section_types)
         self.assertFalse(
@@ -35,7 +36,7 @@ class TestPyfusionConfigParser(BasePyfusionTestCase):
         self.assertTrue(ConfigParser in PyfusionConfigParser.__bases__)
         
     def test_pf_has_section(self):
-        from pyfusion.conf import config
+        from pyfusion import config
         self.assertTrue(config.pf_has_section('Device', self.listed_device))
         self.assertFalse(config.pf_has_section('Device', self.unlisted_device))
 
@@ -64,7 +65,7 @@ class TestKeywordArgConfigHandler(BasePyfusionTestCase):
 
     def test_kwarg_config_handler(self):
         from pyfusion.conf.utils import kwarg_config_handler
-        from pyfusion.conf import config
+        from pyfusion import config
         # config values should be overridden by kwargs
         # test against [Device:TestDevice]
         # take acquisition from config, and database from kwarsg
@@ -88,7 +89,7 @@ class TestKeywordArgConfigHandler(BasePyfusionTestCase):
 class TestVariableTypes(BasePyfusionTestCase):
     """Check that config parser returns correct types for settings."""
     def test_return_correct_type(self):
-        from pyfusion.conf import config
+        from pyfusion import config
         # a setting of type float:
         sample_freq = config.pf_get('Diagnostic', 'test_types', 'sample_freq')
         self.assertTrue(type(sample_freq) == float)

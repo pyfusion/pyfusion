@@ -2,7 +2,7 @@
 
 from ConfigParser import NoSectionError, NoOptionError
 
-import pyfusion.conf
+from pyfusion import config
 from pyfusion.test import BasePyfusionTestCase
 from pyfusion.devices.base import Device
 
@@ -16,9 +16,9 @@ class TestDevice(BasePyfusionTestCase):
         
         test_device = Device(self.listed_device)
         # check that acquisition system is connected
-        acq_name = pyfusion.conf.config.pf_get('Device',
-                                              self.listed_device,
-                                              'acq_name')
+        acq_name = config.pf_get('Device',
+                                 self.listed_device,
+                                 'acq_name')
         from pyfusion.acquisition import get_acq_from_config
         acq_class = get_acq_from_config(acq_name)
         from pyfusion.acquisition.fakedata import FakeDataAcquisition
@@ -26,7 +26,6 @@ class TestDevice(BasePyfusionTestCase):
         
     def test_device_keyword_args(self):
         """ Check that Device correctly processes config/kwarg options."""
-        from pyfusion.conf import config
 
         test_kwargs = {'database': 'dummy_database',
                        'other_var': 'other_val'}

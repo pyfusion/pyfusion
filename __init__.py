@@ -1,6 +1,9 @@
 import os, logging
 
-import pyfusion.conf
+#import pyfusion.conf
+from pyfusion.conf import PyfusionConfigParser
+config = PyfusionConfigParser()
+
 from pyfusion.devices.base import getDevice
 from pyfusion.acquisition.utils import getAcquisition
 
@@ -46,11 +49,11 @@ USER_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'pyfusion.cfg')
 
 
 
-def read_config(config_files = [pyfusion.DEFAULT_CONFIG_FILE, pyfusion.USER_CONFIG_FILE]):
+def read_config(config_files = [DEFAULT_CONFIG_FILE, USER_CONFIG_FILE]):
     try:
-        pyfusion.conf.config.readfp(config_files)
+        config.readfp(config_files)
     except:
-        pyfusion.conf.config.read(config_files)
+        config.read(config_files)
         
 
 

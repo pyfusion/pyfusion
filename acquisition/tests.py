@@ -5,8 +5,6 @@ from pyfusion.test.tests import BasePyfusionTestCase
 # channel names in pyfusion test config file
 SCT_test_channel_name = "test_SCT_channel"
 
-
-
 class TestFakeDataAcquisition(BasePyfusionTestCase):
     """Test the fake data acquisition used for testing."""
 
@@ -28,8 +26,8 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
     def testDeviceConnection(self):
         from pyfusion.devices.base import Device
         test_device = Device('TestDevice')
-        from pyfusion import conf
-        acq_name = conf.config.pf_get('Device', 'TestDevice', 'acq_name')
+        from pyfusion import conf, config
+        acq_name = config.pf_get('Device', 'TestDevice', 'acq_name')
         test_acq = conf.utils.import_setting('Acquisition', acq_name, 'acq_class')
         self.assertTrue(isinstance(test_device.acquisition, test_acq))
 

@@ -1,7 +1,7 @@
 """Basic device class"""
 
 from pyfusion.conf.utils import kwarg_config_handler, import_from_str
-from pyfusion.conf import config
+from pyfusion import config
 from pyfusion import logging
 
 class BaseDevice:

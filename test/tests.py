@@ -71,6 +71,23 @@ class TestInitImports(BasePyfusionTestCase):
     def testImportgetAcquisition(self):
         from pyfusion import getAcquisition
 
+class TestConfigLoaders(BasePyfusionTestCase):
+    """Check pyfusion.read_config and pyfusion.refresh_config"""
+
+    def testReadConfig(self):
+        # initially load config file, which would happen in
+        # __init__.py
+        import pyfusion
+        pyfusion.read_config()
+        # check that unlisted device is not in config
+        self.assertFalse(config.pf_has_section('Device', self.unlisted_device))
+        # create a simple file in memory
+        import StringIO
+        tmp_config = StringIO.StringIO("[Device:%s]\n"
+                                       %(self.unlisted_device))
+        pyfusion.read_config(tmp_config)
+        self.assertTrue(config.pf_has_section('Device', self.unlisted_device))
+        
         
 # Run unit tests if this file is called explicitly
 if __name__ == "__main__":

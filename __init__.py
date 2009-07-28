@@ -44,6 +44,16 @@ if not os.path.exists(USER_PYFUSION_DIR):
     os.mkdir(USER_PYFUSION_DIR)
 USER_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'pyfusion.cfg')
 
-# read config files
-pyfusion.conf.config.read(DEFAULT_CONFIG_FILE)
-pyfusion.conf.config.read(USER_CONFIG_FILE)
+
+
+def read_config(config_files = [pyfusion.DEFAULT_CONFIG_FILE, pyfusion.USER_CONFIG_FILE]):
+    try:
+        pyfusion.conf.config.readfp(config_files)
+    except:
+        pyfusion.conf.config.read(config_files)
+        
+
+
+"""
+read_config()
+"""

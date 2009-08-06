@@ -10,7 +10,7 @@ def import_from_str(string_value):
     split_val = string_value.split('.')
     val_module = __import__('.'.join(split_val[:-1]),
                             globals(), locals(),
-                            [split_val[-1]], -1)
+                            [split_val[-1]])
     return val_module.__dict__[split_val[-1]]
 
 def import_setting(component, component_name, setting):

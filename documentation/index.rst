@@ -21,6 +21,7 @@ Code
 .. toctree::
    :maxdepth: 1
 
+   Development <development>
    Tests <tests/index>
 
 Indices and tables

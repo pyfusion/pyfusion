@@ -46,6 +46,7 @@ USER_PYFUSION_DIR = os.path.join(os.path.expanduser('~'), '.pyfusion')
 if not os.path.exists(USER_PYFUSION_DIR):
     os.mkdir(USER_PYFUSION_DIR)
 USER_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'pyfusion.cfg')
+USER_TEST_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'tests.cfg')
 
 
 

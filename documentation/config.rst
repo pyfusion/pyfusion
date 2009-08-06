@@ -134,3 +134,16 @@ data_fetcher
 
 Location of class (subclass of pyfusion.acquisition.base.BaseDataFetcher) to fetch
 the data for the diagnostic.
+
+tests.cfg
+---------
+
+A seperate configuration file "tests.cfg", in the same ".pyfusion" folder in your home directory, can be used during development to enable tests which are disabled by default.
+
+An example of the syntax is::
+
+	[EnabledTests]
+	mdsplus = True
+	flucstrucs = True
+
+etc...

@@ -42,7 +42,10 @@ class BasePyfusionTestCase(unittest.TestCase):
 
     def setUp(self):
         pyfusion.config.read(TEST_CONFIG_FILE)
-
+        # read custom user config file to disable/enable certain tests
+        pyfusion.config.read(pyfusion.USER_TEST_CONFIG_FILE)
+        
+        
 class TestConfig(BasePyfusionTestCase):
     """Check test config file is as we expect"""
 

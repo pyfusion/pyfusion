@@ -1,11 +1,6 @@
-"""Fake data acquisition used for testing pyfusion code."""
+"""Fake data acquisition fetchers used for testing pyfusion code."""
 
-from pyfusion.acquisition.base import BaseAcquisition, BaseDataFetcher
-
-class FakeDataAcquisition(BaseAcquisition):
-    """Generate fake data for testing code."""
-    pass
-
+from pyfusion.acquisition.base import BaseDataFetcher
 
 class SingleChannelSineDF(BaseDataFetcher):
     """Data fetcher for single channel sine wave."""

@@ -30,6 +30,8 @@ class BaseDevice:
             acq_class_str = config.pf_get('Acquisition',
                                           self.acq_name, 'acq_class')
             self.acquisition = import_from_str(acq_class_str)(self.acq_name)
+            # shortcut
+            self.acq = self.acquisition
         else:
             logging.warning(
                 "No acquisition class specified for device %s" %self.name)

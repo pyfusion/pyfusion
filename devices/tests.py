@@ -21,7 +21,7 @@ class TestDevice(BasePyfusionTestCase):
                                  'acq_name')
         from pyfusion.acquisition import get_acq_from_config
         acq_class = get_acq_from_config(acq_name)
-        from pyfusion.acquisition.fakedata import FakeDataAcquisition
+        from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
         self.assertEqual(acq_class, FakeDataAcquisition)
         
     def test_device_keyword_args(self):

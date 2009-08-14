@@ -24,3 +24,10 @@ def kwarg_config_handler(component_type, component_name, **kwargs):
                 kwargs[config_var] = config.pf_get(component_type,
                                                    component_name, config_var)
     return kwargs
+
+
+def get_config_as_dict(component_type, component_name):
+    config_option_list = config.pf_options(component_type, component_name)
+    config_map = lambda x: (x, config.pf_get(component_type, component_name, x))
+    return dict(map(config_map, config_option_list))
+

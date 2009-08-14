@@ -13,8 +13,11 @@ class TestAcquisitionArgs(BasePyfusionTestCase):
         acq_from_config = FakeDataAcquisition('test_fakedata')
         # create a FakeDataAcquisition instance with keyword args
         from pyfusion import config
-        config_option_list = config.pf_options('Acquisition', 'test_fakedata')
-        
+        #config_option_list = config.pf_options('Acquisition', 'test_fakedata')
+        #config_map = lambda x: (x, config.pf_get('Acquisition', 'test_fakedata', x))
+        #config_dict = dict(map(config_map, config_option_list))
+        #acq_from_kwargs = FakeDataAcquisition(**config_dict)
+
 
 class TestGetAcquisition(BasePyfusionTestCase):
     """test getAcquisition function."""

@@ -107,3 +107,15 @@ class TestVariableTypes(BasePyfusionTestCase):
                           'test_types',
                           'unknowntype')
         
+
+class TestConfigUtils(BasePyfusionTestCase):
+    """Test utilities for handling config files"""
+
+    def test_config_as_dict(self):
+        from pyfusion import config, conf
+        config_option_list = config.pf_options('Acquisition', 'test_fakedata')
+        config_map = lambda x: (x, config.pf_get('Acquisition', 'test_fakedata', x))
+        config_dict_1 = dict(map(config_map, config_option_list))
+
+        config_dict_2 = conf.utils.get_config_as_dict('Acquisition', 'test_fakedata')
+        self.assertEqual(config_dict_1, config_dict_2)

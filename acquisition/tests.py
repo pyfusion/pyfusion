@@ -8,15 +8,51 @@ acquisition_modules = ['FakeData', 'MDSPlus']
 class TestAcquisitionArgs(BasePyfusionTestCase):
     """Make sure we get the same result if we use config or kwargs"""
 
-    def testAcqArgs(self):
-        from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
-        acq_from_config = FakeDataAcquisition('test_fakedata')
-        # create a FakeDataAcquisition instance with keyword args
-        from pyfusion import config
-        #config_option_list = config.pf_options('Acquisition', 'test_fakedata')
-        #config_map = lambda x: (x, config.pf_get('Acquisition', 'test_fakedata', x))
-        #config_dict = dict(map(config_map, config_option_list))
-        #acq_from_kwargs = FakeDataAcquisition(**config_dict)
+    def testEqualityConfigOrArgs(self):
+        """Check that config and kwarg instantiated Acquisition classes are same."""
+        from pyfusion.acquisition.base import BaseAcquisition
+        acq_from_config = BaseAcquisition('test_baseacq')
+        # create a BaseAcquisition instance with keyword args
+        from pyfusion.conf.utils import get_config_as_dict
+        config_dict = get_config_as_dict('Acquisition', 'test_baseacq')
+        acq_from_kwargs = BaseAcquisition(**config_dict)
+        # Acquistion instantiated only from keywords won't have config_name set
+        # but should otherwise be equal
+        from pyfusion.utils.debug import equal_except_for
+        self.assertTrue(equal_except_for(acq_from_config, acq_from_kwargs, 'config_name'))
+
+
+    def testAcqAttrsConfig(self):
+        """Check that config, kwarg attributes are correctly attached to object.
+        
+        If config is supplied, load config before kwargs.
+        """
+        from pyfusion.acquisition.base import BaseAcquisition
+        from pyfusion.conf.utils import get_config_as_dict
+        config_dict = get_config_as_dict('Acquisition', 'test_baseacq')
+        test_acq = BaseAcquisition('test_baseacq')
+        for config_arg in config_dict.keys():
+            self.assertTrue(hasattr(test_acq, config_arg))
+        
+    def testAcqAttrsConfigKwargs(self):
+        """Check that config, kwarg attributes are correctly attached to object.
+        
+        If config is supplied, load config before kwargs.
+        """
+        from pyfusion.acquisition.base import BaseAcquisition
+        from pyfusion.conf.utils import get_config_as_dict
+        config_dict = get_config_as_dict('Acquisition', 'test_baseacq')
+        test_acq = BaseAcquisition('test_baseacq', dummy_var_1 = 5)
+        self.assertEqual(test_acq.dummy_var_1, 5)
+
+    def testAcqAttrsKwargs(self):
+        """Check that config, kwarg attributes are correctly attached to object.
+        
+        If config is supplied, load config before kwargs.
+        """
+        from pyfusion.acquisition.base import BaseAcquisition
+        test_acq = BaseAcquisition(dummy_var_1 = 5)
+        self.assertEqual(test_acq.dummy_var_1, 5)
 
 
 class TestGetAcquisition(BasePyfusionTestCase):

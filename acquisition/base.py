@@ -1,6 +1,6 @@
 """Base classes for pyfusion data acquisition."""
 
-from pyfusion.conf.utils import import_setting, kwarg_config_handler, get_config_as_dict
+from pyfusion.conf.utils import import_setting, kwarg_config_handler, get_config_as_dict, import_from_str
 
 class BaseAcquisition:
     """Base class for data acquisition.
@@ -17,11 +17,30 @@ class BaseAcquisition:
             self.__dict__.update(get_config_as_dict('Acquisition', config_name))
         self.__dict__.update(kwargs)
 
-    def getdata(self, shot, diag_name, **kwargs):
-        """Get the data and return prescribed subclass of BaseData."""
-        fetcher_class = import_setting('Diagnostic', diag_name, 'data_fetcher')
-        conf_kwargs = kwarg_config_handler('Diagnostic', diag_name, **kwargs)
-        return fetcher_class(**conf_kwargs).fetch()
+    def getdata(self, shot, config_name=None, **kwargs):
+        """Get the data and return prescribed subclass of BaseData.
+        
+        usage: getdata(shot, config_name=None, **kwargs)
+        shot is required (first argument)
+        optional second argument config_name to read in from config
+        file
+
+        'fetcher_class' must be either in referenced config file or in
+        keyword args
+        """
+
+        fetcher_args = {}
+        if config_name != None:
+            fetcher_args.update(get_config_as_dict('Diagnostic', config_name))
+        fetcher_args.update(kwargs)
+        
+        try:
+            fetcher_class_str = fetcher_args.pop('data_fetcher')
+            fetcher_class = import_from_str(fetcher_class_str)
+        except KeyError:
+            print "getdata requires 'fetcher_class' defined in either config or keyword arguments"
+            raise
+        return fetcher_class(**fetcher_args).fetch()
 
 class BaseDataFetcher(object):
     """Takes diagnostic/channel data and returns data object."""

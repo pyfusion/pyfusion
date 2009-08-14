@@ -28,3 +28,4 @@ class TestEqualExceptFor(BasePyfusionTestCase):
         self.assertTrue(equal_except_for(d1, d1))
         self.assertTrue(equal_except_for(d1, d2, ['b', 'abc']))
         self.assertTrue(equal_except_for(d1, d2, 'abc'))
+

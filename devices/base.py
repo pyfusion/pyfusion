@@ -1,6 +1,6 @@
 """Basic device class"""
 
-from pyfusion.conf.utils import kwarg_config_handler, import_from_str
+from pyfusion.conf.utils import kwarg_config_handler, import_from_str, get_config_as_dict
 from pyfusion import config
 from pyfusion import logging
 
@@ -21,10 +21,11 @@ class BaseDevice:
     arguement to here, e.g.: BaseDevice(device_name, database='sqlite://')
 
     """
-    def __init__(self, device_name, **kwargs):
-        self.name = device_name
-        kwargs = kwarg_config_handler('Device', self.name, **kwargs)
+    def __init__(self, config_name=None, **kwargs):
+        if config_name != None:
+            self.__dict__.update(get_config_as_dict('Device', config_name))
         self.__dict__.update(kwargs)
+
         #### attach acquisition
         if hasattr(self, 'acq_name'):
             acq_class_str = config.pf_get('Acquisition',
@@ -34,7 +35,7 @@ class BaseDevice:
             self.acq = self.acquisition
         else:
             logging.warning(
-                "No acquisition class specified for device %s" %self.name)
+                "No acquisition class specified for device")
 
 class Device(BaseDevice):
     """At present, there is no difference between Device and BaseDevice."""

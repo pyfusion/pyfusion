@@ -80,3 +80,13 @@ class TestAcquisitionModules(BasePyfusionTestCase):
         for module_name in acquisition_modules:
             self.check_module(module_name)
 
+
+
+class TestDataFetchers(BasePyfusionTestCase):
+    """test DataFetcher subclasses for fake data acquisition."""
+
+    def test_base_classes(self):
+        from pyfusion.acquisition.base import BaseDataFetcher
+        from pyfusion.acquisition.base import DataFetcher
+        self.assertTrue(BaseDataFetcher in DataFetcher.__bases__)
+

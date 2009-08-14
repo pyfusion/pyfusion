@@ -9,8 +9,6 @@ from pyfusion.devices.base import Device
 class TestDevice(BasePyfusionTestCase):
     """Test for the Device class in pyfusion.devices.base."""
     
-        
-
     def testDeviceAcquisition(self):
         """Test that we can use an acquisition specified in config file."""
         
@@ -41,6 +39,14 @@ class TestDevice(BasePyfusionTestCase):
                                  config.pf_get('Device',
                                                'TestDevice', config_var))
         
+    def test_device_no_config(self):
+        """Check Device works with only keyword args (no reference to config)"""
+        test_kwargs = {'database': 'dummy_database',
+                       'other_var': 'other_val'}
+        test_device = Device(**test_kwargs)
+
+        
+
 
 class TestEmptyDevice(BasePyfusionTestCase):
     """Make sure things don't fail for device with no config settings."""

@@ -16,15 +16,29 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         self.assertTrue(BaseAcquisition in FakeDataAcquisition.__bases__)
 
     def testGetDataReturnObject(self):
+        """Make sure correct data object type is returned"""
         from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
         from pyfusion import conf
-        # make sure the requested data type is returned
+
+        # make sure the requested data type is returned using config reference
         test_acq = FakeDataAcquisition('test_fakedata')
         from pyfusion.data.timeseries import SCTData
-        data_instance = test_acq.getdata(self.shot_number, SCT_test_channel_name)
-        self.assertTrue(isinstance(data_instance, SCTData))
+        data_instance_1 = test_acq.getdata(self.shot_number, SCT_test_channel_name)
+        self.assertTrue(isinstance(data_instance_1, SCTData))
+        
+        # ...and for kwargs
+        # read config as dict and pass as kwargs
+        config_dict = conf.utils.get_config_as_dict('Diagnostic', SCT_test_channel_name)
+        data_instance_2 = test_acq.getdata(self.shot_number, **config_dict)
+        self.assertTrue(isinstance(data_instance_2, SCTData))
+
+        # check that the two signals are the same
+        from numpy.testing import assert_array_almost_equal
+        assert_array_almost_equal(data_instance_1.signal.signal,  data_instance_2.signal.signal) 
+        assert_array_almost_equal(data_instance_1.timebase.timebase,  data_instance_2.timebase.timebase) 
         
     def testDeviceConnection(self):
+        """Check that using config loads the correct acquisition."""
         from pyfusion.devices.base import Device
         test_device = Device('TestDevice')
         from pyfusion import conf, config
@@ -36,6 +50,7 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         
 
     def test_get_data(self):
+        """Check that we end up with the correct data class starting from Device"""
         from pyfusion import getDevice
         test_device = getDevice(self.listed_device)
         test_data = test_device.acquisition.getdata(self.shot_number, SCT_test_channel_name)
@@ -48,8 +63,6 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
 
     def test_base_classes(self):
         from pyfusion.acquisition.base import BaseDataFetcher
-        from pyfusion.acquisition.base import DataFetcher
-        self.assertTrue(BaseDataFetcher in DataFetcher.__bases__)
         from pyfusion.acquisition.FakeData.fetch import SingleChannelSineDF
         self.assertTrue(BaseDataFetcher in SingleChannelSineDF.__bases__)
 
@@ -69,7 +82,8 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
         from pyfusion.data.timeseries import SCTData
         self.assertTrue(isinstance(output_data, SCTData))
         from numpy import arange, sin, pi
+        from numpy.testing import assert_array_almost_equal
         test_timebase = arange(t0, t0+float(n_samples)/sample_freq, 1./sample_freq)
-        self.assertTrue((output_data.timebase.timebase == test_timebase).all())
+        assert_array_almost_equal(output_data.timebase.timebase, test_timebase)
         test_signal = amplitude*sin(2*pi*frequency*test_timebase)
-        self.assertTrue((output_data.signal.signal == test_signal).all())
+        assert_array_almost_equal(output_data.signal.signal, test_signal)

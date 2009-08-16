@@ -2,7 +2,16 @@
 
 from pyfusion.acquisition.base import BaseDataFetcher
 
-class MDSPlusDataFetcher(BaseDataFetcher):
+class MDSPlusBaseDataFetcher(BaseDataFetcher):
+    pass
+#    def setup(self):
+#        from MDSPlus import Data
+        
+        
+class MDSPlusTimeseriesDataFetcher(MDSPlusBaseDataFetcher):
+    pass 
+
+class MDSPlusDataFetcher(MDSPlusBaseDataFetcher):
     pass
 
 """

@@ -73,7 +73,8 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
         amplitude = 1.0
         frequency = 3.e4
         t0 = 0.0
-        output_data_fetcher = SingleChannelSineDF(sample_freq=sample_freq,
+        test_shot = -1
+        output_data_fetcher = SingleChannelSineDF(test_shot, sample_freq=sample_freq,
                                                   n_samples=n_samples,
                                                   amplitude=amplitude,
                                                   frequency=frequency,

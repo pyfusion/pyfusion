@@ -80,7 +80,22 @@ class TestAcquisitionModules(BasePyfusionTestCase):
         for module_name in acquisition_modules:
             self.check_module(module_name)
 
-
+from pyfusion.acquisition.base import BaseDataFetcher
+class DummyFetcher(BaseDataFetcher):
+    def __init__(self, *args, **kwargs):
+        self.connected = False
+        super(DummyFetcher, self).__init__(*args, **kwargs)
+    def setup(self):
+        self.connected = True
+    def pulldown(self):
+        self.connected = False
+    def do_fetch(self):
+        if self.connected:
+            return "connected"
+        else:
+            return "disconnected"
+    
+    
 
 class TestDataFetchers(BasePyfusionTestCase):
     """test DataFetcher subclasses for fake data acquisition."""
@@ -89,4 +104,24 @@ class TestDataFetchers(BasePyfusionTestCase):
         from pyfusion.acquisition.base import BaseDataFetcher
         from pyfusion.acquisition.base import DataFetcher
         self.assertTrue(BaseDataFetcher in DataFetcher.__bases__)
+
+    def test_setup_pulldown(self):
+        dummy_shot_number = 12345
+        from pyfusion.acquisition.base import BaseDataFetcher
+        test_fetch = BaseDataFetcher(dummy_shot_number)
+        self.assertTrue(hasattr(test_fetch, 'setup'))
+        self.assertTrue(hasattr(test_fetch, 'pulldown'))
+        self.assertTrue(hasattr(test_fetch, 'fetch'))
+        self.assertTrue(hasattr(test_fetch, 'do_fetch'))
+        
+    def testDummyFetcher(self):
+        dummy_shot_number = 12345
+        test_fetcher = DummyFetcher(dummy_shot_number)
+        self.assertEqual(test_fetcher.connected, False)
+        self.assertEqual(test_fetcher.fetch(), "connected")
+        
+    def testFetcherShotArg(self):
+        dummy_shot_number = 12345
+        test_fetcher = DummyFetcher(dummy_shot_number)
+        self.assertEqual(test_fetcher.shot, dummy_shot_number)
 

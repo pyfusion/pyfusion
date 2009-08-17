@@ -4,11 +4,11 @@
 from pyfusion.acquisition.base import BaseAcquisition
 
 class MDSPlusAcquisition(BaseAcquisition):
-    def __init__(self, server=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         from MDSplus import Data
         self._Data = Data
-        self._Data.execute("mdsconnect('%(server)s')" %{'server':server})
-        return super(MDSPlusAcquisition, self).__init__(*args, **kwargs)
+        super(MDSPlusAcquisition, self).__init__(*args, **kwargs)
+        self._Data.execute("mdsconnect('%(server)s')" %{'server':self.server})
 
     def __del__(self):
         self._Data.execute("mdsdisconnect()")

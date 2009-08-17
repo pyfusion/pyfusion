@@ -1,6 +1,6 @@
 """ Useful functions for manipulating config files."""
 
-from pyfusion import config
+import pyfusion
 
 def CannotImportFromConfigError(Exception):
     """Failed to import a module, class or method from config setting."""
@@ -15,19 +15,19 @@ def import_from_str(string_value):
 
 def import_setting(component, component_name, setting):
     """Attempt to import and return a config setting."""
-    value_str = config.pf_get(component, component_name, setting)
+    value_str = pyfusion.config.pf_get(component, component_name, setting)
     return import_from_str(value_str)
 
 def kwarg_config_handler(component_type, component_name, **kwargs):
-    for config_var in config.pf_options(component_type, component_name):
+    for config_var in pyfusion.config.pf_options(component_type, component_name):
             if not config_var in kwargs.keys():
-                kwargs[config_var] = config.pf_get(component_type,
+                kwargs[config_var] = pyfusion.config.pf_get(component_type,
                                                    component_name, config_var)
     return kwargs
 
 
 def get_config_as_dict(component_type, component_name):
-    config_option_list = config.pf_options(component_type, component_name)
-    config_map = lambda x: (x, config.pf_get(component_type, component_name, x))
+    config_option_list = pyfusion.config.pf_options(component_type, component_name)
+    config_map = lambda x: (x, pyfusion.config.pf_get(component_type, component_name, x))
     return dict(map(config_map, config_option_list))
 

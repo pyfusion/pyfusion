@@ -5,24 +5,21 @@
 Pyfusion documentation
 ======================
 
-Overview
---------
+Tutorials
+---------
 .. toctree::
    :maxdepth: 1
 
-   Introduction <introduction>
-   Tutorial <tutorial>
-   Devices <devices>
-   Data Acquisition <acquisition>
-   Configuration files <config>
+   MDSplus data analysis <tutorials/h1>
 
-Code
-----
+Development
+-----------
 .. toctree::
    :maxdepth: 1
 
-   Development <development>
-   Tests <tests/index>
+   Overview <development/overview>
+   Roadmap <development/roadmap>
+
 
 Indices and tables
 ==================

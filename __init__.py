@@ -16,7 +16,7 @@ logger = logging.getLogger("pyfusion")
 
 
 # version information
-VERSION = (0, 1, None, 'alpha', 0)
+VERSION = (0, 0, 1, '', 0)
 
 def get_version():
     """Human-readable version info."""

@@ -1,8 +1,7 @@
 """Basic device class"""
 
 from pyfusion.conf.utils import kwarg_config_handler, import_from_str, get_config_as_dict
-from pyfusion import config
-from pyfusion import logging
+import pyfusion
 
 class BaseDevice:
     """Represent a laboratory device with ORM for processed data.
@@ -28,13 +27,13 @@ class BaseDevice:
 
         #### attach acquisition
         if hasattr(self, 'acq_name'):
-            acq_class_str = config.pf_get('Acquisition',
+            acq_class_str = pyfusion.config.pf_get('Acquisition',
                                           self.acq_name, 'acq_class')
             self.acquisition = import_from_str(acq_class_str)(self.acq_name)
             # shortcut
             self.acq = self.acquisition
         else:
-            logging.warning(
+            pyfusion.logging.warning(
                 "No acquisition class specified for device")
 
 class Device(BaseDevice):
@@ -44,5 +43,5 @@ class Device(BaseDevice):
 
 def getDevice(device_name):
     """Find and instantiate Device (sub)class from config."""
-    dev_class_str = config.pf_get('Device', device_name, 'dev_class')
+    dev_class_str = pyfusion.config.pf_get('Device', device_name, 'dev_class')
     return import_from_str(dev_class_str)(device_name)

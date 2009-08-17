@@ -82,3 +82,19 @@ TestMDSPlusH1Connection.h1 = True
 TestMDSPlusH1Connection.net = True
 TestMDSPlusH1Connection.slow = True
 
+from unittest import TestCase
+
+class TestH1ConfigSection(TestCase):
+    """make sure H1 section in pyfusion.cfg works"""
+
+    def testH1Config(self):
+        import pyfusion, os
+        pyfusion.clear_config()
+        pyfusion.read_config(os.path.join(pyfusion.THIS_DIR, "pyfusion.cfg"))
+        h1 = pyfusion.getDevice('H1')
+        test_mirnov = h1.acq.getdata(58133, 'H1_mirnov_array_1_coil_1')
+        self.assertEqual(test_mirnov.signal[0], -0.01953125)
+
+TestH1ConfigSection.h1 = True
+TestH1ConfigSection.net = True
+TestH1ConfigSection.slow = True

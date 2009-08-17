@@ -1,0 +1,9 @@
+Using pyfusion for H-1 data analysis
+====================================
+
+Accessing a Mirnov coil signal, using the default configuration file::
+
+   import pyfusion
+   h1 = pyfusion.getDevice('H1')
+
+test

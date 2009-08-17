@@ -44,8 +44,9 @@ class BaseAcquisition(object):
 
 class BaseDataFetcher(object):
     """Takes diagnostic/channel data and returns data object."""
-    def __init__(self, shot, *args, **kwargs):
+    def __init__(self, shot, **kwargs):
         self.shot = shot
+        self.__dict__.update(kwargs)
     def setup(self):
         pass
     def do_fetch(self):

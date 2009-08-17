@@ -88,9 +88,7 @@ class TestH1ConfigSection(TestCase):
     """make sure H1 section in pyfusion.cfg works"""
 
     def testH1Config(self):
-        import pyfusion, os
-        #pyfusion.clear_config()
-        #pyfusion.read_config(os.path.join(pyfusion.THIS_DIR, pyfusion.DEFAULT_CONFIG_FILE))
+        import pyfusion
         h1 = pyfusion.getDevice('H1')
         test_mirnov = h1.acq.getdata(58133, 'H1_mirnov_array_1_coil_1')
         self.assertEqual(test_mirnov.signal[0], -0.01953125)

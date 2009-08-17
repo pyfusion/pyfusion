@@ -2,6 +2,8 @@ import os, logging
 
 #import pyfusion.conf
 from pyfusion.conf import PyfusionConfigParser
+from pyfusion.conf.utils import read_config
+
 config = PyfusionConfigParser()
 
 from pyfusion.devices.base import getDevice
@@ -41,7 +43,7 @@ def get_version():
 
 
 # find config files
-DEFAULT_CONFIG_FILE = 'pyfusion.cfg'
+DEFAULT_CONFIG_FILE = os.path.join(THIS_DIR, 'pyfusion.cfg')
 USER_PYFUSION_DIR = os.path.join(os.path.expanduser('~'), '.pyfusion')
 if not os.path.exists(USER_PYFUSION_DIR):
     os.mkdir(USER_PYFUSION_DIR)
@@ -50,22 +52,5 @@ USER_TEST_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'tests.cfg')
 
 
 
-def read_config(config_files = [DEFAULT_CONFIG_FILE, USER_CONFIG_FILE]):
-    """Read config files.
-
-    Argument is either a single file object, or a list of filenames.
-    """
-    try:
-        config.readfp(config_files)
-    except:
-        config.read(config_files)
-        
-
-def clear_config():
-    """Clear pyfusion.config."""
-    import pyfusion
-    pyfusion.config = PyfusionConfigParser()
-
-
-read_config()
+read_config([DEFAULT_CONFIG_FILE, USER_CONFIG_FILE])
 

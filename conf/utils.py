@@ -31,3 +31,18 @@ def get_config_as_dict(component_type, component_name):
     config_map = lambda x: (x, pyfusion.config.pf_get(component_type, component_name, x))
     return dict(map(config_map, config_option_list))
 
+
+def read_config(config_files):
+    """Read config files.
+
+    Argument is either a single file object, or a list of filenames.
+    """
+    try:
+        pyfusion.config.readfp(config_files)
+    except:
+        pyfusion.config.read(config_files)
+
+def clear_config():
+    """Clear pyfusion.config."""
+    import pyfusion
+    pyfusion.config = pyfusion.conf.PyfusionConfigParser()

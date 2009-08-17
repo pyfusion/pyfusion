@@ -98,7 +98,7 @@ class TestConfigLoaders(BasePyfusionTestCase):
         import pyfusion
         self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
         
-        pyfusion.clear_config()
+        pyfusion.conf.utils.clear_config()
         self.assertFalse(pyfusion.config.pf_has_section('Device', self.listed_device))
         self.assertEqual(pyfusion.config.sections(), [])
         

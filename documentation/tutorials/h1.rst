@@ -5,5 +5,21 @@ Accessing a Mirnov coil signal, using the default configuration file::
 
    import pyfusion
    h1 = pyfusion.getDevice('H1')
+   mirnov_data = h1.acq.getdata(58133, 'H1_mirnov_array_1_coil_1')
 
-test
+
+The timeseries data object mirnov_data is an instance of SCTData::
+
+   print mirnov_data.signal[::10000]
+   [-0.01953125 -0.02441406 -0.01953125  0.06103516 -0.12451172
+   -0.39550781 -0.48583984  0.30517578  0.21484375  0.00244141]
+
+   print mirnov_data.timebase[::10000]
+   [ -1.99979991e-02  -9.99800023e-03   1.99999999e-06   1.00020003e-02
+   2.00020000e-02   3.00019998e-02   4.00019996e-02   5.00020012e-02
+   6.00019991e-02   7.00019971e-02]
+
+
+.
+
+

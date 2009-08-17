@@ -74,8 +74,8 @@ class TestMDSPlusH1Connection(BasePyfusionTestCase):
                                   data_fetcher = df_str,
                                   mds_tree = "H1DATA",
                                   mds_path=".operations.mirnov:a14_14:input_1")
-        from pyfusion.data.timeseries import SCTData
-        self.assertTrue(isinstance(test_data, SCTData))
+        from pyfusion.data.timeseries import TimeseriesData
+        self.assertTrue(isinstance(test_data, TimeseriesData))
         self.assertEqual(test_data.signal[0], -0.01953125)
 
 TestMDSPlusH1Connection.h1 = True

@@ -3,7 +3,7 @@
 from pyfusion.test.tests import BasePyfusionTestCase
 
 # channel names in pyfusion test config file
-SCT_test_channel_name = "test_SCT_channel"
+Timeseries_test_channel_name = "test_Timeseries_channel"
 
 
 class TestFakeDataAcquisition(BasePyfusionTestCase):
@@ -22,15 +22,15 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
 
         # make sure the requested data type is returned using config reference
         test_acq = FakeDataAcquisition('test_fakedata')
-        from pyfusion.data.timeseries import SCTData
-        data_instance_1 = test_acq.getdata(self.shot_number, SCT_test_channel_name)
-        self.assertTrue(isinstance(data_instance_1, SCTData))
+        from pyfusion.data.timeseries import TimeseriesData
+        data_instance_1 = test_acq.getdata(self.shot_number, Timeseries_test_channel_name)
+        self.assertTrue(isinstance(data_instance_1, TimeseriesData))
         
         # ...and for kwargs
         # read config as dict and pass as kwargs
-        config_dict = conf.utils.get_config_as_dict('Diagnostic', SCT_test_channel_name)
+        config_dict = conf.utils.get_config_as_dict('Diagnostic', Timeseries_test_channel_name)
         data_instance_2 = test_acq.getdata(self.shot_number, **config_dict)
-        self.assertTrue(isinstance(data_instance_2, SCTData))
+        self.assertTrue(isinstance(data_instance_2, TimeseriesData))
 
         # check that the two signals are the same
         from numpy.testing import assert_array_almost_equal
@@ -53,9 +53,9 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         """Check that we end up with the correct data class starting from Device"""
         from pyfusion import getDevice
         test_device = getDevice(self.listed_device)
-        test_data = test_device.acquisition.getdata(self.shot_number, SCT_test_channel_name)
-        from pyfusion.data.timeseries import SCTData
-        self.assertTrue(isinstance(test_data, SCTData))
+        test_data = test_device.acquisition.getdata(self.shot_number, Timeseries_test_channel_name)
+        from pyfusion.data.timeseries import TimeseriesData
+        self.assertTrue(isinstance(test_data, TimeseriesData))
 
 
 class TestFakeDataFetchers(BasePyfusionTestCase):
@@ -80,8 +80,8 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
                                                   frequency=frequency,
                                                   t0 = t0)
         output_data = output_data_fetcher.fetch()
-        from pyfusion.data.timeseries import SCTData
-        self.assertTrue(isinstance(output_data, SCTData))
+        from pyfusion.data.timeseries import TimeseriesData
+        self.assertTrue(isinstance(output_data, TimeseriesData))
         from numpy import arange, sin, pi
         from numpy.testing import assert_array_almost_equal
         test_timebase = arange(t0, t0+float(n_samples)/sample_freq, 1./sample_freq)

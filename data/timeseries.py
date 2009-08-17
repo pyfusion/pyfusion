@@ -4,17 +4,6 @@ from numpy import arange
 
 from pyfusion.data.base import BaseData
 
-class SCTData(BaseData):
-    """Single Channel Timeseries (SCT) data."""
-    def __init__(self, timebase, signal):
-        self.timebase = timebase
-        self.signal=signal
-    device_name = None
-
-class MCTData(BaseData):
-    """Single Channel Timeseries (MCT) data."""
-    pass
-
 class Timebase:
     """Timebase vector with parameterised internal representation."""
     def __init__(self, t0=None, n_samples=None, sample_freq=None):
@@ -30,3 +19,10 @@ class Signal:
     """Timeseries signal class with (not-yet-implemented) configurable digitisation."""
     def __init__(self, input_signal):
         self.signal = input_signal
+
+class TimeseriesData(BaseData):
+    def __init__(self, timebase = None, signal=None, **kwargs):
+        self.timebase = timebase
+        self.signal = signal
+        super(TimeseriesData, self).__init__(**kwargs)
+

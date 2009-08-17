@@ -19,8 +19,6 @@ TEST_CONFIG_FILE = os.path.join(TEST_DATA_PATH, "test.cfg")
 # TODO: test configuration data should be generated from these values,
 #       there is no reason to duplicate the information in a file.
 CONFIG_TEST_DEVICE_NAME = "TestDevice"
-CONFIG_TEST_DEVICE_SINGLE_CHANNEL_TIMESERIES = "TestSCTChannel"
-CONFIG_TEST_DEVICE_MULTIPLE_CHANNEL_TIMESERIES = "TestMCTChannel"
 NONCONFIG_TEST_DEVICE_NAME = "UnlistedTestDevice"
 CONFIG_EMPTY_TEST_DEVICE_NAME = "TestEmptyDevice"
 TEST_SHOT_NUMBER = 12345
@@ -30,10 +28,6 @@ class BasePyfusionTestCase(unittest.TestCase):
     """Simple customisation of TestCase."""
     def __init__(self, *args):
         self.listed_device = CONFIG_TEST_DEVICE_NAME
-        self.listed_device_single_channel_timeseries = \
-                                CONFIG_TEST_DEVICE_SINGLE_CHANNEL_TIMESERIES
-        self.listed_device_multiple_channel_timeseries = \
-                                CONFIG_TEST_DEVICE_MULTIPLE_CHANNEL_TIMESERIES
         self.listed_empty_device = CONFIG_EMPTY_TEST_DEVICE_NAME
         self.unlisted_device = NONCONFIG_TEST_DEVICE_NAME
         self.shot_number = TEST_SHOT_NUMBER

@@ -8,7 +8,7 @@ Accessing a Mirnov coil signal, using the default configuration file::
    mirnov_data = h1.acq.getdata(58133, 'H1_mirnov_array_1_coil_1')
 
 
-The timeseries data object mirnov_data is an instance of SCTData::
+The timeseries data object mirnov_data is an instance of TimeseriesData::
 
    print mirnov_data.signal[::10000]
    [-0.01953125 -0.02441406 -0.01953125  0.06103516 -0.12451172

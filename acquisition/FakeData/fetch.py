@@ -14,8 +14,8 @@ class SingleChannelSineDF(BaseDataFetcher):
         super(SingleChannelSineDF, self).__init__(shot, **kwargs)
 
     def fetch(self):
-        from pyfusion.data.timeseries import SCTData, Timebase, Signal
+        from pyfusion.data.timeseries import TimeseriesData, Timebase, Signal
         from numpy import sin, pi
         tb = Timebase(t0=self.t0, n_samples=self.n_samples, sample_freq=self.sample_freq)
         sig = Signal(self.amplitude*sin(2*pi*self.frequency*tb.timebase))
-        return SCTData(timebase=tb, signal=sig)
+        return TimeseriesData(timebase=tb, signal=sig)

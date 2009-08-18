@@ -1,6 +1,6 @@
 """Timeseries data classes."""
 
-from numpy import arange
+import numpy as np
 
 from pyfusion.data.base import BaseData
 
@@ -13,12 +13,22 @@ class Timebase:
         self.timebase = self.generate_timebase()
     def generate_timebase(self):
         sample_time = 1./self.sample_freq
-        return arange(self.t0, self.t0+self.n_samples*sample_time, sample_time)
+        return np.arange(self.t0, self.t0+self.n_samples*sample_time, sample_time)
 
-class Signal:
-    """Timeseries signal class with (not-yet-implemented) configurable digitisation."""
-    def __init__(self, input_signal):
-        self.signal = input_signal
+class Signal(np.ndarray):
+    """Timeseries signal class with (not-yet-implemented) configurable
+    digitisation.
+
+    see doc/subclassing.py in numpy code for details on subclassing ndarray
+    """
+    def __new__(cls, input_array):
+        obj = np.asarray(input_array).view(cls)
+        return obj
+
+    def __array_finalize__(self,obj):
+        pass
+                                  
+
 
 class TimeseriesData(BaseData):
     def __init__(self, timebase = None, signal=None, **kwargs):

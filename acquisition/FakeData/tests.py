@@ -34,7 +34,7 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
 
         # check that the two signals are the same
         from numpy.testing import assert_array_almost_equal
-        assert_array_almost_equal(data_instance_1.signal.signal,  data_instance_2.signal.signal) 
+        assert_array_almost_equal(data_instance_1.signal,  data_instance_2.signal) 
         assert_array_almost_equal(data_instance_1.timebase.timebase,  data_instance_2.timebase.timebase) 
         
     def testDeviceConnection(self):
@@ -87,4 +87,4 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
         test_timebase = arange(t0, t0+float(n_samples)/sample_freq, 1./sample_freq)
         assert_array_almost_equal(output_data.timebase.timebase, test_timebase)
         test_signal = amplitude*sin(2*pi*frequency*test_timebase)
-        assert_array_almost_equal(output_data.signal.signal, test_signal)
+        assert_array_almost_equal(output_data.signal, test_signal)

@@ -61,7 +61,8 @@ class BaseDataFetcher(object):
 
 class DataFetcher(BaseDataFetcher):
     """No difference yet between this an BaseDataFetcher"""
-    pass
+    def fetch(self):
+        pass
 
 class MultiChannelFetcher(BaseDataFetcher):
     pass

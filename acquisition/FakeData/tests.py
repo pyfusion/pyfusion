@@ -91,11 +91,16 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
         assert_array_almost_equal(output_data.signal, test_signal)
 
 class TestMultiChannel(BasePyfusionTestCase):
-    """Would prefer this to be in acquisition/tests.py...."""
+    """Would prefer this to be in acquisition/tests.py...., but we are
+    using fakedata"""
 
     def test_multichannel(self):
         from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
-
+        from pyfusion import config
         test_acq = FakeDataAcquisition('test_fakedata')
         multichannel_data = test_acq.getdata(self.shot_number, multichannel_name)
-        
+        channel_1_data = test_acq.getdata(self.shot_number, Timeseries_test_channel_name)
+        channel_2_data = test_acq.getdata(self.shot_number, Timeseries_test_channel_name+'_2')
+        from numpy.testing import assert_array_almost_equal
+        assert_array_almost_equal(multichannel_data.signal[0,:], channel_1_data.signal)
+        assert_array_almost_equal(multichannel_data.signal[1,:], channel_2_data.signal)

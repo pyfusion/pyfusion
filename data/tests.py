@@ -26,7 +26,7 @@ class TestTimeseriesData(BasePyfusionTestCase):
 class TestTimebase(BasePyfusionTestCase):
     """Test Timebase class."""
 
-    """
+
     def test_timebase(self):
         from pyfusion.data.timeseries import Timebase
         from numpy import arange
@@ -36,14 +36,34 @@ class TestTimebase(BasePyfusionTestCase):
         test_tb = Timebase(t0=t0,n_samples=n_samples, sample_freq=sample_freq)
         local_tb = arange(t0, t0+n_samples/sample_freq, 1./sample_freq)
         self.assertTrue((test_tb.timebase == local_tb).all())
-    """
 
-    
+
+
 class TestSignal(BasePyfusionTestCase):
     """Test Signal class."""
-
+    
     def test_base_class(self):
         from pyfusion.data.timeseries import Signal
         from numpy import ndarray
         self.assertTrue(ndarray in Signal.__bases__)
+
+    def test_n_channels(self):
+        from pyfusion.data.timeseries import Signal
+        import numpy as np
+        test_sig_1a = Signal(np.random.rand(10))
+        self.assertEqual(test_sig_1a.n_channels(), 1)
+        test_sig_1b = Signal(np.random.rand(1,10))
+        self.assertEqual(test_sig_1b.n_channels(), 1)
+        test_sig_2 = Signal(np.random.rand(2,10))
+        self.assertEqual(test_sig_2.n_channels(), 2)
+        
+    def test_n_samples(self):
+        from pyfusion.data.timeseries import Signal
+        import numpy as np
+        test_sig_1a = Signal(np.random.rand(10))
+        self.assertEqual(test_sig_1a.n_samples(), 10)
+        test_sig_1b = Signal(np.random.rand(1,10))
+        self.assertEqual(test_sig_1b.n_samples(), 10)
+        test_sig_2 = Signal(np.random.rand(2,10))
+        self.assertEqual(test_sig_2.n_samples(), 10)
 

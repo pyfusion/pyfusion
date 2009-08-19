@@ -63,3 +63,5 @@ class DataFetcher(BaseDataFetcher):
     """No difference yet between this an BaseDataFetcher"""
     pass
 
+class MultiChannelFetcher(BaseDataFetcher):
+    pass

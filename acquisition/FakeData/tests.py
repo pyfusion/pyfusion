@@ -4,6 +4,7 @@ from pyfusion.test.tests import BasePyfusionTestCase
 
 # channel names in pyfusion test config file
 Timeseries_test_channel_name = "test_Timeseries_channel"
+multichannel_name = "test_multichannel_timeseries"
 
 
 class TestFakeDataAcquisition(BasePyfusionTestCase):
@@ -88,3 +89,13 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
         assert_array_almost_equal(output_data.timebase.timebase, test_timebase)
         test_signal = amplitude*sin(2*pi*frequency*test_timebase)
         assert_array_almost_equal(output_data.signal, test_signal)
+
+class TestMultiChannel(BasePyfusionTestCase):
+    """Would prefer this to be in acquisition/tests.py...."""
+
+    def test_multichannel(self):
+        from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
+
+        test_acq = FakeDataAcquisition('test_fakedata')
+        multichannel_data = test_acq.getdata(self.shot_number, multichannel_name)
+        

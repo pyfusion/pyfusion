@@ -125,3 +125,5 @@ class TestDataFetchers(BasePyfusionTestCase):
         test_fetcher = DummyFetcher(dummy_shot_number)
         self.assertEqual(test_fetcher.shot, dummy_shot_number)
 
+
+    

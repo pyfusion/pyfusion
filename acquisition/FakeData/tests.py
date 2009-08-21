@@ -37,7 +37,7 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         # check that the two signals are the same
         from numpy.testing import assert_array_almost_equal
         assert_array_almost_equal(data_instance_1.signal,  data_instance_2.signal) 
-        assert_array_almost_equal(data_instance_1.timebase.timebase,  data_instance_2.timebase.timebase) 
+        assert_array_almost_equal(data_instance_1.timebase,  data_instance_2.timebase) 
         
     def testDeviceConnection(self):
         """Check that using config loads the correct acquisition."""
@@ -87,7 +87,7 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
         from numpy import arange, sin, pi
         from numpy.testing import assert_array_almost_equal
         test_timebase = arange(t0, t0+float(n_samples)/sample_freq, 1./sample_freq)
-        assert_array_almost_equal(output_data.timebase.timebase, test_timebase)
+        assert_array_almost_equal(output_data.timebase, test_timebase)
         test_signal = amplitude*sin(2*pi*frequency*test_timebase)
         assert_array_almost_equal(output_data.signal, test_signal)
 
@@ -109,9 +109,15 @@ class TestMultiChannel(BasePyfusionTestCase):
         multichannel_data = test_acq.getdata(self.shot_number, multichannel_name)
         channel_1_data = test_acq.getdata(self.shot_number, timeseries_test_channel_1)
         channel_2_data = test_acq.getdata(self.shot_number, timeseries_test_channel_2)
-        #from numpy.testing import assert_array_almost_equal
-        #assert_array_almost_equal(multichannel_data.signal[0,:], channel_1_data.signal)
-        #assert_array_almost_equal(multichannel_data.signal[1,:], channel_2_data.signal)
+        from numpy.testing import assert_array_almost_equal
+        assert_array_almost_equal(multichannel_data.signal[0,:], channel_1_data.signal)
+        assert_array_almost_equal(multichannel_data.signal[1,:], channel_2_data.signal)
 
+    def test_different_timebase_exception(self):
+        pass
+    
     def test_multi_multichannel(self):
+        pass
+
+    def test_kwargs_passed_to_channels(self):
         pass

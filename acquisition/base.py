@@ -1,6 +1,7 @@
 """Base classes for pyfusion data acquisition."""
-
+from numpy.testing import assert_array_almost_equal
 from pyfusion.conf.utils import import_setting, kwarg_config_handler, get_config_as_dict, import_from_str
+from pyfusion.data.timeseries import Signal, Timebase, TimeseriesData
 
 class BaseAcquisition(object):
     """Base class for data acquisition.
@@ -79,6 +80,7 @@ class DataFetcher(BaseDataFetcher):
         pass
 
 class MultiChannelFetcher(BaseDataFetcher):
+    """... for timeseries..."""
     def ordered_channels(self):
         channel_list = []
         for k in self.__dict__.keys():
@@ -91,12 +93,21 @@ class MultiChannelFetcher(BaseDataFetcher):
         ## initially, assume only single channel signals
         ordered_channels = self.ordered_channels()
         data_list = []
-        #for chan in ordered_channels:
-            
-        # for each, load and return fetcher
-        # endloop
-        # create signal from components
-        # return signal
-        pass
-        #return data
+        timebase = None
+        print ordered_channels
+        for chan in ordered_channels:
+            fetcher_class = import_setting('Diagnostic', chan, 'data_fetcher')
+            tmp_data = fetcher_class(self, self.shot, config_name=chan).fetch()
+            print timebase, tmp_data.timebase
+            if timebase == None:
+                timebase = tmp_data.timebase
+                data_list.append(tmp_data.signal)
+            else:
+                try:
+                    assert_array_almost_equal(timebase, tmp_data.timebase)
+                    data_list.append(tmp_data.signal)
+                except:
+                    raise
+        signal=Signal(data_list)
+        return TimeseriesData(signal=signal, timebase=timebase)
 

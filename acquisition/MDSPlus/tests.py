@@ -8,7 +8,7 @@ from pyfusion.acquisition.MDSPlus.fetch import MDSPlusBaseDataFetcher
 class DummyMDSDataFetcher(MDSPlusBaseDataFetcher):
     """Check that we have a mds data object passed though"""
     def do_fetch(self):
-        return self._Data
+        return self.acq._Data
 
 
 class TestMDSPlusDataAcquisition(BasePyfusionTestCase):

@@ -30,8 +30,6 @@ class BaseAcquisition(object):
         """
         from pyfusion import config
         # if there is a data_fetcher arg, use that, otherwise get from config
-        print 'xx ', config_name
-        print 'yy ', kwargs
         if kwargs.has_key('data_fetcher'):
             fetcher_class_name = kwargs['data_fetcher']
         else:
@@ -62,7 +60,6 @@ class BaseDataFetcher(object):
         if config_name != None:
             self.__dict__.update(get_config_as_dict('Diagnostic', config_name))
         self.__dict__.update(kwargs)
-        print kwargs
     def setup(self):
         pass
     def do_fetch(self):
@@ -91,9 +88,10 @@ class MultiChannelFetcher(BaseDataFetcher):
     
     def fetch(self):
         ## initially, assume only single channel signals
-        # get list of args with channel_ prefix
-        # inital empty list to popular wit hindividual channels
-        # loop though channels
+        ordered_channels = self.ordered_channels()
+        data_list = []
+        #for chan in ordered_channels:
+            
         # for each, load and return fetcher
         # endloop
         # create signal from components

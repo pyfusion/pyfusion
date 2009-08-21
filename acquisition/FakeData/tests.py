@@ -76,7 +76,7 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
         frequency = 3.e4
         t0 = 0.0
         test_shot = -1
-        output_data_fetcher = SingleChannelSineDF(test_shot, sample_freq=sample_freq,
+        output_data_fetcher = SingleChannelSineDF(None, test_shot, sample_freq=sample_freq,
                                                   n_samples=n_samples,
                                                   amplitude=amplitude,
                                                   frequency=frequency,
@@ -98,7 +98,7 @@ class TestMultiChannel(BasePyfusionTestCase):
     def test_list_channels(self):
         test_shot = 12345
         from pyfusion.acquisition.base import MultiChannelFetcher
-        fetcher = MultiChannelFetcher(test_shot, config_name=multichannel_name)
+        fetcher = MultiChannelFetcher(None, test_shot, config_name=multichannel_name)
         self.assertEqual(fetcher.ordered_channels(), ['test_timeseries_channel_1', 'test_timeseries_channel_2'])
         
     

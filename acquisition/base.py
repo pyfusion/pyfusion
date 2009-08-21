@@ -37,7 +37,7 @@ class BaseAcquisition(object):
                                                config_name,
                                                'data_fetcher')
         fetcher_class = import_from_str(fetcher_class_name)
-        return fetcher_class(shot, config_name=config_name, **kwargs).fetch()
+        return fetcher_class(self, shot, config_name=config_name, **kwargs).fetch()
         """
         fetcher_args = {}
         if config_name != None:
@@ -55,8 +55,9 @@ class BaseAcquisition(object):
         
 class BaseDataFetcher(object):
     """Takes diagnostic/channel data and returns data object."""
-    def __init__(self, shot, config_name=None,**kwargs):
+    def __init__(self, acq, shot, config_name=None,**kwargs):
         self.shot = shot
+        self.acq = acq
         if config_name != None:
             self.__dict__.update(get_config_as_dict('Diagnostic', config_name))
         self.__dict__.update(kwargs)

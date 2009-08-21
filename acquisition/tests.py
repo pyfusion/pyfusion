@@ -108,7 +108,7 @@ class TestDataFetchers(BasePyfusionTestCase):
     def test_setup_pulldown(self):
         dummy_shot_number = 12345
         from pyfusion.acquisition.base import BaseDataFetcher
-        test_fetch = BaseDataFetcher(dummy_shot_number)
+        test_fetch = BaseDataFetcher(None, dummy_shot_number)
         self.assertTrue(hasattr(test_fetch, 'setup'))
         self.assertTrue(hasattr(test_fetch, 'pulldown'))
         self.assertTrue(hasattr(test_fetch, 'fetch'))
@@ -116,13 +116,13 @@ class TestDataFetchers(BasePyfusionTestCase):
         
     def testDummyFetcher(self):
         dummy_shot_number = 12345
-        test_fetcher = DummyFetcher(dummy_shot_number)
+        test_fetcher = DummyFetcher(None, dummy_shot_number)
         self.assertEqual(test_fetcher.connected, False)
         self.assertEqual(test_fetcher.fetch(), "connected")
         
     def testFetcherShotArg(self):
         dummy_shot_number = 12345
-        test_fetcher = DummyFetcher(dummy_shot_number)
+        test_fetcher = DummyFetcher(None, dummy_shot_number)
         self.assertEqual(test_fetcher.shot, dummy_shot_number)
 
 

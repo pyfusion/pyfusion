@@ -66,6 +66,9 @@ class Signal(np.ndarray):
 class TimeseriesData(BaseData):
     def __init__(self, timebase = None, signal=None, **kwargs):
         self.timebase = timebase
-        self.signal = signal
+        if signal.n_samples() == len(timebase):
+            self.signal = signal
+        else:
+            raise ValueError, "signal has different number of samples to timebase"
         super(TimeseriesData, self).__init__(**kwargs)
 

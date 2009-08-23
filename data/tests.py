@@ -10,9 +10,6 @@ class TestTimeseriesData(BasePyfusionTestCase):
         from pyfusion.data.timeseries import TimeseriesData
         self.assertTrue(BaseData in TimeseriesData.__bases__)
 
-    def testTimebase(self):
-        from pyfusion.data.timeseries import TimeseriesData, Timebase
-        self.assertTrue(hasattr(TimeseriesData(), 'timebase'))
     """
     def testAddChannels(self):
         from pyfusion.data.timeseries import TimeseriesData, Timebase
@@ -106,7 +103,7 @@ class TestFilters(BasePyfusionTestCase):
         from numpy import arange, searchsorted, resize
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb)), (5,20))))
+        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
         new_time_args = searchsorted(tb, new_times)
         timebase_test = tsd.timebase[new_time_args[0]:new_time_args[1]].copy()
         signal_test = tsd.signal[:,new_time_args[0]:new_time_args[1]].copy()
@@ -122,7 +119,7 @@ class TestFilters(BasePyfusionTestCase):
         from pyfusion.data import filter_register
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb)), (5,20))))
+        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
         new_time_args = searchsorted(tb, new_times)
         timebase_test = tsd.timebase[new_time_args[0]:new_time_args[1]].copy()
         signal_test = tsd.signal[:,new_time_args[0]:new_time_args[1]].copy()
@@ -146,8 +143,8 @@ class TestFilters(BasePyfusionTestCase):
         from numpy import arange, searchsorted, resize
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb)), (5,20))))
-        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb))+1, (5,20))))
+        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
+        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb))+1, (5,len(tb)))))
         test_dataset = DataSet()
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
@@ -160,7 +157,7 @@ class TestFilters(BasePyfusionTestCase):
         pyfusion.data.filter_register.add_module('pyfusion.data.tests')
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb)), (5,20))))
+        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
         self.assertTrue(hasattr(tsd, 'dummy_filter_3'))
 
 class TestDataSet(BasePyfusionTestCase):
@@ -171,8 +168,8 @@ class TestDataSet(BasePyfusionTestCase):
         from numpy import arange, searchsorted, resize
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb)), (5,20))))
-        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb))+1, (5,20))))
+        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
+        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb))+1, (5,len(tb)))))
         test_dataset = DataSet()
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
@@ -196,11 +193,21 @@ class TestDataSet(BasePyfusionTestCase):
         from numpy import arange, searchsorted, resize
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb)), (5,20))))
-        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb))+1, (5,20))))
+        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
+        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb))+1, (5,len(tb)))))
         test_dataset = DataSet()
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
         test_dataset.reduce_time(new_times)
         test_dataset.add(3)
+"""        
+class TestSegmentFilter(BasePyfusionTestCase):
+    
+    def test_single_channel_timeseries(self):
+        from pyfusion.data.base import DataSet
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from numpy import arange, searchsorted, resize
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb)), (5,20))))
         
+"""

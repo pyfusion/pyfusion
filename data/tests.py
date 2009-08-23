@@ -38,6 +38,11 @@ class TestTimebase(BasePyfusionTestCase):
         self.assertTrue((test_tb == local_tb).all())
 
 
+## dummy filters for testing filter method loading
+def dummy_filter_1(input_data, *args, **kwargs):
+    return input_data
+dummy_filter_1.allowed_class=['TimeseriesData']
+#dummy_filter_1.require_dataset=False
 
 class TestSignal(BasePyfusionTestCase):
     """Test Signal class."""
@@ -66,4 +71,62 @@ class TestSignal(BasePyfusionTestCase):
         self.assertEqual(test_sig_1b.n_samples(), 10)
         test_sig_2 = Signal(np.random.rand(2,10))
         self.assertEqual(test_sig_2.n_samples(), 10)
+
+class TestFilters(BasePyfusionTestCase):
+
+    def test_reduce_time_filter_single_channel(self):
+        from pyfusion.data.filters import reduce_time
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from numpy import arange, searchsorted
+        new_times = [-0.25, 0.25]
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        tsd = TimeseriesData(timebase=tb, signal=Signal(arange(len(tb))))
+        new_time_args = searchsorted(tb, new_times)
+        timebase_test = tsd.timebase[new_time_args[0]:new_time_args[1]].copy()
+        signal_test = tsd.signal[new_time_args[0]:new_time_args[1]].copy()
+        reduced_tsd = reduce_time(tsd, new_times)
+        self.assertTrue(isinstance(reduced_tsd, TimeseriesData))
+        from numpy.testing import assert_array_almost_equal
+        assert_array_almost_equal(reduced_tsd.timebase, timebase_test)
+        assert_array_almost_equal(reduced_tsd.signal, signal_test)
+        
+    def test_reduce_time_filter_multi_channel(self):
+        from pyfusion.data.filters import reduce_time
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from numpy import arange, searchsorted, resize
+        new_times = [-0.25, 0.25]
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb)), (5,20))))
+        new_time_args = searchsorted(tb, new_times)
+        timebase_test = tsd.timebase[new_time_args[0]:new_time_args[1]].copy()
+        signal_test = tsd.signal[:,new_time_args[0]:new_time_args[1]].copy()
+        reduced_tsd = reduce_time(tsd, new_times)
+        self.assertTrue(isinstance(reduced_tsd, TimeseriesData))
+        from numpy.testing import assert_array_almost_equal
+        assert_array_almost_equal(reduced_tsd.timebase, timebase_test)
+        assert_array_almost_equal(reduced_tsd.signal, signal_test)
+    
+    def test_reduce_time_filter_multi_channel_attached_method(self):
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from numpy import arange, searchsorted, resize
+        from pyfusion.data import filter_register
+        new_times = [-0.25, 0.25]
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb)), (5,20))))
+        new_time_args = searchsorted(tb, new_times)
+        timebase_test = tsd.timebase[new_time_args[0]:new_time_args[1]].copy()
+        signal_test = tsd.signal[:,new_time_args[0]:new_time_args[1]].copy()
+        reduced_tsd = tsd.reduce_time(new_times)
+        self.assertTrue(isinstance(reduced_tsd, TimeseriesData))
+        from numpy.testing import assert_array_almost_equal
+        assert_array_almost_equal(reduced_tsd.timebase, timebase_test)
+        assert_array_almost_equal(reduced_tsd.signal, signal_test)
+    
+
+    def test_filter_method_loader(self):
+        import pyfusion
+        pyfusion.data.filter_register.add_module('pyfusion.data.tests')
+        self.assertTrue(dummy_filter_1 in pyfusion.data.filter_register.get_for('TimeseriesData'))
+        from pyfusion.data.filters import reduce_time
+        self.assertTrue(reduce_time in pyfusion.data.filter_register.get_for('TimeseriesData'))
 

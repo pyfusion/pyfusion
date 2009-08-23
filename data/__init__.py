@@ -13,7 +13,11 @@ class FilterRegister(object):
                     if not self.cache.has_key(cl):
                         self.cache[cl] = []
                     self.cache[cl].append(module_inst.__dict__[attribute_name])
-    def get_for(self, class_name):
-        return self.cache.get(class_name, [])
+    def get_for(self, data_class):
+        output_list = []
+        for filter_class in self.cache.keys():
+            if issubclass(data_class, filter_class):
+                output_list.extend(self.cache[filter_class])
+        return output_list
 
 filter_register = FilterRegister()

@@ -71,6 +71,7 @@ class BaseDataFetcher(object):
     def fetch(self):
         self.setup()
         data = self.do_fetch()
+        data.meta.update({'shot':self.shot})
         self.pulldown()
         return data
 
@@ -109,5 +110,7 @@ class MultiChannelFetcher(BaseDataFetcher):
                 except:
                     raise
         signal=Signal(data_list)
-        return TimeseriesData(signal=signal, timebase=timebase)
+        output_data = TimeseriesData(signal=signal, timebase=timebase)
+        output_data.meta.update({'shot':self.shot})
+        return output_data
 

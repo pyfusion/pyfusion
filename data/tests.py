@@ -200,7 +200,7 @@ class TestDataSet(BasePyfusionTestCase):
         test_dataset.add(tsd_2)
         test_dataset.reduce_time(new_times)
         test_dataset.add(3)
-"""        
+
 class TestSegmentFilter(BasePyfusionTestCase):
     
     def test_single_channel_timeseries(self):
@@ -208,6 +208,28 @@ class TestSegmentFilter(BasePyfusionTestCase):
         from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
         from numpy import arange, searchsorted, resize
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(len(tb)), (5,20))))
-        
-"""
+        tsd = TimeseriesData(timebase=tb, signal=Signal(arange(len(tb))))
+        seg_dataset = tsd.segment(n_samples=10)
+        self.assertTrue(len(seg_dataset)==10)
+
+    def test_multi_channel_timeseries(self):
+        from pyfusion.data.base import DataSet
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from numpy import arange, searchsorted, resize
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(3*len(tb)), (3,len(tb)))))
+        seg_dataset = tsd.segment(n_samples=10)
+        self.assertTrue(len(seg_dataset)==10)
+
+    def test_dataset(self):
+        from pyfusion.data.base import DataSet
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from numpy import arange, searchsorted, resize
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(3*len(tb)), (3,len(tb)))))
+        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(3*len(tb)+1), (3,len(tb)))))
+        input_dataset = DataSet()
+        input_dataset.add(tsd_1)
+        input_dataset.add(tsd_2)
+        seg_dataset = input_dataset.segment(n_samples=10)
+        self.assertTrue(len(seg_dataset)==20)

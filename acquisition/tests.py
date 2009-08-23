@@ -1,7 +1,7 @@
 """Test code for data acquisition."""
 
 from pyfusion.test.tests import BasePyfusionTestCase
-
+from pyfusion.data.base import BaseData
 # Add new acquisition modules here for basic module structure test
 acquisition_modules = ['FakeData', 'MDSPlus']
 
@@ -91,9 +91,14 @@ class DummyFetcher(BaseDataFetcher):
         self.connected = False
     def do_fetch(self):
         if self.connected:
-            return "connected"
+            d=BaseData()
+            d.meta["connected"]=True
+            return d
         else:
-            return "disconnected"
+            d=BaseData()
+            d.meta["connected"]=False
+            return d
+
     
     
 
@@ -118,7 +123,8 @@ class TestDataFetchers(BasePyfusionTestCase):
         dummy_shot_number = 12345
         test_fetcher = DummyFetcher(None, dummy_shot_number)
         self.assertEqual(test_fetcher.connected, False)
-        self.assertEqual(test_fetcher.fetch(), "connected")
+        d=test_fetcher.fetch()
+        self.assertEqual(d.meta["connected"], True)
         
     def testFetcherShotArg(self):
         dummy_shot_number = 12345

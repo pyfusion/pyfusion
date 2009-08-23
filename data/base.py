@@ -16,6 +16,7 @@ class BaseData(object):
     Usage: ..........
     """
     def __init__(self):
+        self.meta = {}
         filter_list = pyfusion.data.filter_register.get_for(self.__class__)
         for filter_method in filter_list:
             self._add_method(filter_method)

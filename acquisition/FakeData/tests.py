@@ -112,6 +112,7 @@ class TestMultiChannel(BasePyfusionTestCase):
         from numpy.testing import assert_array_almost_equal
         assert_array_almost_equal(multichannel_data.signal[0,:], channel_1_data.signal)
         assert_array_almost_equal(multichannel_data.signal[1,:], channel_2_data.signal)
+        self.assertEqual(channel_1_data.meta.get('shot'), self.shot_number)
 
     def test_different_timebase_exception(self):
         pass

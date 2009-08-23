@@ -1,7 +1,8 @@
 """
 """
-from numpy import searchsorted
+from numpy import searchsorted, arange
 from pyfusion.data.base import DataSet
+from pyfusion.data.timeseries import TimeseriesData
 import pyfusion
 
 def reduce_time(input_data, new_time_range):
@@ -22,6 +23,31 @@ def reduce_time(input_data, new_time_range):
     else:
         input_data.signal = input_data.signal[:,new_time_args[0]:new_time_args[1]]
     return input_data
-from pyfusion.data.timeseries import TimeseriesData
-from pyfusion.data.base import DataSet
+
 reduce_time.allowed_class=[TimeseriesData, DataSet]
+
+def segment(input_data, n_samples):
+    if isinstance(input_data, DataSet):
+        output_dataset = input_data.copy()
+        output_dataset.clear()
+        for data in input_data:
+            try:
+                output_dataset.update(data.segment(n_samples))
+            except AttributeError:
+                pyfusion.logger.warning("Data filter 'segment' not applied to item in dataset")
+        return output_dataset
+    output_data = DataSet()
+    for el in arange(0,len(input_data.timebase), n_samples):
+        if input_data.signal.ndim == 1:
+            tmp_data = TimeseriesData(timebase=input_data.timebase[el:el+n_samples],
+                                      signal=input_data.signal[el:el+n_samples])
+        else:
+            tmp_data = TimeseriesData(timebase=input_data.timebase[el:el+n_samples],
+                                      signal=input_data.signal[:,el:el+n_samples])
+            
+        tmp_data.meta = input_data.meta.copy()
+        output_data.add(tmp_data)
+    return output_data
+
+segment.allowed_class=[TimeseriesData, DataSet]
+

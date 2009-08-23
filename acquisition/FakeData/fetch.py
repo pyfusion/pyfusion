@@ -19,4 +19,6 @@ class SingleChannelSineDF(BaseDataFetcher):
         from numpy import sin, pi
         tb = generate_timebase(t0=self.t0, n_samples=self.n_samples, sample_freq=self.sample_freq)
         sig = Signal(self.amplitude*sin(2*pi*self.frequency*tb))
-        return TimeseriesData(timebase=tb, signal=sig)
+        output_data = TimeseriesData(timebase=tb, signal=sig)
+        output_data.meta.update({'shot':self.shot})
+        return output_data

@@ -98,7 +98,7 @@ class MultiChannelFetcher(BaseDataFetcher):
         print ordered_channels
         for chan in ordered_channels:
             fetcher_class = import_setting('Diagnostic', chan, 'data_fetcher')
-            tmp_data = fetcher_class(self, self.shot, config_name=chan).fetch()
+            tmp_data = fetcher_class(self.acq, self.shot, config_name=chan).fetch()
             print timebase, tmp_data.timebase
             if timebase == None:
                 timebase = tmp_data.timebase

@@ -99,6 +99,15 @@ class TestH1ConfigSection(TestCase):
         test_mirnov = h1.acq.getdata(58133, 'H1_mirnov_array_1_coil_1')
         self.assertEqual(test_mirnov.signal[0], -0.01953125)
 
+    def testH1Multichannel(self):
+        import pyfusion
+        shot = 58133
+        diag = "h1_mirnov_array_1"
+        d=pyfusion.getDevice("H1")
+        data=d.acq.getdata(shot, diag)
+
+
 TestH1ConfigSection.h1 = True
 TestH1ConfigSection.net = True
 TestH1ConfigSection.slow = True
+

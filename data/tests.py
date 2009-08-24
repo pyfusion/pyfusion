@@ -233,3 +233,28 @@ class TestSegmentFilter(BasePyfusionTestCase):
         input_dataset.add(tsd_2)
         seg_dataset = input_dataset.segment(n_samples=10)
         self.assertTrue(len(seg_dataset)==20)
+
+class DummyCoordTransform(object):
+    input_coords = 'cylindrical'
+    output_coords = 'dummy'
+
+    def transform(self, coords):
+        return (2*coords[0], 3*coords[1], 4*coords[2])
+
+class TestCoordinates(BasePyfusionTestCase):
+
+    def test_load_coords(self):
+        from pyfusion.data.base import Coords
+        dummy_coords = Coords(cylindrical=(1.0,1.0,1.0))
+        self.assertEqual(dummy_coords.cylindrical, (1.0,1.0,1.0))
+
+    def test_coord_transform(self):
+        from pyfusion.data.base import Coords
+        cyl_coords = (1.0,1.0,1.0)
+        dummy_coords = Coords(cylindrical=cyl_coords)
+        dummy_coords.load_transform(DummyCoordTransform)
+        self.assertEqual(dummy_coords.dummy(), (2*cyl_coords[0], 3*cyl_coords[1], 4*cyl_coords[2]))
+        cyl_coords = (2.0,1.0,4.0)
+        dummy_coords_1 = Coords(cylindrical=cyl_coords)
+        dummy_coords_1.load_transform(DummyCoordTransform)
+        self.assertEqual(dummy_coords_1.dummy(), (2*cyl_coords[0], 3*cyl_coords[1], 4*cyl_coords[2]))

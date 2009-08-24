@@ -37,3 +37,11 @@ class DataSet(set):
             return method_fn(self, *args, **kwargs)
         self.__dict__[method_fn.__name__] = _fn
 
+class Coords(object):
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def load_transform(self, transform_class):
+        def _new_transform_method(**kwargs):
+            return transform_class().transform(self.__dict__.get(transform_class.input_coords),**kwargs)
+        self.__dict__.update({transform_class.output_coords:_new_transform_method})

@@ -4,11 +4,17 @@
 from pyfusion.test.tests import BasePyfusionTestCase
 
 from pyfusion.acquisition.MDSPlus.fetch import MDSPlusBaseDataFetcher
+from pyfusion.data.base import BaseData
+
+class DummyMDSData(BaseData):
+    pass
 
 class DummyMDSDataFetcher(MDSPlusBaseDataFetcher):
     """Check that we have a mds data object passed though"""
     def do_fetch(self):
-        return self.acq._Data
+        data = DummyMDSData()
+        data.meta['mds_Data'] = self.acq._Data
+        return data
 
 
 class TestMDSPlusDataAcquisition(BasePyfusionTestCase):
@@ -55,7 +61,7 @@ class TestMDSPlusDataFetchers(BasePyfusionTestCase):
         df_str = "pyfusion.acquisition.MDSPlus.tests.DummyMDSDataFetcher"
         test_data = test_acq.getdata(dummy_shot, data_fetcher=df_str, mds_tree="H1DATA")
         from MDSplus import Data
-        self.assertEqual(Data.__dict__, test_data.__dict__)
+        self.assertEqual(Data.__dict__, test_data.meta['mds_Data'].__dict__)
         
 TestMDSPlusDataFetchers.h1 = True
 TestMDSPlusDataFetchers.net = True

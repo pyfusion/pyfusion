@@ -95,10 +95,12 @@ class MultiChannelFetcher(BaseDataFetcher):
         ## initially, assume only single channel signals
         ordered_channels = self.ordered_channels()
         data_list = []
+        coord_list = []
         timebase = None
         for chan in ordered_channels:
             fetcher_class = import_setting('Diagnostic', chan, 'data_fetcher')
             tmp_data = fetcher_class(self.acq, self.shot, config_name=chan).fetch()
+            coord_list.append(tmp_data.meta.coords)
             if timebase == None:
                 timebase = tmp_data.timebase
                 data_list.append(tmp_data.signal)
@@ -111,5 +113,6 @@ class MultiChannelFetcher(BaseDataFetcher):
         signal=Signal(data_list)
         output_data = TimeseriesData(signal=signal, timebase=timebase)
         output_data.meta.update({'shot':self.shot})
+        output_data.meta.coords = coord_list
         return output_data
 

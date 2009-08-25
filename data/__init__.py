@@ -3,6 +3,8 @@ class FilterRegister(object):
     def __init__(self):
         self.cache = {}
         self.add_module('pyfusion.data.filters')
+        ## if we use it for plots, should it really be callsed filterregister?
+        self.add_module('pyfusion.data.plots')
         
     def add_module(self, module_str):
         from pyfusion.conf.utils import import_from_str

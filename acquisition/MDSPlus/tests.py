@@ -102,7 +102,7 @@ class TestH1ConfigSection(TestCase):
     def testH1Multichannel(self):
         import pyfusion
         shot = 58133
-        diag = "h1_mirnov_array_1"
+        diag = "H1_mirnov_array_1"
         d=pyfusion.getDevice("H1")
         data=d.acq.getdata(shot, diag)
 

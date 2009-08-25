@@ -55,6 +55,16 @@ class Signal(np.ndarray):
         else:
             return self.shape[1]
 
+    def get_channel(self, channel_number):
+        """allows us to use get_channel(0) no matter what ndim is"""
+        if self.ndim == 1 and channel_number == 0:
+            return self
+        elif self.ndim > 1:
+            return self[channel_number,:]
+        else:
+            raise ValueError
+
+        
     #def add_channel(self, additional_array):
     ##### -- problems with resizing subclass of ndarray, need to be careful 
     #    additional_signal = Signal(additional_array)

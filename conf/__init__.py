@@ -8,7 +8,7 @@ from pyfusion.conf.exceptions import DisallowedSectionType, \
 # This list contains allowed section types, i.e. [SectionType:Name] in
 # config files. Be sure to update the documentation (config.rst) when
 # adding to this list
-allowed_section_types = ['Device', 'Diagnostic', 'Acquisition']
+allowed_section_types = ['Device', 'Diagnostic', 'Acquisition', 'CoordTransform']
 ## sections which don't follow the [SectionType:Name] syntax
 special_section_names = ['variabletypes']
 

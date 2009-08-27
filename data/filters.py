@@ -51,3 +51,35 @@ def segment(input_data, n_samples):
 
 segment.allowed_class=[TimeseriesData, DataSet]
 
+
+
+def normalise(input_data, method='peak', separate=False):
+    from numpy import mean, sqrt, max, abs, var, atleast_2d
+    if method.lower() in ['rms', 'r']:
+        if input_data.signal.ndim == 1:
+            norm_value = sqrt(mean(input_data.signal**2))
+        else:
+            rms_vals = sqrt(mean(input_data.signal**2, axis=1))
+            if separate == False:
+                rms_vals = max(rms_vals)
+            norm_value = atleast_2d(rms_vals).T            
+    elif method.lower() in ['peak', 'p']:
+        if input_data.signal.ndim == 1:
+            norm_value = abs(input_data.signal).max(axis=0)
+        else:
+            max_vals = abs(input_data.signal).max(axis=1)
+            if separate == False:
+                max_vals = max(max_vals)
+            norm_value = atleast_2d(max_vals).T
+    elif method.lower() in ['var', 'variance', 'v']:
+        if input_data.signal.ndim == 1:
+            norm_value = var(input_data.signal)
+        else:
+            var_vals = var(input_data.signal, axis=1)
+            if separate == False:
+                var_vals = max(var_vals)
+            norm_value = atleast_2d(var_vals).T            
+    input_data.signal = input_data.signal / norm_value
+    return input_data
+    
+normalise.allowed_class=[TimeseriesData]#, DataSet]

@@ -264,4 +264,92 @@ class TestCoordinates(BasePyfusionTestCase):
         self.assertEqual(dummy_coords_1.dummy(), (2*cyl_coords[0], 3*cyl_coords[1], 4*cyl_coords[2]))
 
 class TestFlucstrucs(BasePyfusionTestCase):
-    pass
+
+    def test_fakedata_single_shot(self):
+        import pyfusion
+        #d=pyfusion.getDevice('H1')
+        #data = d.acq.getdata(58073, 'H1_mirnov_array_1')
+        #fs_data = data.reduce_time([0.030,0.031])
+        
+
+class TestNormalise(BasePyfusionTestCase):
+
+    def test_single_channel_fakedata(self):
+        from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
+        from numpy import sqrt, mean, max, var
+        test_acq = FakeDataAcquisition('test_fakedata')
+        channel_data = test_acq.getdata(self.shot_number, "test_timeseries_channel_2")
+        channel_data_norm_no_arg = test_acq.getdata(self.shot_number, "test_timeseries_channel_2").normalise()
+        channel_data_rms_norm_by_arg = test_acq.getdata(self.shot_number, "test_timeseries_channel_2").normalise(method='rms')
+        channel_data_peak_norm_by_arg = test_acq.getdata(self.shot_number, "test_timeseries_channel_2").normalise(method='peak')
+        channel_data_var_norm_by_arg = test_acq.getdata(self.shot_number, "test_timeseries_channel_2").normalise(method='var')
+        rms_value = sqrt(mean(channel_data.signal**2))
+        peak_value = max(abs(channel_data.signal))
+        var_value = var(channel_data.signal)
+
+        from numpy.testing import assert_array_almost_equal
+
+        assert_array_almost_equal(channel_data.signal/rms_value, channel_data_rms_norm_by_arg.signal)
+        assert_array_almost_equal(channel_data.signal/peak_value, channel_data_peak_norm_by_arg.signal)
+        assert_array_almost_equal(channel_data.signal/var_value, channel_data_var_norm_by_arg.signal)
+
+        # check that default is peak
+        assert_array_almost_equal(channel_data_peak_norm_by_arg.signal, channel_data_norm_no_arg.signal)
+
+        
+    def test_multichannel_fakedata(self):
+        from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
+        from numpy import sqrt, mean, max, var
+        from numpy.testing import assert_array_almost_equal
+        test_acq = FakeDataAcquisition('test_fakedata')
+        multichannel_data = test_acq.getdata(self.shot_number, "test_multichannel_timeseries")
+
+        mcd_ch_0 = multichannel_data.signal.get_channel(0)
+        mcd_ch_0_peak = max(abs(mcd_ch_0))
+        mcd_ch_0_rms = sqrt(mean(mcd_ch_0**2))
+        mcd_ch_0_var = var(mcd_ch_0)
+        
+        mcd_ch_1 = multichannel_data.signal.get_channel(1)
+        mcd_ch_1_peak = max(abs(mcd_ch_1))
+        mcd_ch_1_rms = sqrt(mean(mcd_ch_1**2))
+        mcd_ch_1_var = var(mcd_ch_1)
+        
+        mcd_peak_separate = test_acq.getdata(self.shot_number,
+                                             "test_multichannel_timeseries").normalise(method='peak', separate=True)
+        mcd_peak_whole = test_acq.getdata(self.shot_number,
+                                          "test_multichannel_timeseries").normalise(method='peak', separate=False)
+        mcd_rms_separate = test_acq.getdata(self.shot_number,
+                                            "test_multichannel_timeseries").normalise(method='rms', separate=True)
+        mcd_rms_whole = test_acq.getdata(self.shot_number,
+                                         "test_multichannel_timeseries").normalise(method='rms', separate=False)
+        mcd_var_separate = test_acq.getdata(self.shot_number,
+                                            "test_multichannel_timeseries").normalise(method='var', separate=True)
+        mcd_var_whole = test_acq.getdata(self.shot_number,
+                                         "test_multichannel_timeseries").normalise(method='var', separate=False)
+        
+        # peak - separate
+        assert_array_almost_equal(mcd_peak_separate.signal.get_channel(0), mcd_ch_0/mcd_ch_0_peak)
+        assert_array_almost_equal(mcd_peak_separate.signal.get_channel(1), mcd_ch_1/mcd_ch_1_peak)
+        # peak - whole
+        max_peak = max(mcd_ch_0_peak, mcd_ch_1_peak)
+        assert_array_almost_equal(mcd_peak_whole.signal.get_channel(0), mcd_ch_0/max_peak)
+        assert_array_almost_equal(mcd_peak_whole.signal.get_channel(1), mcd_ch_1/max_peak)
+        
+        # rms - separate
+        assert_array_almost_equal(mcd_rms_separate.signal.get_channel(0), mcd_ch_0/mcd_ch_0_rms)
+        assert_array_almost_equal(mcd_rms_separate.signal.get_channel(1), mcd_ch_1/mcd_ch_1_rms)
+        # rms - whole
+        max_rms = max(mcd_ch_0_rms, mcd_ch_1_rms)
+        assert_array_almost_equal(mcd_rms_whole.signal.get_channel(0), mcd_ch_0/max_rms)
+        assert_array_almost_equal(mcd_rms_whole.signal.get_channel(1), mcd_ch_1/max_rms)
+
+        # var - separate
+        assert_array_almost_equal(mcd_var_separate.signal.get_channel(0), mcd_ch_0/mcd_ch_0_var)
+        assert_array_almost_equal(mcd_var_separate.signal.get_channel(1), mcd_ch_1/mcd_ch_1_var)
+        # var - whole
+        max_var = max(mcd_ch_0_var, mcd_ch_1_var)
+        assert_array_almost_equal(mcd_var_whole.signal.get_channel(0), mcd_ch_0/max_var)
+        assert_array_almost_equal(mcd_var_whole.signal.get_channel(1), mcd_ch_1/max_var)
+
+
+        

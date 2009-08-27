@@ -35,3 +35,9 @@ class TestH1MirnovCoords(BasePyfusionTestCase):
         
     def test_multichannel_mirnov_bean_kappah_from_metadata(self):
         pass
+
+TestH1MirnovCoords.h1 = True
+TestH1MirnovCoords.net = True
+TestH1MirnovCoords.slow = True
+
+

@@ -263,3 +263,5 @@ class TestCoordinates(BasePyfusionTestCase):
         dummy_coords_1.load_transform(DummyCoordTransform)
         self.assertEqual(dummy_coords_1.dummy(), (2*cyl_coords[0], 3*cyl_coords[1], 4*cyl_coords[2]))
 
+class TestFlucstrucs(BasePyfusionTestCase):
+    pass

@@ -40,4 +40,20 @@ TestH1MirnovCoords.h1 = True
 TestH1MirnovCoords.net = True
 TestH1MirnovCoords.slow = True
 
+class TestH1Device(BasePyfusionTestCase):
 
+    def test_load_h1(self):
+        from pyfusion.devices.base import BaseDevice
+        from pyfusion.devices.H1.device import H1
+
+        self.assertTrue(issubclass(H1, BaseDevice))
+        
+    def test_getdevice(self):
+        import pyfusion
+        h1test = pyfusion.getDevice('H1')
+        from pyfusion.devices.H1.device import H1
+
+        self.assertTrue(isinstance(h1test, H1))
+
+    def test_kh(self):
+        pass

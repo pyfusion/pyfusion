@@ -18,3 +18,6 @@ def plot_signals(input_data, filename=None):
         pl.show()
 
 plot_signals.allowed_class=[TimeseriesData]
+
+def plot_multichannel_coord(input_data, coord=None, savefig=None):
+    pass

@@ -56,4 +56,8 @@ class TestH1Device(BasePyfusionTestCase):
         self.assertTrue(isinstance(h1test, H1))
 
     def test_kh(self):
-        pass
+        import pyfusion
+        h1test = pyfusion.getDevice('H1')
+        shot_kh = (58073, 0.74)
+        data = h1test.acq.getdata(shot_kh[0], 'H1_mirnov_array_1_coil_1')        
+        self.assertAlmostEqual(data.meta['kh'], shot_kh[1])

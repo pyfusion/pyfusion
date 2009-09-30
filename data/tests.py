@@ -352,4 +352,36 @@ class TestNormalise(BasePyfusionTestCase):
         assert_array_almost_equal(mcd_var_whole.signal.get_channel(1), mcd_ch_1/max_var)
 
 
+from pyfusion.data.timeseries import Timebase, Signal
+from numpy import arange, pi, zeros, resize, random, cos
+
+# modes: [amplitude, freq, phase at angle0]
+def get_multimode_test_data(n_channels = 10,
+                            ch_angles = 2*pi*arange(10)/10,
+                            timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                            modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                            noise = 0.2):
+    data_array = zeros((n_channels, len(timebase)))
+    timebase_matrix = resize(timebase, (n_channels, len(timebase)))
+    angle_matrix = resize(ch_angles, (len(timebase), n_channels)).T
+    for m in modes:
+        data_array += m[0]*cos(2*pi*m[2]*timebase_matrix + m[1]*angle_matrix + m[3])
+    data_array += noise*2*(random.random(data_array.shape)-0.5)
+    output = TimeseriesData(timebase=timebase, signal=Signal(data_array))
+    return output
+
+class TestFlucstrucs(BasePyfusionTestCase):
+
+    def test_svd(self):
+        multichannel_data = get_multimode_test_data(n_channels = 10,
+                                                    ch_angles = 2*pi*arange(10)/10,
+                                                    timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.2)
+        self.assertTrue(isinstance(multichannel_data, TimeseriesData))
+        svd_data = multichannel_data.svd()
         
+        #import pylab as pl
+        #multichannel_data.plot_signals()
+        
+TestFlucstrucs.tmp = True

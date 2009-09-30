@@ -83,3 +83,8 @@ def normalise(input_data, method='peak', separate=False):
     return input_data
     
 normalise.allowed_class=[TimeseriesData]#, DataSet]
+
+def svd(input_data):
+    pass
+
+svd.allowed_class=[TimeseriesData]

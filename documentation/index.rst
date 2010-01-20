@@ -5,12 +5,10 @@
 Pyfusion documentation
 ======================
 
-Tutorials
----------
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   MDSplus data analysis <tutorials/h1>
+   tutorial/index
 
 Development
 -----------

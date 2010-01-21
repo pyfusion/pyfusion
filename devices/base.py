@@ -17,7 +17,7 @@ class BaseDevice:
     Keyword arguments:
     Any setting in the [Device:device_name] section of the
     configuration file can be overridden by supplying a keyword
-    arguement to here, e.g.: BaseDevice(device_name, database='sqlite://')
+    argument to here, e.g.: BaseDevice(device_name, database='sqlite://')
 
     """
     def __init__(self, config_name=None, **kwargs):

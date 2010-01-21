@@ -9,6 +9,8 @@ Pyfusion documentation
    :maxdepth: 2
 
    tutorial/index
+   ref/index
+
 
 Development
 -----------

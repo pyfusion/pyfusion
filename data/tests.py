@@ -1,4 +1,5 @@
 """Tests for data code."""
+from numpy.testing import assert_array_almost_equal, assert_almost_equal
 
 from pyfusion.test.tests import BasePyfusionTestCase
 from pyfusion.data.base import BaseData, DataSet
@@ -93,7 +94,6 @@ class TestFilters(BasePyfusionTestCase):
         signal_test = tsd.signal[new_time_args[0]:new_time_args[1]].copy()
         reduced_tsd = reduce_time(tsd, new_times)
         self.assertTrue(isinstance(reduced_tsd, TimeseriesData))
-        from numpy.testing import assert_array_almost_equal
         assert_array_almost_equal(reduced_tsd.timebase, timebase_test)
         assert_array_almost_equal(reduced_tsd.signal, signal_test)
         
@@ -109,7 +109,6 @@ class TestFilters(BasePyfusionTestCase):
         signal_test = tsd.signal[:,new_time_args[0]:new_time_args[1]].copy()
         reduced_tsd = reduce_time(tsd, new_times)
         self.assertTrue(isinstance(reduced_tsd, TimeseriesData))
-        from numpy.testing import assert_array_almost_equal
         assert_array_almost_equal(reduced_tsd.timebase, timebase_test)
         assert_array_almost_equal(reduced_tsd.signal, signal_test)
     
@@ -125,7 +124,6 @@ class TestFilters(BasePyfusionTestCase):
         signal_test = tsd.signal[:,new_time_args[0]:new_time_args[1]].copy()
         reduced_tsd = tsd.reduce_time(new_times)
         self.assertTrue(isinstance(reduced_tsd, TimeseriesData))
-        from numpy.testing import assert_array_almost_equal
         assert_array_almost_equal(reduced_tsd.timebase, timebase_test)
         assert_array_almost_equal(reduced_tsd.signal, signal_test)
     
@@ -287,7 +285,6 @@ class TestNormalise(BasePyfusionTestCase):
         peak_value = max(abs(channel_data.signal))
         var_value = var(channel_data.signal)
 
-        from numpy.testing import assert_array_almost_equal
 
         assert_array_almost_equal(channel_data.signal/rms_value, channel_data_rms_norm_by_arg.signal)
         assert_array_almost_equal(channel_data.signal/peak_value, channel_data_peak_norm_by_arg.signal)
@@ -300,7 +297,6 @@ class TestNormalise(BasePyfusionTestCase):
     def test_multichannel_fakedata(self):
         from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
         from numpy import sqrt, mean, max, var
-        from numpy.testing import assert_array_almost_equal
         test_acq = FakeDataAcquisition('test_fakedata')
         multichannel_data = test_acq.getdata(self.shot_number, "test_multichannel_timeseries")
 
@@ -352,4 +348,71 @@ class TestNormalise(BasePyfusionTestCase):
         assert_array_almost_equal(mcd_var_whole.signal.get_channel(1), mcd_ch_1/max_var)
 
 
+from pyfusion.data.timeseries import Timebase, Signal
+from numpy import arange, pi, zeros, resize, random, cos
+
+# modes: [amplitude, freq, phase at angle0]
+def get_multimode_test_data(n_channels = 10,
+                            ch_angles = 2*pi*arange(10)/10,
+                            timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                            modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                            noise = 0.2):
+    data_array = zeros((n_channels, len(timebase)))
+    timebase_matrix = resize(timebase, (n_channels, len(timebase)))
+    angle_matrix = resize(ch_angles, (len(timebase), n_channels)).T
+    for m in modes:
+        data_array += m[0]*cos(2*pi*m[2]*timebase_matrix + m[1]*angle_matrix + m[3])
+    data_array += noise*2*(random.random(data_array.shape)-0.5)
+    output = TimeseriesData(timebase=timebase, signal=Signal(data_array))
+    return output
+
+class TestFlucstrucs(BasePyfusionTestCase):
+
+    def test_svd(self):
+        multichannel_data = get_multimode_test_data(n_channels = 10,
+                                                    ch_angles = 2*pi*arange(10)/10,
+                                                    timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.2)
+        self.assertTrue(isinstance(multichannel_data, TimeseriesData))
+        svd_data = multichannel_data.svd()
         
+        #import pylab as pl
+        #multichannel_data.plot_signals()
+        
+TestFlucstrucs.tmp = True
+
+class TestSubtractMeanFilter(BasePyfusionTestCase):
+    """Test mean subtraction filter for timeseries data."""
+
+
+    def test_remove_mean_single_channel(self):
+        from pyfusion.data.filters import reduce_time
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from numpy import arange, searchsorted,mean
+
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        # nonzero signal mean
+        tsd = TimeseriesData(timebase=tb, signal=Signal(arange(len(tb))))
+
+        filtered_tsd = tsd.subtract_mean()
+
+        assert_almost_equal(mean(filtered_tsd.signal), 0)
+        
+    
+    def test_remove_mean_multichanel(self):
+        from numpy import mean, zeros_like
+        multichannel_data = get_multimode_test_data(n_channels = 10,
+                                                    ch_angles = 2*pi*arange(10)/10,
+                                                    timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.2)
+        # add some non-zero offset
+        multichannel_data.signal += random.rand(*multichannel_data.signal.shape)
+
+        filtered_data = multichannel_data.subtract_mean()
+        mean_filtered_data = mean(filtered_data.signal, axis=1)
+        assert_array_almost_equal(mean_filtered_data, zeros_like(mean_filtered_data))
+
+
+    

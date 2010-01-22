@@ -123,3 +123,5 @@ class TestMultiChannel(BasePyfusionTestCase):
 
     def test_kwargs_passed_to_channels(self):
         pass
+
+

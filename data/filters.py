@@ -1,6 +1,6 @@
 """
 """
-from numpy import searchsorted, arange
+from numpy import searchsorted, arange, mean, resize, repeat
 from pyfusion.data.base import DataSet
 from pyfusion.data.timeseries import TimeseriesData
 import pyfusion
@@ -83,3 +83,19 @@ def normalise(input_data, method='peak', separate=False):
     return input_data
     
 normalise.allowed_class=[TimeseriesData]#, DataSet]
+
+def svd(input_data):
+    pass
+
+svd.allowed_class=[TimeseriesData]
+
+def subtract_mean(input_data):
+    if input_data.signal.ndim == 1:
+        mean_value = mean(input_data.signal)
+    else:
+        mean_vector = mean(input_data.signal, axis=1)
+        mean_value = resize(repeat(mean_vector, input_data.signal.shape[1]), input_data.signal.shape)
+    input_data.signal -= mean_value
+    return input_data
+
+subtract_mean.allowed_class=[TimeseriesData]

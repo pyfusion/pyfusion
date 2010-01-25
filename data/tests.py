@@ -414,5 +414,29 @@ class TestSubtractMeanFilter(BasePyfusionTestCase):
         mean_filtered_data = mean(filtered_data.signal, axis=1)
         assert_array_almost_equal(mean_filtered_data, zeros_like(mean_filtered_data))
 
+class TestFilterMetaClass(BasePyfusionTestCase):
 
-    
+    def test_new_filter(self):
+        from pyfusion.data import filters
+        from pyfusion.data.base import BaseData
+        # add some filters
+        @filters.register("TestData")
+        class MyTestFilter:
+            def test_filter(self):
+                return self
+
+        @filters.register("TestData", "TestData2")
+        class MyOtherTestFilter:
+            def other_test_filter(self):
+                return self
+
+        # now create TestData 
+
+        class TestData(BaseData):
+            pass
+        
+        test_data = TestData()
+        for attr_name in ["test_filter", "other_test_filter"]:
+            self.assertTrue(hasattr(test_data, attr_name))
+TestFilterMetaClass.dev = True
+

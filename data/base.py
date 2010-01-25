@@ -5,6 +5,7 @@ except NameError:
     from sets import Set as set # Python 2.3 fallback
 
 from pyfusion.conf.utils import import_from_str
+from pyfusion.data.filters import MetaFilter
 import pyfusion
                 
 class Coords(object):
@@ -42,6 +43,8 @@ class BaseData(object):
 
     Usage: ..........
     """
+    __metaclass__ = MetaFilter
+
     def __init__(self):
         self.meta = MetaData()
         filter_list = pyfusion.data.filter_register.get_for(self.__class__)

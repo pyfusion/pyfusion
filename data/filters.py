@@ -1,10 +1,40 @@
 """
 """
 from numpy import searchsorted, arange, mean, resize, repeat
-from pyfusion.data.base import DataSet
-from pyfusion.data.timeseries import TimeseriesData
+#from pyfusion.data.base import DataSet
+#from pyfusion.data.timeseries import TimeseriesData
 import pyfusion
 
+#######################
+######### DEV #########
+#######################
+
+filter_reg = {}
+
+
+def register(*class_names):
+    def reg_item(filter_class):
+        for cl_name in class_names:
+            if not filter_reg.has_key(cl_name):
+                filter_reg[cl_name] = [filter_class]
+            else:
+                filter_reg[cl_name].append(filter_class)
+    return reg_item
+
+class MetaFilter(type):
+    def __init__(cls, name, bases, attrs):
+        filter_classes = filter_reg.get(name, [])
+        
+        bases.extend(cl_i for cl_i in filter_classes if not cl_i in bases)
+
+#class BaseFilter(object):
+#    __metaclass__ = MetaFilter
+
+#######################
+#######################
+#######################
+
+"""
 def reduce_time(input_data, new_time_range):
     if isinstance(input_data, DataSet):
         output_dataset = input_data.copy()
@@ -99,3 +129,4 @@ def subtract_mean(input_data):
     return input_data
 
 subtract_mean.allowed_class=[TimeseriesData]
+"""

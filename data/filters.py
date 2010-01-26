@@ -1,13 +1,7 @@
 """
 """
 from numpy import searchsorted, arange, mean, resize, repeat
-#from pyfusion.data.base import DataSet
-#
 import pyfusion
-
-#######################
-######### DEV #########
-#######################
 
 filter_reg = {}
 
@@ -28,12 +22,6 @@ class MetaFilter(type):
         attrs.update((i.__name__,i) for i in filter_methods)
         return super(MetaFilter, cls).__new__(cls, name, bases, attrs)
 
-#class BaseFilter(object):
-#    __metaclass__ = MetaFilter
-
-#######################
-#######################
-#######################
 
 @register("TimeseriesData", "DataSet")
 def reduce_time(input_data, new_time_range):

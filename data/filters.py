@@ -1,11 +1,43 @@
 """
 """
 from numpy import searchsorted, arange, mean, resize, repeat
-from pyfusion.data.base import DataSet
-from pyfusion.data.timeseries import TimeseriesData
+#from pyfusion.data.base import DataSet
+#
 import pyfusion
 
+#######################
+######### DEV #########
+#######################
+
+filter_reg = {}
+
+
+def register(*class_names):
+    def reg_item(filter_method):
+        for cl_name in class_names:
+            if not filter_reg.has_key(cl_name):
+                filter_reg[cl_name] = [filter_method]
+            else:
+                filter_reg[cl_name].append(filter_method)
+        return filter_method
+    return reg_item
+
+class MetaFilter(type):
+    def __new__(cls, name, bases, attrs):
+        filter_methods = filter_reg.get(name, [])
+        attrs.update((i.__name__,i) for i in filter_methods)
+        return super(MetaFilter, cls).__new__(cls, name, bases, attrs)
+
+#class BaseFilter(object):
+#    __metaclass__ = MetaFilter
+
+#######################
+#######################
+#######################
+
+@register("TimeseriesData", "DataSet")
 def reduce_time(input_data, new_time_range):
+    from pyfusion.data.base import DataSet
     if isinstance(input_data, DataSet):
         output_dataset = input_data.copy()
         output_dataset.clear()
@@ -24,9 +56,11 @@ def reduce_time(input_data, new_time_range):
         input_data.signal = input_data.signal[:,new_time_args[0]:new_time_args[1]]
     return input_data
 
-reduce_time.allowed_class=[TimeseriesData, DataSet]
 
+@register("TimeseriesData", "DataSet")
 def segment(input_data, n_samples):
+    from pyfusion.data.base import DataSet
+    from pyfusion.data.timeseries import TimeseriesData
     if isinstance(input_data, DataSet):
         output_dataset = input_data.copy()
         output_dataset.clear()
@@ -49,10 +83,8 @@ def segment(input_data, n_samples):
         output_data.add(tmp_data)
     return output_data
 
-segment.allowed_class=[TimeseriesData, DataSet]
 
-
-
+@register("TimeseriesData")#, DataSet])
 def normalise(input_data, method='peak', separate=False):
     from numpy import mean, sqrt, max, abs, var, atleast_2d
     if method.lower() in ['rms', 'r']:
@@ -82,13 +114,11 @@ def normalise(input_data, method='peak', separate=False):
     input_data.signal = input_data.signal / norm_value
     return input_data
     
-normalise.allowed_class=[TimeseriesData]#, DataSet]
-
+@register("TimeseriesData")
 def svd(input_data):
     pass
 
-svd.allowed_class=[TimeseriesData]
-
+@register("TimeseriesData")
 def subtract_mean(input_data):
     if input_data.signal.ndim == 1:
         mean_value = mean(input_data.signal)
@@ -98,4 +128,5 @@ def subtract_mean(input_data):
     input_data.signal -= mean_value
     return input_data
 
-subtract_mean.allowed_class=[TimeseriesData]
+
+

@@ -13,19 +13,19 @@ filter_reg = {}
 
 
 def register(*class_names):
-    def reg_item(filter_class):
+    def reg_item(filter_method):
         for cl_name in class_names:
             if not filter_reg.has_key(cl_name):
-                filter_reg[cl_name] = [filter_class]
+                filter_reg[cl_name] = [filter_method]
             else:
-                filter_reg[cl_name].append(filter_class)
+                filter_reg[cl_name].append(filter_method)
     return reg_item
 
 class MetaFilter(type):
-    def __init__(cls, name, bases, attrs):
-        filter_classes = filter_reg.get(name, [])
-        
-        bases.extend(cl_i for cl_i in filter_classes if not cl_i in bases)
+    def __new__(cls, name, bases, attrs):
+        filter_methods = filter_reg.get(name, [])
+        attrs.update((i.__name__,i) for i in filter_methods)
+        return super(MetaFilter, cls).__new__(cls, name, bases, attrs)
 
 #class BaseFilter(object):
 #    __metaclass__ = MetaFilter

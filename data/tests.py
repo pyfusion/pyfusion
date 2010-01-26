@@ -421,14 +421,12 @@ class TestFilterMetaClass(BasePyfusionTestCase):
         from pyfusion.data.base import BaseData
         # add some filters
         @filters.register("TestData")
-        class MyTestFilter:
-            def test_filter(self):
-                return self
+        def test_filter(self):
+            return self
 
         @filters.register("TestData", "TestData2")
-        class MyOtherTestFilter:
-            def other_test_filter(self):
-                return self
+        def other_test_filter(self):
+            return self
 
         # now create TestData 
 

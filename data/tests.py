@@ -374,6 +374,40 @@ class TestSubtractMeanFilter(BasePyfusionTestCase):
         mean_filtered_data = mean(filtered_data.signal, axis=1)
         assert_array_almost_equal(mean_filtered_data, zeros_like(mean_filtered_data))
 
+
+    def test_remove_mean_dataset(self):
+        from numpy import mean, zeros_like
+        from pyfusion.data.base import DataSet
+        multichannel_data_1 = get_multimode_test_data(n_channels = 10,
+                                                    ch_angles = 2*pi*arange(10)/10,
+                                                    timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.2)
+        multichannel_data_2 = get_multimode_test_data(n_channels = 15,
+                                                    ch_angles = 2*pi*arange(15)/15,
+                                                    timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                                                    modes = [[0.7, 7., 24.e3, 3.2], [1.0, 90., 37.e3, 10.3]],
+                                                    noise = 0.7)
+        multichannel_data_3 = get_multimode_test_data(n_channels = 13,
+                                                    ch_angles = 2*pi*arange(13)/13,
+                                                    timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                                                    modes = [[0.7, 7., 24.e3, 3.2], [1.0, 90., 37.e3, 10.3]],
+                                                    noise = 0.7)
+        # add some non-zero offset
+        multichannel_data_1.signal += random.rand(*multichannel_data_1.signal.shape)
+        multichannel_data_2.signal += random.rand(*multichannel_data_2.signal.shape)
+
+        test_dataset = DataSet()
+        test_dataset.add(multichannel_data_1)
+        test_dataset.add(multichannel_data_2)
+
+
+        filtered_data = test_dataset.subtract_mean()
+        for d in filtered_data:
+            mean_filtered_data = mean(d.signal, axis=1)
+            assert_array_almost_equal(mean_filtered_data, zeros_like(mean_filtered_data))
+
+
 class TestFilterMetaClass(BasePyfusionTestCase):
 
     def test_new_filter(self):

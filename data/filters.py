@@ -1,4 +1,6 @@
 """
+Some un-pythonic code here (checking instance type inside
+function). Need to figure out a better way to do this.
 """
 from numpy import searchsorted, arange, mean, resize, repeat
 import pyfusion
@@ -106,8 +108,14 @@ def normalise(input_data, method='peak', separate=False):
 def svd(input_data):
     pass
 
-@register("TimeseriesData")
+@register("TimeseriesData", "DataSet")
 def subtract_mean(input_data):
+    from pyfusion.data.base import DataSet
+    if isinstance(input_data, DataSet):
+        output_dataset = DataSet()
+        for d in input_data:
+            output_dataset.add(subtract_mean(d))
+        return output_dataset
     if input_data.signal.ndim == 1:
         mean_value = mean(input_data.signal)
     else:

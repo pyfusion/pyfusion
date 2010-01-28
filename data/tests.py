@@ -253,6 +253,18 @@ class TestNormalise(BasePyfusionTestCase):
         # check that default is peak
         assert_array_almost_equal(channel_data_peak_norm_by_arg.signal, channel_data_norm_no_arg.signal)
 
+
+        # try for dataset
+        from pyfusion.data.base import DataSet
+        channel_data_for_set = test_acq.getdata(self.shot_number, "test_timeseries_channel_2")
+
+        test_dataset = DataSet()
+        test_dataset.add(channel_data_for_set)
+        test_dataset.normalise(method='rms')
+        for d in test_dataset:
+            assert_array_almost_equal(channel_data.signal/rms_value, d.signal)
+            
+
         
     def test_multichannel_fakedata(self):
         from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition

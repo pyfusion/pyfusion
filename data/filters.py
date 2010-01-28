@@ -74,9 +74,15 @@ def segment(input_data, n_samples):
     return output_data
 
 
-@register("TimeseriesData")#, DataSet])
+@register("TimeseriesData", "DataSet")
 def normalise(input_data, method='peak', separate=False):
     from numpy import mean, sqrt, max, abs, var, atleast_2d
+    from pyfusion.data.base import DataSet
+    if isinstance(input_data, DataSet):
+        output_dataset = DataSet()
+        for d in input_data:
+            output_dataset.add(normalise(d, method=method, separate=separate))
+        return output_dataset
     if method.lower() in ['rms', 'r']:
         if input_data.signal.ndim == 1:
             norm_value = sqrt(mean(input_data.signal**2))

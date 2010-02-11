@@ -110,9 +110,15 @@ def normalise(input_data, method='peak', separate=False):
     input_data.signal = input_data.signal / norm_value
     return input_data
     
+#@register("TimeseriesData")
+#def svd(input_data):
+#    pass
+
 @register("TimeseriesData")
-def svd(input_data):
+def flucstruc(input_data):
     pass
+
+
 
 @register("TimeseriesData", "DataSet")
 def subtract_mean(input_data):

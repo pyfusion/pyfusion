@@ -339,15 +339,37 @@ def get_multimode_test_data(n_channels = 10,
     return output
 
 class TestFlucstrucs(BasePyfusionTestCase):
-
-    def test_svd(self):
+    def test_flucstruc(self):
+        from numpy.linalg import svd
         multichannel_data = get_multimode_test_data(n_channels = 10,
                                                     ch_angles = 2*pi*arange(10)/10,
-                                                    timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                                                    timebase = Timebase(arange(0.0,0.01,1.e-6)),
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                     noise = 0.2)
-        self.assertTrue(isinstance(multichannel_data, TimeseriesData))
-        svd_data = multichannel_data.svd()
+        segments = multichannel_data.segment(n_samples=1024)
+        mean_sub = segments.subtract_mean()
+        norm_data = mean_sub.normalise(method="var")
+
+        for n_i,n_data in enumerate(norm_data):
+            svd_data = svd(n_data.signal)
+            print svd_data
+        assert false
+        #mirnov_data = mirnov_data.svd()
+
+        fs_data = multichannel_data.flucstruc()
+        
+        
+        #import pylab as pl
+        #multichannel_data.plot_signals()
+
+#     def test_svd(self):
+#         multichannel_data = get_multimode_test_data(n_channels = 10,
+#                                                     ch_angles = 2*pi*arange(10)/10,
+#                                                     timebase = Timebase(arange(0.0,0.01,1.e-5)),
+#                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+#                                                     noise = 0.2)
+#         self.assertTrue(isinstance(multichannel_data, TimeseriesData))
+#         svd_data = multichannel_data.svd()
         
         #import pylab as pl
         #multichannel_data.plot_signals()

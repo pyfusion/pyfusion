@@ -115,6 +115,7 @@ class FlucStruc(BaseData):
                            np.dot(np.diag(svd_data.svs.take(self.svs)), svd_data.chronos[self.svs,:]))
         # phase differences between nearest neighbour channels
         self.dphase = self._get_dphase(min_dphase=min_dphase)
+        self.p = np.sum(svd_data.svs.take(self.svs)**2)/svd_data.E
 
     def _get_dphase(self, min_dphase = -np.pi):
         """

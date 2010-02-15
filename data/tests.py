@@ -454,6 +454,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
         fs_data = multichannel_data.flucstruc(min_dphase = -2*pi)
         self.assertTrue(isinstance(fs_data, DataSet))
         self.assertTrue(len(fs_data) > 0)
+        E = 0.7**2 + 0.5**2
         for fs in fs_data:
             self.assertTrue(isinstance(fs, FlucStruc))
             # fs_data is not ordered, so we identify flucstrucs by the sv indicies
@@ -467,6 +468,8 @@ class TestFlucstrucs(BasePyfusionTestCase):
                 test_dphase = fs.dphase
                 # check phases within 0.5 rad
                 assert_array_almost_equal(test_dphase, fake_dphases, 1)
+                # check fs energy is correct to 3 decimal places
+                self.assertAlmostEqual(fs.p, 0.7**2/E, 3)
             if fs.svs == [2,3]:
                 self.assertAlmostEqual(1.e-4*fs.freq, 1.e-4*37.e3, 1)
                 fake_phases = -4.0*2*pi*arange(n_ch+1)[:-1]/(n_ch)
@@ -475,6 +478,9 @@ class TestFlucstrucs(BasePyfusionTestCase):
                 test_dphase = fs.dphase
                 # check phases within 0.5 rad
                 assert_array_almost_equal(test_dphase, fake_dphases, 1)
+                # check fs energy is correct to 3 decimal places
+                self.assertAlmostEqual(fs.p, 0.5**2/E, 3)
+
 
         #assert False
         #import pylab as pl

@@ -14,11 +14,15 @@ class Timebase(np.ndarray):
     """
     def __new__(cls, input_array):
         obj = np.asarray(input_array).view(cls).copy()
+        # this doesnt work?
         obj.sample_freq = 1./(obj[1]-obj[0])
         return obj
 
+
     def __array_finalize__(self,obj):
         pass
+
+    
 
 def generate_timebase(t0=0.0, n_samples=1.e4, sample_freq=1.e6):
     sample_time = 1./sample_freq
@@ -96,7 +100,8 @@ class SVDData(BaseData):
         self.chronos = svd_input[2]
         self.E = sum(self.svs*self.svs)
         self.p = self.svs**2/self.E
-
+        self.H = float((-1./np.log(len(self.svs)))*sum(self.p*np.log(self.p)))
+        
     def self_cps(self):
         try:
             return self._self_cps
@@ -106,6 +111,7 @@ class SVDData(BaseData):
 
 class FlucStruc(BaseData):
     def __init__(self, svd_data, sv_list, timebase, min_dphase = -np.pi):
+        # NOTE I'd prefer not to duplicate info here which is in svd_data - should be able to refer to that, once sqlalchemy is hooked in
         self.svs = sv_list
         # peak frequency for fluctuation structure
         self.freq = peak_freq(svd_data.chronos[sv_list[0]], timebase)
@@ -116,6 +122,7 @@ class FlucStruc(BaseData):
         # phase differences between nearest neighbour channels
         self.dphase = self._get_dphase(min_dphase=min_dphase)
         self.p = np.sum(svd_data.svs.take(self.svs)**2)/svd_data.E
+        self.H = svd_data.H
 
     def _get_dphase(self, min_dphase = -np.pi):
         """
@@ -126,7 +133,8 @@ class FlucStruc(BaseData):
     def _get_single_channel_phase(self, ch_id):
         data_fft = np.fft.fft(self.signal[ch_id])
         # fft goes up to sample freq (mirror-like about Nyquist)
-        freq_array = self.timebase.sample_freq*np.arange(len(data_fft))/(len(data_fft)-1)
+        sample_freq = 1./(self.timebase[1]-self.timebase[0])
+        freq_array = sample_freq*np.arange(len(data_fft))/(len(data_fft)-1)
         freq_elmt = np.searchsorted(freq_array,self.freq)
         a = data_fft[freq_elmt].real
         b = data_fft[freq_elmt].imag

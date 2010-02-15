@@ -2,8 +2,12 @@
 Some un-pythonic code here (checking instance type inside
 function). Need to figure out a better way to do this.
 """
-from numpy import searchsorted, arange, mean, resize, repeat
+from numpy import searchsorted, arange, mean, resize, repeat, fft, conjugate, linalg, array, zeros_like, take, argmin, pi
 import pyfusion
+
+def cps(a,b):
+    return fft.fft(a)*conjugate(fft.fft(b))
+
 
 filter_reg = {}
 
@@ -110,14 +114,62 @@ def normalise(input_data, method='peak', separate=False):
     input_data.signal = input_data.signal / norm_value
     return input_data
     
-#@register("TimeseriesData")
-#def svd(input_data):
-#    pass
+@register("TimeseriesData")
+def svd(input_data):
+    from timeseries import SVDData
+    return SVDData(linalg.svd(input_data.signal, 0))
 
 @register("TimeseriesData")
-def flucstruc(input_data):
-    pass
+def flucstruc(input_data, min_dphase = -pi):
+    from pyfusion.data.base import DataSet
+    from pyfusion.data.timeseries import FlucStruc
 
+    fs_dataset = DataSet()
+
+    svd_data = input_data.subtract_mean().normalise(method="var").svd()
+
+    for fs_gr in svd_data.fs_group():
+        fs_dataset.add(FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase))
+    
+    return fs_dataset
+
+@register("TimeseriesData", "SVDData")
+def fs_group(input_data):
+    """
+    no filtering implemented yet
+    """
+    from timeseries import SVDData
+
+    if not isinstance(input_data, SVDData):
+        input_data = input_data.subtract_mean().normalise(method="var").svd()
+    
+    #energy_threshold = 0.9999
+    
+    #svd_data = linalg.svd(norm_data.signal,0)
+    output_fs_list = []
+
+    #svs_norm_energy = array([i**2 for i in svd_data[1]])/input_data.E
+
+    #max_element = searchsorted(cumsum(svs_norm_energy), energy_threshold)
+    #remaining_ids = range(max_element)
+    remaining_ids = range(len(input_data.svs))
+    
+    self_cps = input_data.self_cps()
+
+    while len(remaining_ids) > 1:
+        rsv0 = remaining_ids[0]
+        tmp_cp = [mean(abs(cps(input_data.chronos[rsv0], input_data.chronos[sv])))**2/(self_cps[rsv0]*self_cps[sv]) for sv in remaining_ids]
+        tmp_cp_argsort = array(tmp_cp).argsort()[::-1]
+        sort_cp = take(tmp_cp,tmp_cp_argsort)
+        delta_cp = sort_cp[1:]-sort_cp[:-1]
+        output_fs_list.append([remaining_ids[i] for i in tmp_cp_argsort[:argmin(delta_cp)+1]])
+            
+
+        for i in output_fs_list[-1]: remaining_ids.remove(i)
+    if len(remaining_ids) == 1:
+        output_fs_list.append(remaining_ids)
+
+    return output_fs_list
 
 
 @register("TimeseriesData", "DataSet")

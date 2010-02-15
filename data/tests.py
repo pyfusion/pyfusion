@@ -5,6 +5,21 @@ from pyfusion.test.tests import BasePyfusionTestCase
 from pyfusion.data.base import BaseData, DataSet
 from pyfusion.data.timeseries import TimeseriesData
 
+
+def cps(a,b):
+    return fft.fft(a)*conjugate(fft.fft(b))
+        
+
+class TestUtils(BasePyfusionTestCase):
+    def test_remap_periodic(self):
+        from numpy import pi, array
+        from utils import remap_periodic
+        data = array([-3,-2,-1,0,1,2,2.5, 3])
+        output = remap_periodic(data, min_val = 0, period=3)
+        expected = array([0, 1, 2, 0, 1, 2, 2.5, 0])
+        assert_array_almost_equal(output, expected)
+        
+
 class TestTimeseriesData(BasePyfusionTestCase):
     """Test timeseries data"""
     def testBaseClasses(self):
@@ -35,7 +50,7 @@ class TestTimebase(BasePyfusionTestCase):
         test_tb = generate_timebase(t0=t0,n_samples=n_samples, sample_freq=sample_freq)
         local_tb = arange(t0, t0+n_samples/sample_freq, 1./sample_freq)
         self.assertTrue((test_tb == local_tb).all())
-
+        self.assertAlmostEqual(test_tb.sample_freq, sample_freq, 4)
 
 
 class TestSignal(BasePyfusionTestCase):
@@ -221,6 +236,7 @@ class TestCoordinates(BasePyfusionTestCase):
         dummy_coords_1.load_transform(DummyCoordTransform)
         self.assertEqual(dummy_coords_1.dummy(), (2*cyl_coords[0], 3*cyl_coords[1], 4*cyl_coords[2]))
 
+"""
 class TestFlucstrucs(BasePyfusionTestCase):
 
     def test_fakedata_single_shot(self):
@@ -228,7 +244,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
         #d=pyfusion.getDevice('H1')
         #data = d.acq.getdata(58073, 'H1_mirnov_array_1')
         #fs_data = data.reduce_time([0.030,0.031])
-        
+"""     
 
 class TestNormalise(BasePyfusionTestCase):
 
@@ -339,26 +355,128 @@ def get_multimode_test_data(n_channels = 10,
     return output
 
 class TestFlucstrucs(BasePyfusionTestCase):
-    def test_flucstruc(self):
-        from numpy.linalg import svd
+
+    def test_svd_data(self):
+        from pyfusion.data.timeseries import SVDData
+        n_ch = 10
+        n_samples = 1024
+        multichannel_data = get_multimode_test_data(n_channels = n_ch,
+                                                    ch_angles = 2*pi*arange(n_ch)/n_ch,
+                                                    timebase = Timebase(arange(n_samples)*1.e-6),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.5)
+
+        test_svd = multichannel_data.svd()
+        self.assertTrue(isinstance(test_svd, SVDData))
+        self.assertEqual(len(test_svd.topos[0]), n_ch)
+        self.assertEqual(len(test_svd.chronos[0]), n_samples)
+
+    def test_SVDData_class(self):
+        from pyfusion.data.timeseries import SVDData
+        from numpy import linalg, transpose, array
+        n_ch = 5
+        n_samples = 512
+        fake_data = resize(arange(n_ch*n_samples), (n_ch, n_samples))
+        numpy_svd = linalg.svd(fake_data, 0)
+        test_svd  = SVDData(numpy_svd)
+        assert_array_almost_equal(test_svd.topos, transpose(numpy_svd[0]))
+        assert_array_almost_equal(test_svd.svs, numpy_svd[1])
+        assert_array_almost_equal(test_svd.chronos, numpy_svd[2])
+
+        E = sum(numpy_svd[1]*numpy_svd[1])
+        self.assertEqual(test_svd.E, E)
+        p = array([i**2 for i in test_svd.svs])/test_svd.E
+        assert_array_almost_equal(test_svd.p, p)
+        
+        self_cps = test_svd.self_cps()
+        assert_array_almost_equal(self_cps, array([(0.99999999999999989+0j),
+                                                   (0.99999999999999922+0j),
+                                                   (0.99999999999999767+0j),
+                                                   (0.99999999999999867+0j),
+                                                   (1.0000000000000002+0j)])
+                                  )
+
+    def test_fs_grouping(self):
+        # this signal should be grouped as [0,1], [2,3] + noise 
         multichannel_data = get_multimode_test_data(n_channels = 10,
                                                     ch_angles = 2*pi*arange(10)/10,
-                                                    timebase = Timebase(arange(0.0,0.01,1.e-6)),
+                                                    #timebase = Timebase(arange(0.0,0.01,1.e-6)),
+                                                    timebase = Timebase(arange(1024)*1.e-6),
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
-                                                    noise = 0.2)
-        segments = multichannel_data.segment(n_samples=1024)
-        mean_sub = segments.subtract_mean()
-        norm_data = mean_sub.normalise(method="var")
+                                                    noise = 0.5)
 
-        for n_i,n_data in enumerate(norm_data):
-            svd_data = svd(n_data.signal)
-            print svd_data
-        assert false
-        #mirnov_data = mirnov_data.svd()
+        fs_groups = multichannel_data.fs_group()
+        self.assertEqual(fs_groups[0], [0,1])
+        self.assertEqual(fs_groups[1], [2,3])
+        
 
-        fs_data = multichannel_data.flucstruc()
-        
-        
+    def test_fs_grouping_from_svd(self):
+        n_ch = 10
+        n_samples = 1024
+        multichannel_data = get_multimode_test_data(n_channels = n_ch,
+                                                    ch_angles = 2*pi*arange(n_ch)/n_ch,
+                                                    timebase = Timebase(arange(n_samples)*1.e-6),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.5)
+
+        test_svd = multichannel_data.svd()
+        fs_groups = test_svd.fs_group()
+
+    def test_flucstruc_signals(self):
+        # make sure that flucstruc derived from all singular values
+        # gives back the original signal
+        from pyfusion.data.timeseries import SVDData, FlucStruc
+        from pyfusion.data.base import DataSet
+        from numpy import array
+        n_ch = 10
+        n_samples = 1024
+        multichannel_data = get_multimode_test_data(n_channels = n_ch,
+                                                    ch_angles = 2*pi*arange(n_ch)/n_ch,
+                                                    timebase = Timebase(arange(n_samples)*1.e-6),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.01)
+        svd_data = multichannel_data.svd()
+        test_fs = FlucStruc(svd_data, range(len(svd_data.svs)), multichannel_data.timebase)
+
+        assert_almost_equal(test_fs.signal, multichannel_data.signal)
+
+    def test_flucstruc_phases(self):
+        from pyfusion.data.timeseries import SVDData, FlucStruc
+        from pyfusion.data.base import DataSet
+        from numpy import array
+        n_ch = 10
+        n_samples = 1024
+        multichannel_data = get_multimode_test_data(n_channels = n_ch,
+                                                    ch_angles = 2*pi*arange(n_ch)/n_ch,
+                                                    timebase = Timebase(arange(n_samples)*1.e-6),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.01)
+        fs_data = multichannel_data.flucstruc(min_dphase = -2*pi)
+        self.assertTrue(isinstance(fs_data, DataSet))
+        self.assertTrue(len(fs_data) > 0)
+        for fs in fs_data:
+            self.assertTrue(isinstance(fs, FlucStruc))
+            # fs_data is not ordered, so we identify flucstrucs by the sv indicies
+            if fs.svs == [0,1]:
+                # check that freq is correct to within 1kHz
+                self.assertAlmostEqual(1.e-4*fs.freq, 1.e-4*24.e3, 1)
+                # 
+                fake_phases = -3.0*2*pi*arange(n_ch+1)[:-1]/(n_ch)
+                fake_dphases = fake_phases[1:]-fake_phases[:-1]
+
+                test_dphase = fs.dphase
+                # check phases within 0.5 rad
+                assert_array_almost_equal(test_dphase, fake_dphases, 1)
+            if fs.svs == [2,3]:
+                self.assertAlmostEqual(1.e-4*fs.freq, 1.e-4*37.e3, 1)
+                fake_phases = -4.0*2*pi*arange(n_ch+1)[:-1]/(n_ch)
+                fake_dphases = fake_phases[1:]-fake_phases[:-1]
+
+                test_dphase = fs.dphase
+                # check phases within 0.5 rad
+                assert_array_almost_equal(test_dphase, fake_dphases, 1)
+
+        #assert False
         #import pylab as pl
         #multichannel_data.plot_signals()
 

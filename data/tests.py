@@ -588,5 +588,5 @@ class TestFilterMetaClass(BasePyfusionTestCase):
         test_data = TestData()
         for attr_name in ["test_filter", "other_test_filter"]:
             self.assertTrue(hasattr(test_data, attr_name))
-TestFilterMetaClass.dev = True
+#TestFilterMetaClass.dev = True
 

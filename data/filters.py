@@ -3,6 +3,7 @@ Some un-pythonic code here (checking instance type inside
 function). Need to figure out a better way to do this.
 """
 from numpy import searchsorted, arange, mean, resize, repeat, fft, conjugate, linalg, array, zeros_like, take, argmin, pi
+from numpy import correlate as numpy_correlate
 import pyfusion
 
 def cps(a,b):
@@ -189,4 +190,10 @@ def subtract_mean(input_data):
     return input_data
 
 
-
+#########################################
+## wrappers to numpy signal processing ##
+#########################################
+@register("TimeseriesData")
+def correlate(input_data, index_1, index_2, **kwargs):
+    return numpy_correlate(input_data.signal[index_1],
+                           input_data.signal[index_2], **kwargs)

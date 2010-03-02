@@ -30,5 +30,4 @@ class TestDSVAcquisition(BasePyfusionTestCase):
             assert_array_almost_equal(channel_i, test_data.signal[i])
         self.assertEqual(test_shot_number, test_data.meta['shot'])
 
-        
-TestDSVAcquisition.dev = True
+

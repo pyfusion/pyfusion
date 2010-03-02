@@ -498,7 +498,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
         #import pylab as pl
         #multichannel_data.plot_signals()
         
-TestFlucstrucs.tmp = True
+
 
 class TestSubtractMeanFilter(BasePyfusionTestCase):
     """Test mean subtraction filter for timeseries data."""
@@ -588,5 +588,20 @@ class TestFilterMetaClass(BasePyfusionTestCase):
         test_data = TestData()
         for attr_name in ["test_filter", "other_test_filter"]:
             self.assertTrue(hasattr(test_data, attr_name))
-#TestFilterMetaClass.dev = True
 
+
+class TestNumpyFilters(BasePyfusionTestCase):
+
+    def test_correlate(self):
+        from numpy import correlate
+        multichannel_data = get_multimode_test_data(n_channels = 2,
+                                                    ch_angles = 2*pi*arange(10)/10,
+                                                    timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.2)
+        numpy_corr = correlate(multichannel_data.signal[0], multichannel_data.signal[1])
+
+        pyfusion_corr = multichannel_data.correlate(0,1)
+        assert_array_almost_equal(numpy_corr, pyfusion_corr)
+
+TestNumpyFilters.dev = True

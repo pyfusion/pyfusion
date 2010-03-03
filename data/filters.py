@@ -70,10 +70,12 @@ def segment(input_data, n_samples):
     for el in arange(0,len(input_data.timebase), n_samples):
         if input_data.signal.ndim == 1:
             tmp_data = TimeseriesData(timebase=input_data.timebase[el:el+n_samples],
-                                      signal=input_data.signal[el:el+n_samples])
+                                      signal=input_data.signal[el:el+n_samples],
+                                      coords=input_data.coordinates)
         else:
             tmp_data = TimeseriesData(timebase=input_data.timebase[el:el+n_samples],
-                                      signal=input_data.signal[:,el:el+n_samples])
+                                      signal=input_data.signal[:,el:el+n_samples],
+                                      coords=input_data.coordinates)
             
         tmp_data.meta = input_data.meta.copy()
         output_data.add(tmp_data)
@@ -119,7 +121,7 @@ def normalise(input_data, method='peak', separate=False):
 @register("TimeseriesData")
 def svd(input_data):
     from timeseries import SVDData
-    return SVDData(linalg.svd(input_data.signal, 0))
+    return SVDData(input_data.timebase, input_data.coordinates, linalg.svd(input_data.signal, 0))
 
 @register("TimeseriesData")
 def flucstruc(input_data, min_dphase = -pi):

@@ -43,7 +43,7 @@ class Coords(object):
         self.__dict__.update({transform_class.output_coords:_new_transform_method})
 
 class MetaData(dict):
-    coords = Coords()
+    pass
 
 class BaseData(object):
     """Base class for handling processed data.

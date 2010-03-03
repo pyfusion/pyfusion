@@ -81,26 +81,34 @@ class Signal(np.ndarray):
     
 
 class TimeseriesData(BaseData):
-    def __init__(self, timebase = None, signal=None, **kwargs):
+    def __init__(self, timebase = None, signal=None, coords=None, **kwargs):
         self.timebase = timebase
         if signal.n_samples() == len(timebase):
             self.signal = signal
         else:
             raise ValueError, "signal has different number of samples to timebase"
+        if signal.n_channels() == len(coords):
+            self.coordinates = coords
+        else:
+            raise ValueError, "different number of signal channels and coordinates"
         super(TimeseriesData, self).__init__(**kwargs)
 
 
 class SVDData(BaseData):
-    def __init__(self, svd_input):
+    def __init__(self, dim1, dim2, svd_input):
         """
         svd_input is a tuple as outputted by numpy.linalg.svd(data, 0)
         """
+        self.dim1 = dim1
+        self.dim2 = dim2
         self.topos = np.transpose(svd_input[0])
         self.svs = svd_input[1]
         self.chronos = svd_input[2]
         self.E = sum(self.svs*self.svs)
         self.p = self.svs**2/self.E
         self.H = float((-1./np.log(len(self.svs)))*sum(self.p*np.log(self.p)))
+        
+
         
     def self_cps(self):
         try:

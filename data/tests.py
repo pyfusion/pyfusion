@@ -604,4 +604,19 @@ class TestNumpyFilters(BasePyfusionTestCase):
         pyfusion_corr = multichannel_data.correlate(0,1)
         assert_array_almost_equal(numpy_corr, pyfusion_corr)
 
-TestNumpyFilters.dev = True
+
+class TestPlotMethods(BasePyfusionTestCase):
+    def test_svd_plot(self):
+        from pyfusion.data.timeseries import SVDData
+        n_ch = 4
+        n_samples = 256
+        multichannel_data = get_multimode_test_data(n_channels = n_ch,
+                                                    ch_angles = 2*pi*arange(n_ch)/n_ch,
+                                                    timebase = Timebase(arange(n_samples)*1.e-6),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.5)
+
+        test_svd = multichannel_data.svd()
+        self.assertTrue(hasattr(test_svd, 'svdplot'))
+        
+TestPlotMethods.dev = True

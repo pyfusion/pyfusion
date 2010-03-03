@@ -5,9 +5,19 @@ except NameError:
     from sets import Set as set # Python 2.3 fallback
 
 from pyfusion.conf.utils import import_from_str
-from pyfusion.data.filters import MetaFilter
+from pyfusion.data.filters import filter_reg
+from pyfusion.data.plots import plot_reg
 import pyfusion
-                
+
+
+class MetaMethods(type):
+    def __new__(cls, name, bases, attrs):
+        for reg in [filter_reg, plot_reg]:
+            filter_methods = reg.get(name, [])
+            attrs.update((i.__name__,i) for i in filter_methods)
+        return super(MetaMethods, cls).__new__(cls, name, bases, attrs)
+
+
 class Coords(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -43,13 +53,13 @@ class BaseData(object):
 
     Usage: ..........
     """
-    __metaclass__ = MetaFilter
+    __metaclass__ = MetaMethods
 
     def __init__(self):
         self.meta = MetaData()
             
 class DataSet(set):
-    __metaclass__ = MetaFilter
+    __metaclass__ = MetaMethods
 
 
 class BaseCoordTransform(object):

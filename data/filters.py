@@ -23,12 +23,13 @@ def register(*class_names):
         return filter_method
     return reg_item
 
+"""
 class MetaFilter(type):
     def __new__(cls, name, bases, attrs):
         filter_methods = filter_reg.get(name, [])
         attrs.update((i.__name__,i) for i in filter_methods)
         return super(MetaFilter, cls).__new__(cls, name, bases, attrs)
-
+"""
 
 @register("TimeseriesData", "DataSet")
 def reduce_time(input_data, new_time_range):

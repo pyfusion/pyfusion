@@ -13,24 +13,26 @@ class TestH1MirnovCoords(BasePyfusionTestCase):
         self.assertTrue(isinstance(data, TimeseriesData))
         from pyfusion.data.base import MetaData
         self.assertTrue(isinstance(data.meta, MetaData))
-        self.assertTrue(hasattr(data.meta, 'coords'))
+        self.assertTrue(hasattr(data, 'coordinates'))
         from pyfusion.data.base import Coords
-        self.assertTrue(isinstance(data.meta.coords, Coords))
-        self.assertTrue(hasattr(data.meta.coords, 'cylindrical'))
-        self.assertTrue(hasattr(data.meta.coords, 'magnetic'))
-        coil_1_coords_kh_0 = data.meta.coords.magnetic(kh=0.0)
+        for c in data.coordinates:
+            self.assertTrue(isinstance(c, Coords))
+            self.assertTrue(hasattr(c, 'cylindrical'))
+            self.assertTrue(hasattr(c, 'magnetic'))
+        coil_1_coords_kh_0 = data.coordinates[0].magnetic(kh=0.0)
         self.assertTrue(isinstance(coil_1_coords_kh_0, tuple))
-        self.failUnlessAlmostEqual(data.meta.coords.magnetic(kh=0.0)[0], -0.183250233, places=8)
-        self.failUnlessAlmostEqual(data.meta.coords.magnetic(kh=0.5)[0], -0.139925787181, places=8)
-        self.failUnlessAlmostEqual(data.meta.coords.magnetic(kh=1.0)[0], -0.024546986649, places=8)
+        self.failUnlessAlmostEqual(data.coordinates[0].magnetic(kh=0.0)[0], -0.183250233, places=8)
+        self.failUnlessAlmostEqual(data.coordinates[0].magnetic(kh=0.5)[0], -0.139925787181, places=8)
+        self.failUnlessAlmostEqual(data.coordinates[0].magnetic(kh=1.0)[0], -0.024546986649, places=8)
 
 
     def test_single_mirnov_channel_kappah_from_metadata(self):
         import pyfusion
         h1test = pyfusion.getDevice('H1')
         shot_kh = (58073, 0.74)
-        data = h1test.acq.getdata(shot_kh[0], 'H1_mirnov_array_1_coil_1')        
-        self.assertAlmostEqual(data.meta.coords.magnetic(), data.meta.coords.magnetic(kh=shot_kh[1]))        
+        data = h1test.acq.getdata(shot_kh[0],
+                                  'H1_mirnov_array_1_coil_1')
+        self.assertAlmostEqual(data.coordinates[0].magnetic(), data.coordinates[0].magnetic(kh=shot_kh[1]))        
 
     def test_single_channel_with_kappah_supplied_through_metadata(self):
         pass
@@ -39,7 +41,7 @@ class TestH1MirnovCoords(BasePyfusionTestCase):
         import pyfusion
         d=pyfusion.getDevice('H1')
         data = d.acq.getdata(58073, 'H1_mirnov_array_1')
-        self.assertEqual(data.signal.n_channels(), len(data.meta.coords))
+        self.assertEqual(data.signal.n_channels(), len(data.coordinates))
         
     def test_multichannel_mirnov_bean_kappah_from_metadata(self):
         pass

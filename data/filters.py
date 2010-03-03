@@ -3,6 +3,7 @@ Some un-pythonic code here (checking instance type inside
 function). Need to figure out a better way to do this.
 """
 from numpy import searchsorted, arange, mean, resize, repeat, fft, conjugate, linalg, array, zeros_like, take, argmin, pi
+from numpy import correlate as numpy_correlate
 import pyfusion
 
 def cps(a,b):
@@ -22,12 +23,13 @@ def register(*class_names):
         return filter_method
     return reg_item
 
+"""
 class MetaFilter(type):
     def __new__(cls, name, bases, attrs):
         filter_methods = filter_reg.get(name, [])
         attrs.update((i.__name__,i) for i in filter_methods)
         return super(MetaFilter, cls).__new__(cls, name, bases, attrs)
-
+"""
 
 @register("TimeseriesData", "DataSet")
 def reduce_time(input_data, new_time_range):
@@ -68,10 +70,12 @@ def segment(input_data, n_samples):
     for el in arange(0,len(input_data.timebase), n_samples):
         if input_data.signal.ndim == 1:
             tmp_data = TimeseriesData(timebase=input_data.timebase[el:el+n_samples],
-                                      signal=input_data.signal[el:el+n_samples])
+                                      signal=input_data.signal[el:el+n_samples],
+                                      coords=input_data.coordinates)
         else:
             tmp_data = TimeseriesData(timebase=input_data.timebase[el:el+n_samples],
-                                      signal=input_data.signal[:,el:el+n_samples])
+                                      signal=input_data.signal[:,el:el+n_samples],
+                                      coords=input_data.coordinates)
             
         tmp_data.meta = input_data.meta.copy()
         output_data.add(tmp_data)
@@ -117,7 +121,7 @@ def normalise(input_data, method='peak', separate=False):
 @register("TimeseriesData")
 def svd(input_data):
     from timeseries import SVDData
-    return SVDData(linalg.svd(input_data.signal, 0))
+    return SVDData(input_data.timebase, input_data.coordinates, linalg.svd(input_data.signal, 0))
 
 @register("TimeseriesData")
 def flucstruc(input_data, min_dphase = -pi):
@@ -189,4 +193,10 @@ def subtract_mean(input_data):
     return input_data
 
 
-
+#########################################
+## wrappers to numpy signal processing ##
+#########################################
+@register("TimeseriesData")
+def correlate(input_data, index_1, index_2, **kwargs):
+    return numpy_correlate(input_data.signal[index_1],
+                           input_data.signal[index_2], **kwargs)

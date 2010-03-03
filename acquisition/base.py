@@ -72,7 +72,9 @@ class BaseDataFetcher(object):
         self.setup()
         data = self.do_fetch()
         data.meta.update({'shot':self.shot})
-        data.meta.coords.load_from_config(**self.__dict__)
+        ## Coords shouldn't be fetched for BaseData (they are required
+        ## for TimeSeries)
+        #data.coords.load_from_config(**self.__dict__)
         self.pulldown()
         return data
 
@@ -100,7 +102,7 @@ class MultiChannelFetcher(BaseDataFetcher):
         for chan in ordered_channels:
             fetcher_class = import_setting('Diagnostic', chan, 'data_fetcher')
             tmp_data = fetcher_class(self.acq, self.shot, config_name=chan).fetch()
-            coord_list.append(tmp_data.meta.coords)
+            coord_list.append(tmp_data.coordinates)
             if timebase == None:
                 timebase = tmp_data.timebase
                 data_list.append(tmp_data.signal)
@@ -111,8 +113,8 @@ class MultiChannelFetcher(BaseDataFetcher):
                 except:
                     raise
         signal=Signal(data_list)
-        output_data = TimeseriesData(signal=signal, timebase=timebase)
+        output_data = TimeseriesData(signal=signal, timebase=timebase,
+                                     coords=coord_list)
         output_data.meta.update({'shot':self.shot})
-        output_data.meta.coords = coord_list
         return output_data
 

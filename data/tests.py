@@ -1,14 +1,29 @@
 """Tests for data code."""
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
+from numpy import arange, pi, zeros, resize, random, cos, array
 
 from pyfusion.test.tests import BasePyfusionTestCase
-from pyfusion.data.base import BaseData, DataSet
-from pyfusion.data.timeseries import TimeseriesData
+from pyfusion.data.base import BaseData, DataSet, Coords
+from pyfusion.data.timeseries import TimeseriesData, Timebase, Signal
+from pyfusion.data.utils import cps
 
 
-def cps(a,b):
-    return fft.fft(a)*conjugate(fft.fft(b))
-        
+# modes: [amplitude, freq, phase at angle0]
+def get_multimode_test_data(n_channels = 10,
+                            ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(10)/10),
+                            timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                            modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                            noise = 0.2):
+    data_array = zeros((n_channels, len(timebase)))
+    timebase_matrix = resize(timebase, (n_channels, len(timebase)))
+    angle_matrix = resize(array([i.cylindrical[1] for i in ch_coords]), (len(timebase), n_channels)).T
+    for m in modes:
+        data_array += m[0]*cos(2*pi*m[2]*timebase_matrix + m[1]*angle_matrix + m[3])
+    data_array += noise*2*(random.random(data_array.shape)-0.5)
+    output = TimeseriesData(timebase=timebase,
+                            signal=Signal(data_array), coords=ch_coords)
+    return output
+
 
 class TestUtils(BasePyfusionTestCase):
     def test_remap_periodic(self):
@@ -26,16 +41,19 @@ class TestTimeseriesData(BasePyfusionTestCase):
         from pyfusion.data.timeseries import TimeseriesData
         self.assertTrue(BaseData in TimeseriesData.__bases__)
 
-    """
-    def testAddChannels(self):
-        from pyfusion.data.timeseries import TimeseriesData, Timebase
-        t0=0.3
-        n_samples=500
-        sample_freq=1.e6
-        tb = Timebase(t0=t0,n_samples=n_samples, sample_freq=sample_freq)
-        ts = TimeseriesData(timebase=tb)
-        self.assertEqual(ts.n_channels(), 0)
-    """ 
+
+    def test_timebase_and_coords(self):
+        n_ch = 10
+        n_samples = 1024
+        timebase = Timebase(arange(n_samples)*1.e-6)
+        ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(n_ch)/n_ch)
+        multichannel_data = get_multimode_test_data(n_channels = n_ch,
+                                                    ch_coords = ch_coords,
+                                                    timebase = timebase,
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.5)
+TestTimeseriesData.dev1=True
+
 
 class TestTimebase(BasePyfusionTestCase):
     """Test Timebase class."""
@@ -89,7 +107,8 @@ class TestFilters(BasePyfusionTestCase):
         from numpy import arange, searchsorted
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd = TimeseriesData(timebase=tb, signal=Signal(arange(len(tb))))
+        tsd = TimeseriesData(timebase=tb,
+                             signal=Signal(arange(len(tb))), coords=[Coords()])
         new_time_args = searchsorted(tb, new_times)
         timebase_test = tsd.timebase[new_time_args[0]:new_time_args[1]].copy()
         signal_test = tsd.signal[new_time_args[0]:new_time_args[1]].copy()
@@ -104,7 +123,9 @@ class TestFilters(BasePyfusionTestCase):
         from numpy import arange, searchsorted, resize
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
+        tsd = TimeseriesData(timebase=tb,
+                             signal=Signal(resize(arange(5*len(tb)),(5,len(tb)))),
+                             coords=(Coords(),Coords(),Coords(),Coords(),Coords()))
         new_time_args = searchsorted(tb, new_times)
         timebase_test = tsd.timebase[new_time_args[0]:new_time_args[1]].copy()
         signal_test = tsd.signal[:,new_time_args[0]:new_time_args[1]].copy()
@@ -118,7 +139,9 @@ class TestFilters(BasePyfusionTestCase):
         from numpy import arange, searchsorted, resize
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
+        tsd = TimeseriesData(timebase=tb,
+                             signal=Signal(resize(arange(5*len(tb)),(5,len(tb)))),
+                             coords=(Coords(), Coords(),Coords(),Coords(),Coords()))
         new_time_args = searchsorted(tb, new_times)
         timebase_test = tsd.timebase[new_time_args[0]:new_time_args[1]].copy()
         signal_test = tsd.signal[:,new_time_args[0]:new_time_args[1]].copy()
@@ -134,8 +157,11 @@ class TestFilters(BasePyfusionTestCase):
         from numpy import arange, searchsorted, resize
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
-        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb))+1, (5,len(tb)))))
+        tsd_1 = TimeseriesData(timebase=tb,
+                               signal=Signal(resize(arange(5*len(tb)),(5,len(tb)))),
+                               coords=(Coords(),Coords(),Coords(),Coords(),Coords()))
+        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb))+1,(5,len(tb)))),
+                               coords=(Coords(),Coords(),Coords(),Coords(),Coords()))
         test_dataset = DataSet()
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
@@ -149,8 +175,11 @@ class TestDataSet(BasePyfusionTestCase):
         from numpy import arange, searchsorted, resize
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
-        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb))+1, (5,len(tb)))))
+        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)),(5,len(tb)))),
+                               coords=(Coords(),Coords(),Coords(),Coords(),Coords()))
+        tsd_2 = TimeseriesData(timebase=tb,
+                               signal=Signal(resize(arange(5*len(tb))+1, (5,len(tb)))),
+                               coords=(Coords(),Coords(),Coords(),Coords(),Coords()))
         test_dataset = DataSet()
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
@@ -166,8 +195,11 @@ class TestDataSet(BasePyfusionTestCase):
         from numpy import arange, searchsorted, resize
         new_times = [-0.25, 0.25]
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)), (5,len(tb)))))
-        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb))+1, (5,len(tb)))))
+        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)),(5,len(tb)))),
+                               coords=(Coords(),Coords(),Coords(),Coords(),Coords()))
+        tsd_2 = TimeseriesData(timebase=tb,
+                               signal=Signal(resize(arange(5*len(tb))+1,(5,len(tb)))),
+                               coords=(Coords(),Coords(),Coords(),Coords(),Coords()))
         test_dataset = DataSet()
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
@@ -181,7 +213,8 @@ class TestSegmentFilter(BasePyfusionTestCase):
         from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
         from numpy import arange, searchsorted, resize
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd = TimeseriesData(timebase=tb, signal=Signal(arange(len(tb))))
+        tsd = TimeseriesData(timebase=tb,
+                             signal=Signal(arange(len(tb))), coords=[Coords()])
         seg_dataset = tsd.segment(n_samples=10)
         self.assertTrue(len(seg_dataset)==10)
 
@@ -190,7 +223,9 @@ class TestSegmentFilter(BasePyfusionTestCase):
         from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
         from numpy import arange, searchsorted, resize
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd = TimeseriesData(timebase=tb, signal=Signal(resize(arange(3*len(tb)), (3,len(tb)))))
+        tsd = TimeseriesData(timebase=tb,
+                             signal=Signal(resize(arange(3*len(tb)), (3,len(tb)))),
+                             coords=(Coords(), Coords(), Coords()))
         seg_dataset = tsd.segment(n_samples=10)
         self.assertTrue(len(seg_dataset)==10)
 
@@ -199,8 +234,12 @@ class TestSegmentFilter(BasePyfusionTestCase):
         from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
         from numpy import arange, searchsorted, resize
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(3*len(tb)), (3,len(tb)))))
-        tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(3*len(tb)+1), (3,len(tb)))))
+        tsd_1 = TimeseriesData(timebase=tb,
+                               signal=Signal(resize(arange(3*len(tb)), (3,len(tb)))),
+                               coords=(Coords(), Coords(), Coords()))
+        tsd_2 = TimeseriesData(timebase=tb,
+                               signal=Signal(resize(arange(3*len(tb)+1),(3,len(tb)))),
+                               coords=(Coords(), Coords(), Coords()))
         input_dataset = DataSet()
         input_dataset.add(tsd_1)
         input_dataset.add(tsd_2)
@@ -336,33 +375,19 @@ class TestNormalise(BasePyfusionTestCase):
         assert_array_almost_equal(mcd_var_whole.signal.get_channel(1), mcd_ch_1/max_var)
 
 
-from pyfusion.data.timeseries import Timebase, Signal
-from numpy import arange, pi, zeros, resize, random, cos
-
-# modes: [amplitude, freq, phase at angle0]
-def get_multimode_test_data(n_channels = 10,
-                            ch_angles = 2*pi*arange(10)/10,
-                            timebase = Timebase(arange(0.0,0.01,1.e-5)),
-                            modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
-                            noise = 0.2):
-    data_array = zeros((n_channels, len(timebase)))
-    timebase_matrix = resize(timebase, (n_channels, len(timebase)))
-    angle_matrix = resize(ch_angles, (len(timebase), n_channels)).T
-    for m in modes:
-        data_array += m[0]*cos(2*pi*m[2]*timebase_matrix + m[1]*angle_matrix + m[3])
-    data_array += noise*2*(random.random(data_array.shape)-0.5)
-    output = TimeseriesData(timebase=timebase, signal=Signal(data_array))
-    return output
 
 class TestFlucstrucs(BasePyfusionTestCase):
 
     def test_svd_data(self):
         from pyfusion.data.timeseries import SVDData
+        from pyfusion.data.base import Coords
         n_ch = 10
         n_samples = 1024
+        timebase = Timebase(arange(n_samples)*1.e-6)
+        ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(n_ch)/n_ch)
         multichannel_data = get_multimode_test_data(n_channels = n_ch,
-                                                    ch_angles = 2*pi*arange(n_ch)/n_ch,
-                                                    timebase = Timebase(arange(n_samples)*1.e-6),
+                                                    ch_coords = ch_coords,
+                                                    timebase = timebase,
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                     noise = 0.5)
 
@@ -370,6 +395,10 @@ class TestFlucstrucs(BasePyfusionTestCase):
         self.assertTrue(isinstance(test_svd, SVDData))
         self.assertEqual(len(test_svd.topos[0]), n_ch)
         self.assertEqual(len(test_svd.chronos[0]), n_samples)
+        assert_array_almost_equal(test_svd.dim1, timebase)
+        print test_svd.dim2
+        for c_i, coord in enumerate(ch_coords):
+            self.assertEqual(coord, test_svd.dim2[c_i])
 
     def test_SVDData_class(self):
         from pyfusion.data.timeseries import SVDData
@@ -378,7 +407,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
         n_samples = 512
         fake_data = resize(arange(n_ch*n_samples), (n_ch, n_samples))
         numpy_svd = linalg.svd(fake_data, 0)
-        test_svd  = SVDData(numpy_svd)
+        test_svd  = SVDData(arange(n_samples), arange(n_ch), numpy_svd)
         assert_array_almost_equal(test_svd.topos, transpose(numpy_svd[0]))
         assert_array_almost_equal(test_svd.svs, numpy_svd[1])
         assert_array_almost_equal(test_svd.chronos, numpy_svd[2])
@@ -399,7 +428,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
     def test_fs_grouping(self):
         # this signal should be grouped as [0,1], [2,3] + noise 
         multichannel_data = get_multimode_test_data(n_channels = 10,
-                                                    ch_angles = 2*pi*arange(10)/10,
+                                                    ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(10)/10),
                                                     #timebase = Timebase(arange(0.0,0.01,1.e-6)),
                                                     timebase = Timebase(arange(1024)*1.e-6),
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
@@ -414,7 +443,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
         n_ch = 10
         n_samples = 1024
         multichannel_data = get_multimode_test_data(n_channels = n_ch,
-                                                    ch_angles = 2*pi*arange(n_ch)/n_ch,
+                                                    ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(n_ch)/n_ch),
                                                     timebase = Timebase(arange(n_samples)*1.e-6),
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                     noise = 0.5)
@@ -431,7 +460,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
         n_ch = 10
         n_samples = 1024
         multichannel_data = get_multimode_test_data(n_channels = n_ch,
-                                                    ch_angles = 2*pi*arange(n_ch)/n_ch,
+                                                    ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(n_ch)/n_ch),
                                                     timebase = Timebase(arange(n_samples)*1.e-6),
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                     noise = 0.01)
@@ -447,7 +476,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
         n_ch = 10
         n_samples = 1024
         multichannel_data = get_multimode_test_data(n_channels = n_ch,
-                                                    ch_angles = 2*pi*arange(n_ch)/n_ch,
+                                                    ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(n_ch)/n_ch),
                                                     timebase = Timebase(arange(n_samples)*1.e-6),
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                     noise = 0.01)
@@ -488,7 +517,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
 
 #     def test_svd(self):
 #         multichannel_data = get_multimode_test_data(n_channels = 10,
-#                                                     ch_angles = 2*pi*arange(10)/10,
+#                                                     ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(10)/10),
 #                                                     timebase = Timebase(arange(0.0,0.01,1.e-5)),
 #                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
 #                                                     noise = 0.2)
@@ -498,7 +527,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
         #import pylab as pl
         #multichannel_data.plot_signals()
         
-TestFlucstrucs.tmp = True
+
 
 class TestSubtractMeanFilter(BasePyfusionTestCase):
     """Test mean subtraction filter for timeseries data."""
@@ -511,7 +540,8 @@ class TestSubtractMeanFilter(BasePyfusionTestCase):
 
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
         # nonzero signal mean
-        tsd = TimeseriesData(timebase=tb, signal=Signal(arange(len(tb))))
+        tsd = TimeseriesData(timebase=tb,
+                             signal=Signal(arange(len(tb))), coords=[Coords()])
 
         filtered_tsd = tsd.subtract_mean()
 
@@ -521,7 +551,7 @@ class TestSubtractMeanFilter(BasePyfusionTestCase):
     def test_remove_mean_multichanel(self):
         from numpy import mean, zeros_like
         multichannel_data = get_multimode_test_data(n_channels = 10,
-                                                    ch_angles = 2*pi*arange(10)/10,
+                                                    ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(10)/10),
                                                     timebase = Timebase(arange(0.0,0.01,1.e-5)),
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                     noise = 0.2)
@@ -537,17 +567,17 @@ class TestSubtractMeanFilter(BasePyfusionTestCase):
         from numpy import mean, zeros_like
         from pyfusion.data.base import DataSet
         multichannel_data_1 = get_multimode_test_data(n_channels = 10,
-                                                    ch_angles = 2*pi*arange(10)/10,
+                                                    ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(10)/10),
                                                     timebase = Timebase(arange(0.0,0.01,1.e-5)),
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                     noise = 0.2)
         multichannel_data_2 = get_multimode_test_data(n_channels = 15,
-                                                    ch_angles = 2*pi*arange(15)/15,
+                                                    ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(15)/15),
                                                     timebase = Timebase(arange(0.0,0.01,1.e-5)),
                                                     modes = [[0.7, 7., 24.e3, 3.2], [1.0, 90., 37.e3, 10.3]],
                                                     noise = 0.7)
         multichannel_data_3 = get_multimode_test_data(n_channels = 13,
-                                                    ch_angles = 2*pi*arange(13)/13,
+                                                    ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(13)/13),
                                                     timebase = Timebase(arange(0.0,0.01,1.e-5)),
                                                     modes = [[0.7, 7., 24.e3, 3.2], [1.0, 90., 37.e3, 10.3]],
                                                     noise = 0.7)
@@ -588,5 +618,35 @@ class TestFilterMetaClass(BasePyfusionTestCase):
         test_data = TestData()
         for attr_name in ["test_filter", "other_test_filter"]:
             self.assertTrue(hasattr(test_data, attr_name))
-TestFilterMetaClass.dev = True
 
+
+class TestNumpyFilters(BasePyfusionTestCase):
+
+    def test_correlate(self):
+        from numpy import correlate
+        multichannel_data = get_multimode_test_data(n_channels = 2,
+                                                    ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(2)/2),
+                                                    timebase = Timebase(arange(0.0,0.01,1.e-5)),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.2)
+        numpy_corr = correlate(multichannel_data.signal[0], multichannel_data.signal[1])
+
+        pyfusion_corr = multichannel_data.correlate(0,1)
+        assert_array_almost_equal(numpy_corr, pyfusion_corr)
+
+
+class TestPlotMethods(BasePyfusionTestCase):
+    def test_svd_plot(self):
+        from pyfusion.data.timeseries import SVDData
+        n_ch = 4
+        n_samples = 256
+        multichannel_data = get_multimode_test_data(n_channels = n_ch,
+                                                    ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(n_ch)/n_ch),
+                                                    timebase = Timebase(arange(n_samples)*1.e-6),
+                                                    modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                    noise = 0.5)
+
+        test_svd = multichannel_data.svd()
+        self.assertTrue(hasattr(test_svd, 'svdplot'))
+        
+TestPlotMethods.dev = True

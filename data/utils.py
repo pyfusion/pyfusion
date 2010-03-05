@@ -6,7 +6,8 @@ def cps(a,b):
 def peak_freq(signal,timebase,minfreq=0,maxfreq=1.e18):
     """
     TODO: old code: needs review
-    DOESN'T HAVE UNIT TEST
+    this function only has a basic unittest to make sure it returns
+    the correct freq in a simple case.
     """
     timebase = array(timebase)
     sig_fft = fft.fft(signal)

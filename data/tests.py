@@ -33,7 +33,21 @@ class TestUtils(BasePyfusionTestCase):
         output = remap_periodic(data, min_val = 0, period=3)
         expected = array([0, 1, 2, 0, 1, 2, 2.5, 0])
         assert_array_almost_equal(output, expected)
-        
+
+    def test_peak_freq(self):
+        from utils import peak_freq
+        test_freq = 27.e3
+        single_mode_signal = get_multimode_test_data(n_channels=1,
+                                                     ch_coords=[Coords(cylindrical=(0.0,0.0,0.0))],
+                                                     timebase=Timebase(arange(0.0,0.01, 1.e-6)),
+                                                     modes = [[0.5, 2, test_freq, 0.1]],
+                                                     noise=0.1
+                                                     )
+        p_f = peak_freq(single_mode_signal.signal[0], single_mode_signal.timebase)
+        # check that we get 27.0 kHz (1 decimal place accuracy)
+        self.assertAlmostEqual(1.e-3*p_f, 1.e-3*test_freq, 1)
+
+    
 
 class TestTimeseriesData(BasePyfusionTestCase):
     """Test timeseries data"""
@@ -52,7 +66,6 @@ class TestTimeseriesData(BasePyfusionTestCase):
                                                     timebase = timebase,
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                     noise = 0.5)
-TestTimeseriesData.dev1=True
 
 
 class TestTimebase(BasePyfusionTestCase):
@@ -649,4 +662,3 @@ class TestPlotMethods(BasePyfusionTestCase):
         test_svd = multichannel_data.svd()
         self.assertTrue(hasattr(test_svd, 'svdplot'))
         
-TestPlotMethods.dev = True

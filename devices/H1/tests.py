@@ -49,6 +49,7 @@ class TestH1MirnovCoords(BasePyfusionTestCase):
 TestH1MirnovCoords.h1 = True
 TestH1MirnovCoords.net = True
 TestH1MirnovCoords.slow = True
+TestH1MirnovCoords.busted = True
 
 class TestH1Device(BasePyfusionTestCase):
 

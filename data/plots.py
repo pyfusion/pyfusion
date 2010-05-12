@@ -125,6 +125,10 @@ def svdplot(input_data):
 
     n_SV = len(input_data.svs)
 
+    from pyfusion.data.utils import peak_freq
+    for chrono in input_data.chronos:
+        print peak_freq(chrono, input_data.dim1)
+
     # define axes 
     ax1 = pl.subplot(221)
     ax2 = pl.subplot(222)
@@ -165,12 +169,12 @@ def svdplot(input_data):
     # plot all SVs, use button_setting_list for initial visibility
     # axes 1: chrono
     pl.axes(ax1)
-    pl.xlabel('Time -*-get units from Timebase-*-')
+    #pl.xlabel('Time -*-get units from Timebase-*-')
     pl.ylabel('Amplitude [a.u.]')
     plot_list_1 = range(n_SV)
     for sv_i in range(n_SV):
-	plot_list_1[sv_i], = ax1.plot(1.e3*array(input_data.dim1), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
-    pl.xlim(1.e3*min(input_data.dim1), 1.e3*max(input_data.dim1))
+	plot_list_1[sv_i], = ax1.plot(array(input_data.dim1), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
+    pl.xlim(min(input_data.dim1), max(input_data.dim1))
 
     # axes 2: SVs
     plot_list_2 = range(n_SV)

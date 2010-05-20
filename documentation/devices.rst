@@ -7,13 +7,13 @@
 The :mod:`pyfusion.devices.base` module defines the following classes
 and exceptions
 
-.. class:: BaseDevice(device_name, \*\*kwargs)
+.. class:: Device(device_name, \*\*kwargs)
 
     Represent a laboratory device with ORM for processed data.
 
-    In general, a customised subclass of BaseDevice will be used.
+    In general, a customised subclass of Device will be used.
     
-    Usage: BaseDevice(device_name, \*\*kwargs)
+    Usage: Device(device_name, \*\*kwargs)
 
     Arguments:
     
@@ -22,7 +22,7 @@ and exceptions
     Keyword arguments:
     
     Any configuration setting can be overridden by supplying a keyword
-    argument with the setting name, e.g.: ``BaseDevice(device_name, database='sqlite://')``
+    argument with the setting name, e.g.: ``Device(device_name, database='sqlite://')``
 
 
     see also: getDevice()

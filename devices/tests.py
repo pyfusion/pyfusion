@@ -43,9 +43,20 @@ class TestDevice(BasePyfusionTestCase):
         """Check Device works with only keyword args (no reference to config)"""
         test_kwargs = {'database': 'dummy_database',
                        'other_var': 'other_val'}
-        test_device = Device(**test_kwargs)
+        test_device = Device('some_device_not_in_config_file', **test_kwargs)
 
         
+    def testORM(self):
+        """Check that creating a new device is reflected in the database"""
+        import pyfusion
+        # give test device a name
+        test_device = Device(self.listed_device)
+        session = pyfusion.Session()
+        session.add(test_device)
+        session.commit()
+        # query by name and make sure we can retrieve device
+        from_query = session.query(Device).filter(Device.name == self.listed_device).one()
+        self.assertEqual(test_device, from_query)
 
 
 class TestEmptyDevice(BasePyfusionTestCase):
@@ -61,3 +72,4 @@ class TestGetDevice(BasePyfusionTestCase):
         test_device_1 = getDevice(self.listed_device)
         test_device_2 = Device(self.listed_device)
         self.assertEqual(test_device_1.__class__, test_device_2.__class__)
+

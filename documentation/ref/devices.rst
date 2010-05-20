@@ -25,15 +25,15 @@ Base Device Objects
 
 .. module:: devices.base
 
-The following classes are provided by the :mod:`~pyfusion.devices.base` submodule. In general, a customised subclass of :class:`BaseDevice` is used rather than the base class itself. 
+The following classes are provided by the :mod:`~pyfusion.devices.base` submodule. In general, a customised subclass of :class:`Device` is used rather than the base class itself. 
 
-.. class:: BaseDevice(config_name=None, **kwargs)
+.. class:: Device(config_name=None, **kwargs)
 
-   Returns an instance of :class:`BaseDevice` optionally initialised with an underlying instance of a specified subclass of :class:`~pyfusion.acquisition.base.BaseAcquisition`.
+   Returns an instance of :class:`Device` optionally initialised with an underlying instance of a specified subclass of :class:`~pyfusion.acquisition.base.BaseAcquisition`.
 
    :arg config_name: configuration file section (i.e. [Device:config_name]) to load.
    
-   Any configuration file option can be overridden by supplying an argument of the same name to :class:`BaseDevice`. For example, given a configuration file::
+   Any configuration file option can be overridden by supplying an argument of the same name to :class:`Device`. For example, given a configuration file::
       
       [Device:MyDevice]
       param_1 = param_1_value
@@ -42,16 +42,16 @@ The following classes are provided by the :mod:`~pyfusion.devices.base` submodul
    the configuration will be loaded by specifying the config_name::   
 
       >>> import pyfusion
-      >>> my_device = pyfusion.devices.base.BaseDevice(config_name="MyDevice")
+      >>> my_device = pyfusion.devices.base.Device(config_name="MyDevice")
       >>> my_device.param_1
       'param_1_value'
       >>> my_device.param_2
       'param_2_value'
-      >>> my_other_device = pyfusion.devices.base.BaseDevice(config_name="MyDevice", param_1="some_other_value")
+      >>> my_other_device = pyfusion.devices.base.Device(config_name="MyDevice", param_1="some_other_value")
       >>> my_other_device.param_1
       'some_other_value'
 
-   The only configuration parameter which is directly handled by :class:`BaseDevice` is "acq_name", which specifies the name of the data acquisition system (i.e. [Acquisition:MyAcquisition] in the configuration file) to be attached to the :class:`BaseDevice` instance. So, for a configuration file::
+   The only configuration parameter which is directly handled by :class:`Device` is "acq_name", which specifies the name of the data acquisition system (i.e. [Acquisition:MyAcquisition] in the configuration file) to be attached to the :class:`Device` instance. So, for a configuration file::
    
       [Device:MyDevice]
       acq_name = MyAcquisition
@@ -64,7 +64,7 @@ The following classes are provided by the :mod:`~pyfusion.devices.base` submodul
    we get::
 
       >>> import pyfusion
-      >>> my_device = pyfusion.devices.base.BaseDevice(config_name="MyDevice")
+      >>> my_device = pyfusion.devices.base.Device(config_name="MyDevice")
       >>> my_device.acquisition    
       <pyfusion.acquisition.base.BaseAcquisition object at 0x87a3a4c>
       >>> my_device.acq
@@ -72,9 +72,6 @@ The following classes are provided by the :mod:`~pyfusion.devices.base` submodul
 
    where my_device.acquisition (and synonym my_device.acq) is an instance of :class:`~pyfusion.acquisition.base.BaseAcquisition`.
 
-.. class:: Device
-
-   Trivial subclass of :class:`BaseDevice` which doesn't add anything new.
 
 H-1 Device Class
 -------------------
@@ -83,4 +80,4 @@ H-1 Device Class
 
 .. class:: H1
 
-   Trivial subclass of :class:`BaseDevice` which doesn't add anything new.
+   Trivial subclass of :class:`Device` which doesn't add anything new (yet).

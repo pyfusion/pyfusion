@@ -6,8 +6,6 @@ from pyfusion.conf.utils import read_config
 
 config = PyfusionConfigParser()
 
-from pyfusion.devices.base import getDevice
-from pyfusion.acquisition.utils import getAcquisition
 
 # set up logger
 import logging.config
@@ -54,3 +52,29 @@ USER_TEST_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'tests.cfg')
 
 read_config([DEFAULT_CONFIG_FILE, USER_CONFIG_FILE])
 
+########################################################
+## Module-wide object relational mapper configuration ##
+########################################################
+
+# configure sqlalchemy after config so we can use configured database
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
+orm_engine = create_engine(config.get('global', 'database'))
+
+Session = scoped_session(sessionmaker(autocommit=False,
+                                      autoflush=True,
+                                      bind=orm_engine))
+
+Base = declarative_base(bind=orm_engine)
+
+
+#########################################################
+
+from pyfusion.devices.base import getDevice
+from pyfusion.acquisition.utils import getAcquisition
+
+# location of this is important...
+# needs to occur after classes inheriting Base have been imported?
+Base.metadata.create_all()

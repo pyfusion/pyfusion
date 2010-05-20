@@ -1,14 +1,16 @@
 """Basic device class"""
 
+from sqlalchemy import Column, Integer, String
+
 from pyfusion.conf.utils import kwarg_config_handler, import_from_str, get_config_as_dict
 import pyfusion
 
-class BaseDevice:
-    """Represent a laboratory device with ORM for processed data.
+class Device(pyfusion.Base):
+    """Represent a laboratory device.  
 
-    In general, a customised subclass of BaseDevice will be used.
+    In general, a customised subclass of Device will be used.
     
-    Usage: BaseDevice(device_name, **kwargs)
+    Usage: Device(device_name, **kwargs)
 
     Arguments:
     device_name -- name of device as listed in configuration file, 
@@ -17,13 +19,20 @@ class BaseDevice:
     Keyword arguments:
     Any setting in the [Device:device_name] section of the
     configuration file can be overridden by supplying a keyword
-    argument to here, e.g.: BaseDevice(device_name, database='sqlite://')
+    argument to here, e.g.: Device(device_name)
 
     """
-    def __init__(self, config_name=None, **kwargs):
-        if config_name != None:
+    
+    __tablename__ = 'devices'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True)
+
+
+    def __init__(self, config_name, **kwargs):
+        if pyfusion.config.pf_has_section('Device', config_name):
             self.__dict__.update(get_config_as_dict('Device', config_name))
         self.__dict__.update(kwargs)
+        self.name = config_name
 
         #### attach acquisition
         if hasattr(self, 'acq_name'):
@@ -36,9 +45,8 @@ class BaseDevice:
             pyfusion.logging.warning(
                 "No acquisition class specified for device")
 
-class Device(BaseDevice):
-    """At present, there is no difference between Device and BaseDevice."""
-    pass
+
+
 
 
 def getDevice(device_name):

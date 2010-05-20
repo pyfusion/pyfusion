@@ -1,4 +1,4 @@
-from pyfusion.devices.base import BaseDevice
+from pyfusion.devices.base import Device
 
-class H1(BaseDevice):
+class H1(Device):
     pass

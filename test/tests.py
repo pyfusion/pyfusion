@@ -96,6 +96,17 @@ class TestConfigLoaders(BasePyfusionTestCase):
         self.assertFalse(pyfusion.config.pf_has_section('Device', self.listed_device))
         self.assertEqual(pyfusion.config.sections(), [])
         
+
+class TestSQL(BasePyfusionTestCase):
+    """Test module-wide SQLAlchemy config."""
+
+    def testSQLConfig(self):
+        import pyfusion
+        database = pyfusion.config.get('global', 'database')
+        self.assertEqual(pyfusion.orm_engine.url.__str__(), database)
+
+        
+
 # Run unit tests if this file is called explicitly
 if __name__ == "__main__":
     unittest.main()

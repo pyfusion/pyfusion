@@ -10,7 +10,7 @@ Pyfusion documentation
 
    tutorial/index
    ref/index
-
+   orm
 
 Development
 -----------

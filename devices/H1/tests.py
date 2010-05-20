@@ -54,10 +54,10 @@ TestH1MirnovCoords.busted = True
 class TestH1Device(BasePyfusionTestCase):
 
     def test_load_h1(self):
-        from pyfusion.devices.base import BaseDevice
+        from pyfusion.devices.base import Device
         from pyfusion.devices.H1.device import H1
 
-        self.assertTrue(issubclass(H1, BaseDevice))
+        self.assertTrue(issubclass(H1, Device))
         
     def test_getdevice(self):
         import pyfusion
@@ -72,6 +72,7 @@ class TestH1Device(BasePyfusionTestCase):
         shot_kh = (58073, 0.74)
         data = h1test.acq.getdata(shot_kh[0], 'H1_mirnov_array_1_coil_1')        
         self.assertAlmostEqual(data.meta['kh'], shot_kh[1])
+
 
 TestH1Device.slow = True
 TestH1Device.h1 = True

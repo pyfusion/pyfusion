@@ -47,16 +47,6 @@ An instance of the  SQLAlchemy ``Session`` class is used to manage interactions 
 
 The ``autocommit`` and ``autoflush`` arguments  prescribe how the session should organise transactions. A `database transaction <http://en.wikipedia.org/wiki/Database_transaction>`_ refers to a group of queries which should be treated as a single operation on the database, either all queries in a should be applied, or none of them should. Using ``commit()`` in an sqlalchemy session commits the current transaction, whereas ``flush()`` will write pending data to the database without closing the transaction. In ``autocommit`` mode SQLAlchemy automatically commits after each ``flush()``, while this removes some flexibility in construction of transactions it can be useful for testing and debug purposes. Regardless of these settings, ``commit()`` will always call a ``flush()`` before committing the transaction. The ``autoflush=True`` argument specifies that ``flush()`` should be called before any individual query is issued.  
 
-Declarative base class
-""""""""""""""""""""""
-
-The base class for declarative ORM is defined in ``pyfusion/__init__.py``::
-
-  from sqlalchemy.ext.declarative import declarative_base
-  Base = declarative_base()
-
-Pyfusion provides generic base classes for devices, diagnostics, data, etc. which inherit this ORM base class. ORM management at the class level is done though the functionality provided by this base class, as described in the next section. 
- 
 
 Class-level configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^

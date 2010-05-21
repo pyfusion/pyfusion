@@ -19,7 +19,7 @@ The pyfusion ORM configuration
 
 Pyfusion uses SQLAlchemy for its ORM. The standard method for configuring an ORM with SQLAlchemy is to explicitly construct Table objects and link them to Python classes with a mapping object. An alternative configuration is to use the SQLAlchemy declarative extension, which provides a base class which provides Table and mapper attributes to any class which inherits it. The two approaches represent different styles code rather than providing different functionality. Pyfusion uses the standard approach to keep ORM code separate from non-ORM (class definitions) code, allowing pyfusion to be used without ORM.
 
-------------------------------
+..
 
 Module-wide configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,7 +1,7 @@
-.. _tutorial-index:
+.. _install-index:
 
 ######################
-  Pyfusion Tutorial
+Installing Pyfusion
 ######################
 
 :Release: |version|
@@ -10,8 +10,7 @@
 Pyfusion overview text here.
 
 .. toctree::
-   :numbered:
    
-   gettingdata.rst
-   manipulatingdata.rst
-   h1.rst
+   fedora/index
+   ubuntu/index
+

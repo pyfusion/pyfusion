@@ -14,7 +14,7 @@ Pyfusion reference overview text here.
    
    devices
    acquisition
-   data
-   conf
-   utils
-   test
+   config
+   orm
+
+

@@ -42,6 +42,18 @@ def read_config(config_files):
     except:
         pyfusion.config.read(config_files)
 
+    tmp  = pyfusion.config.get('global', 'database')
+    print tmp
+    if tmp == 'None':
+        
+        pyfusion.USE_ORM = False
+    else:
+        pyfusion.USE_ORM = True
+        from pyfusion.orm import setup_orm
+        setup_orm()
+    
+
+
 def clear_config():
     """Clear pyfusion.config."""
     import pyfusion

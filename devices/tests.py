@@ -49,14 +49,15 @@ class TestDevice(BasePyfusionTestCase):
     def testORM(self):
         """Check that creating a new device is reflected in the database"""
         import pyfusion
-        # give test device a name
-        test_device = Device(self.listed_device)
-        session = pyfusion.Session()
-        session.add(test_device)
-        session.commit()
-        # query by name and make sure we can retrieve device
-        from_query = session.query(Device).filter(Device.name == self.listed_device).one()
-        self.assertEqual(test_device, from_query)
+        if pyfusion.USE_ORM:
+            # give test device a name
+            test_device = Device(self.listed_device)
+            session = pyfusion.Session()
+            session.add(test_device)
+            session.commit()
+            # query by name and make sure we can retrieve device
+            from_query = session.query(Device).filter(Device.name == self.listed_device).one()
+            self.assertEqual(test_device, from_query)
 
 
 class TestEmptyDevice(BasePyfusionTestCase):

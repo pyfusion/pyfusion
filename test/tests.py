@@ -103,7 +103,13 @@ class TestSQL(BasePyfusionTestCase):
     def testSQLConfig(self):
         import pyfusion
         database = pyfusion.config.get('global', 'database')
-        self.assertEqual(pyfusion.orm_engine.url.__str__(), database)
+        print database
+        if database == 'None':
+            self.assertEqual(pyfusion.USE_ORM, False)
+        else:
+            self.assertEqual(pyfusion.USE_ORM, True)
+        if pyfusion.USE_ORM:
+            self.assertEqual(pyfusion.orm_engine.url.__str__(), database)
 
         
 

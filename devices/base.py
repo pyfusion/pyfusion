@@ -1,11 +1,9 @@
 """Basic device class"""
 
-from sqlalchemy import Column, Integer, String
-
 from pyfusion.conf.utils import kwarg_config_handler, import_from_str, get_config_as_dict
 import pyfusion
 
-class Device(pyfusion.Base):
+class Device(object):
     """Represent a laboratory device.  
 
     In general, a customised subclass of Device will be used.
@@ -23,9 +21,9 @@ class Device(pyfusion.Base):
 
     """
     
-    __tablename__ = 'devices'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(50), unique=True)
+    #__tablename__ = 'devices'
+    #id = Column(Integer, primary_key=True)
+    #name = Column(String(50), unique=True)
 
 
     def __init__(self, config_name, **kwargs):
@@ -46,8 +44,15 @@ class Device(pyfusion.Base):
                 "No acquisition class specified for device")
 
 
+if pyfusion.USE_ORM:
+    from sqlalchemy import Table, Column, Integer, String
+    from sqlalchemy.orm import mapper
+    device_table = Table('devices', pyfusion.metadata,
+                         Column('id', Integer, primary_key=True),
+                         Column('name', String, unique=True))
 
-
+    pyfusion.metadata.create_all()
+    mapper(Device, device_table)
 
 def getDevice(device_name):
     """Find and instantiate Device (sub)class from config."""

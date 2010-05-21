@@ -56,19 +56,23 @@ read_config([DEFAULT_CONFIG_FILE, USER_CONFIG_FILE])
 ## Module-wide object relational mapper configuration ##
 ########################################################
 
-# configure sqlalchemy after config so we can use configured database
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 
-orm_engine = create_engine(config.get('global', 'database'))
+"""
+# USE_ORM is set up read_config()
+#from pyfusion import USE_ORM 
+if not pyfusion.config.get('global', 'database') == 'None':
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import scoped_session, sessionmaker
+    from sqlalchemy.ext.declarative import declarative_base
 
-Session = scoped_session(sessionmaker(autocommit=False,
+    orm_engine = create_engine(config.get('global', 'database'))
+    
+    Session = scoped_session(sessionmaker(autocommit=False,
                                       autoflush=True,
                                       bind=orm_engine))
 
-Base = declarative_base(bind=orm_engine)
-
+    Base = declarative_base(bind=orm_engine)
+"""
 
 #########################################################
 
@@ -77,4 +81,4 @@ from pyfusion.acquisition.utils import getAcquisition
 
 # location of this is important...
 # needs to occur after classes inheriting Base have been imported?
-Base.metadata.create_all()
+#Base.metadata.create_all()

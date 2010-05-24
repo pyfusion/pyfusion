@@ -31,3 +31,14 @@ def remap_periodic(input_array, min_val, period = 2*pi):
         input_array[input_array>=min_val+period] -= period
     return input_array
 
+def list2bin(input_list):
+    # we explicitly cast to int(), as numpy's integer type clashes with sqlalchemy
+    return int(sum(2**array(input_list)))
+
+def bin2list(input_value):
+    output_list = []
+    bin_index_str = bin(input_value)[2:][::-1]
+    for ind,i in enumerate(bin_index_str):
+        if i == '1':
+            output_list.append(ind)
+    return output_list

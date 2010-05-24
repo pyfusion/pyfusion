@@ -18,12 +18,11 @@ each with different data acquisition systems. Pyfusion abstracts out
 the data acquisition process, and provides common, easily customisable
 data objects for most types of data. 
 
-xxxxx
+..
+   classes: Device, Acquisition, DataFetcher, Diagnostic, Data, DataFilter loosely
+   coupled by easy to edit test config file.
 
-classes: Device, Acquisition, DataFetcher, Diagnostic, Data, DataFilter loosely
-coupled by easy to edit test config file.
-
-processed data is mapped to SQL with SQLAlchemy ORM
+   processed data is mapped to SQL with SQLAlchemy ORM
 
 
 .. toctree::

@@ -57,10 +57,21 @@ class BaseData(object):
 
     def __init__(self):
         self.meta = MetaData()
+
+    def save(self):
+        if pyfusion.USE_ORM:
+            # this may be inefficient: get it working, then get it fast
+            session = pyfusion.Session()
+            session.add(self)
+            session.commit()
+            session.close()
             
 class DataSet(set):
     __metaclass__ = MetaMethods
 
+    def save(self):
+        for item in self:
+            item.save()
 
 class BaseCoordTransform(object):
     """Base class does nothing useful at the moment"""

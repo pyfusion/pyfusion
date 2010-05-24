@@ -3,8 +3,9 @@
 import numpy as np
 
 from pyfusion.data.base import BaseData
-from utils import cps, peak_freq, remap_periodic
+from utils import cps, peak_freq, remap_periodic, list2bin, bin2list
 
+import pyfusion
         
 
 class Timebase(np.ndarray):
@@ -120,17 +121,21 @@ class SVDData(BaseData):
 class FlucStruc(BaseData):
     def __init__(self, svd_data, sv_list, timebase, min_dphase = -np.pi):
         # NOTE I'd prefer not to duplicate info here which is in svd_data - should be able to refer to that, once sqlalchemy is hooked in
-        self.svs = sv_list
+        #self.svs = sv_list
+        self._binary_svs = list2bin(sv_list)
         # peak frequency for fluctuation structure
         self.freq = peak_freq(svd_data.chronos[sv_list[0]], timebase)
         self.timebase = timebase
         # singular value filtered signals
-        self.signal = np.dot(np.transpose(svd_data.topos[self.svs,:]),
-                           np.dot(np.diag(svd_data.svs.take(self.svs)), svd_data.chronos[self.svs,:]))
+        self.signal = np.dot(np.transpose(svd_data.topos[sv_list,:]),
+                           np.dot(np.diag(svd_data.svs.take(sv_list)), svd_data.chronos[sv_list,:]))
         # phase differences between nearest neighbour channels
         self.dphase = self._get_dphase(min_dphase=min_dphase)
-        self.p = np.sum(svd_data.svs.take(self.svs)**2)/svd_data.E
+        self.p = np.sum(svd_data.svs.take(sv_list)**2)/svd_data.E
         self.H = svd_data.H
+
+    def svs(self):
+        return bin2list(self._binary_svs)
 
     def _get_dphase(self, min_dphase = -np.pi):
         """
@@ -138,6 +143,7 @@ class FlucStruc(BaseData):
         """
         phases = np.array([self._get_single_channel_phase(i) for i in range(self.signal.shape[0])])
         return remap_periodic(phases[1:]-phases[:-1], min_val = min_dphase)
+
     def _get_single_channel_phase(self, ch_id):
         data_fft = np.fft.fft(self.signal[ch_id])
         # fft goes up to sample freq (mirror-like about Nyquist)
@@ -148,3 +154,12 @@ class FlucStruc(BaseData):
         b = data_fft[freq_elmt].imag
         phase_val = np.arctan2(a,b)
         return phase_val
+
+if pyfusion.USE_ORM:
+    from sqlalchemy import Table, Column, Integer, String
+    from sqlalchemy.orm import mapper
+    flucstruc_table = Table('flucstrucs', pyfusion.metadata,
+                            Column('id', Integer, primary_key=True),
+                            Column('_binary_svs', Integer))    
+    pyfusion.metadata.create_all()
+    mapper(FlucStruc, flucstruc_table)

@@ -541,7 +541,35 @@ class TestFlucstrucs(BasePyfusionTestCase):
         #multichannel_data.plot_signals()
         
 
-
+    def test_ORM_flucstrucs(self):
+        """ check that flucstrucs can be saved to database"""
+        import pyfusion
+        if pyfusion.USE_ORM:
+            n_ch = 10
+            n_samples = 1024
+            multichannel_data = get_multimode_test_data(n_channels = n_ch,
+                                                        ch_coords = tuple(Coords(cylindrical=(1.0,i,0.0)) for i in 2*pi*arange(n_ch)/n_ch),
+                                                        timebase = Timebase(arange(n_samples)*1.e-6),
+                                                        modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                        noise = 0.01)
+            fs_data = multichannel_data.flucstruc(min_dphase = -2*pi)
+            fs_data.save()
+            session = pyfusion.Session()
+            from pyfusion.data.timeseries import FlucStruc
+            from_query = session.query(FlucStruc).all()
+            self.assertEqual(len(fs_data), len(from_query))
+            """
+            for fs in fs_data:
+                if 0 in fs.svs:
+                    fs1 = fs
+            for fs in from_query:
+                if 0 in fs.svs:
+                    fs2 = fs
+            print fs1, fs2
+            assert False
+            """
+            #print from_query[0].binary_svs
+            #assert False
 class TestSubtractMeanFilter(BasePyfusionTestCase):
     """Test mean subtraction filter for timeseries data."""
 

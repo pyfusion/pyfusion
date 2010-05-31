@@ -690,3 +690,25 @@ class TestPlotMethods(BasePyfusionTestCase):
         test_svd = multichannel_data.svd()
         self.assertTrue(hasattr(test_svd, 'svdplot'))
         
+
+class TestDataHistory(BasePyfusionTestCase):
+    def testNewData(self):
+        from pyfusion.data.base import BaseData
+        test_data = BaseData()
+        self.assertEqual(test_data.history.split('> ')[1], 'New BaseData')
+
+    def testFilteredDataHistory(self):
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from numpy import arange
+
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        # nonzero signal mean
+        tsd = TimeseriesData(timebase=tb,
+                             signal=Signal(arange(len(tb))), coords=[Coords()])
+
+        filtered_tsd = tsd.subtract_mean()
+        self.assertEqual(len(filtered_tsd.history.split('\n')), 2)
+        filtered_tsd.normalise(method='rms')
+        self.assertEqual(filtered_tsd.history.split('> ')[-1], "normalise(method='rms')")
+
+TestDataHistory.dev = True

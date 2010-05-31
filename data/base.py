@@ -4,17 +4,25 @@ try:
 except NameError:
     from sets import Set as set # Python 2.3 fallback
 
+from datetime import datetime
+
 from pyfusion.conf.utils import import_from_str
 from pyfusion.data.filters import filter_reg
 from pyfusion.data.plots import plot_reg
 import pyfusion
 
 
+def history_reg_method(method):
+    def updated_method(input_data, *args, **kwargs):
+        input_data.history += '\n%s > %s' %(datetime.now(), method.__name__ + '(' + ', '.join(args) + ', '.join("%s='%s'" %(i[0], i[1]) for i in kwargs.items()) + ')')
+        return method(input_data, *args, **kwargs)
+    return updated_method
+
 class MetaMethods(type):
     def __new__(cls, name, bases, attrs):
         for reg in [filter_reg, plot_reg]:
             filter_methods = reg.get(name, [])
-            attrs.update((i.__name__,i) for i in filter_methods)
+            attrs.update((i.__name__,history_reg_method(i)) for i in filter_methods)
         return super(MetaMethods, cls).__new__(cls, name, bases, attrs)
 
 
@@ -57,7 +65,8 @@ class BaseData(object):
 
     def __init__(self):
         self.meta = MetaData()
-
+        self.history = "%s > New %s" %(datetime.now(), self.__class__.__name__)
+        
     def save(self):
         if pyfusion.USE_ORM:
             # this may be inefficient: get it working, then get it fast

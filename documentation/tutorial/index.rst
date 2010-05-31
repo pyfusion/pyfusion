@@ -14,4 +14,4 @@ Pyfusion overview text here.
    
    gettingdata.rst
    manipulatingdata.rst
-   h1.rst
+   datahistory.rst

@@ -24,26 +24,26 @@ Pyfusion uses SQLAlchemy for its ORM. The standard method for configuring an ORM
 Module-wide configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Most, if not all, the pyfusion ORM code lives in two places: module-wide code is located in ``pyfusion/__init__.py``, while class specific code resides in the class itself. The module-wide configuration consists of ``Engine`` and ``Session`` instances, and definition of a base class for declarative SQLAlchemy.  
+Code which controls module-wide (i.e. all of pyfusion) ORM is located in ``pyfusion.orm``. The important components here are the ORM engine, session and metadata. These are created by ``pyfusion.orm.setup_orm()`` which is called after the configuration files are read during ``import pyfusion``.
 
 
 Engine
 """"""
 
-The SQLAlchemy engine provides an abstraction of the relational database (beneath it could be MySQL, Postgres, SQLite, etc), and a pool of connections to the database. Starting a database connection is an expensive operation, to streamline database interaction, the engine keeps a pool of connections which it uses and recycles to avoid the overhead of creating database connections for each operation. In pyfusion, the SQLAlchemy engine is created when pyfusion is imported (``pyfusion/__init__.py``)::
+The SQLAlchemy engine provides an abstraction of the relational database (beneath it could be MySQL, Postgres, SQLite, etc), and a pool of connections to the database. Starting a database connection is an expensive operation, to streamline database interaction, the engine keeps a pool of connections which it uses and recycles to avoid the overhead of creating database connections for each operation.::
 
+    pyfusion.orm_engine = create_engine(pyfusion.config.get('global', 'database'))
 
- from sqlalchemy import create_engine
- orm_engine = create_engine(config.get('global', 'database'))
-
-Presently there is no support for changing database configuration within a single pyfusion session, i.e. reloading the configuration file will not reset the database. 
 
 Session
 """""""
 
 An instance of the  SQLAlchemy ``Session`` class is used to manage interactions with the database, it can keep track of modifications to data instances and flush multiple changes to the database when required. We use ``scoped_session`` to provide a thread-local ``Session`` instance, which allows us to use the same session in different parts of pyfusion. The session configuration looks like::
 
- Session = scoped_session(sessionmaker(autocommit=False, autoflush=True, bind=orm_engine))
+ pyfusion.Session = scoped_session(sessionmaker(autocommit=False,
+                                   autoflush=True,
+                                   bind=pyfusion.orm_engine))
+
 
 The ``autocommit`` and ``autoflush`` arguments  prescribe how the session should organise transactions. A `database transaction <http://en.wikipedia.org/wiki/Database_transaction>`_ refers to a group of queries which should be treated as a single operation on the database, either all queries in a should be applied, or none of them should. Using ``commit()`` in an sqlalchemy session commits the current transaction, whereas ``flush()`` will write pending data to the database without closing the transaction. In ``autocommit`` mode SQLAlchemy automatically commits after each ``flush()``, while this removes some flexibility in construction of transactions it can be useful for testing and debug purposes. Regardless of these settings, ``commit()`` will always call a ``flush()`` before committing the transaction. The ``autoflush=True`` argument specifies that ``flush()`` should be called before any individual query is issued.  
 

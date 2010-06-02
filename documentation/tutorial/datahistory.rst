@@ -29,4 +29,4 @@ Any pyfusion object can be considered as the result of a series of operations pe
  2010-06-01 00:13:01.612895 > normalise(method='rms')
 
 
-Currently, no useful information is provided about how the original data was created (which shot, which channel, etc) -- this will be added soon. 
+The data log is automatically provided for all filters which are added via the ``@register()`` decorator. Currently, no useful information is provided about how the original data was created (which shot, which channel, etc) -- this will be added soon. 

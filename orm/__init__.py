@@ -18,5 +18,4 @@ def setup_orm():
 
     pyfusion.metadata = MetaData()
     pyfusion.metadata.bind = pyfusion.orm_engine
-    #pyfusion.Base = declarative_base(bind=pyfusion.orm_engine)
 

@@ -108,7 +108,7 @@ class SVDData(BaseData):
         self.E = sum(self.svs*self.svs)
         self.p = self.svs**2/self.E
         self.H = float((-1./np.log(len(self.svs)))*sum(self.p*np.log(self.p)))
-        
+        super(SVDData, self).__init__()
 
         
     def self_cps(self):
@@ -133,6 +133,7 @@ class FlucStruc(BaseData):
         self.dphase = self._get_dphase(min_dphase=min_dphase)
         self.p = np.sum(svd_data.svs.take(sv_list)**2)/svd_data.E
         self.H = svd_data.H
+        super(FlucStruc, self).__init__()
 
     def svs(self):
         return bin2list(self._binary_svs)

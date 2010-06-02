@@ -13,5 +13,5 @@ Pyfusion overview text here.
    :numbered:
    
    gettingdata.rst
-   manipulatingdata.rst
+   workingwithdata.rst
    datahistory.rst

@@ -14,7 +14,8 @@ import pyfusion
 
 def history_reg_method(method):
     def updated_method(input_data, *args, **kwargs):
-        input_data.history += '\n%s > %s' %(datetime.now(), method.__name__ + '(' + ', '.join(args) + ', '.join("%s='%s'" %(i[0], i[1]) for i in kwargs.items()) + ')')
+        print args, kwargs
+        input_data.history += '\n%s > %s' %(datetime.now(), method.__name__ + '(' + ', '.join(map(str,args)) + ', '.join("%s='%s'" %(str(i[0]), str(i[1])) for i in kwargs.items()) + ')')
         return method(input_data, *args, **kwargs)
     return updated_method
 
@@ -77,6 +78,9 @@ class BaseData(object):
             
 class DataSet(set):
     __metaclass__ = MetaMethods
+
+    def __init__(self):
+        self.history = "%s > New %s" %(datetime.now(), self.__class__.__name__)
 
     def save(self):
         for item in self:

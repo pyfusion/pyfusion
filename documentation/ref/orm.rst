@@ -51,6 +51,40 @@ The ``autocommit`` and ``autoflush`` arguments  prescribe how the session should
 Class-level configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The ORM code for classes in pyfusion follows the class code, and is active only if ``pyfusion.USE_ORM`` is ``True``. The ORM class code contains a ``Table`` definition, a call to ``pyfusion.metadata.create_all()`` to create table, and a mapping of the class to the table. For example, the ``Device`` class definition and ORM code appears as::
+
+ class Device(object):
+ 
+     def __init__(self, config_name, **kwargs):
+         if pyfusion.config.pf_has_section('Device', config_name):
+             self.__dict__.update(get_config_as_dict('Device', config_name))
+         self.__dict__.update(kwargs)
+         self.name = config_name
+ 
+         #### attach acquisition
+         if hasattr(self, 'acq_name'):
+             acq_class_str = pyfusion.config.pf_get('Acquisition',
+                                           self.acq_name, 'acq_class')
+             self.acquisition = import_from_str(acq_class_str)(self.acq_name)
+             # shortcut
+             self.acq = self.acquisition
+         else:
+             pyfusion.logging.warning(
+                 "No acquisition class specified for device")
+ 
+ 
+ if pyfusion.USE_ORM:
+     from sqlalchemy import Table, Column, Integer, String
+     from sqlalchemy.orm import mapper
+     device_table = Table('devices', pyfusion.metadata,
+                          Column('id', Integer, primary_key=True),
+                          Column('name', String, unique=True))
+ 
+     pyfusion.metadata.create_all()
+     mapper(Device, device_table)
+
+
+
 Does pyfusion read from the config file or data database?
 ---------------------------------------------------------
 

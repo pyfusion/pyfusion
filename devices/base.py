@@ -49,7 +49,7 @@ if pyfusion.USE_ORM:
     from sqlalchemy.orm import mapper
     device_table = Table('devices', pyfusion.metadata,
                          Column('id', Integer, primary_key=True),
-                         Column('name', String, unique=True))
+                         Column('name', String(32), unique=True))
 
     pyfusion.metadata.create_all()
     mapper(Device, device_table)

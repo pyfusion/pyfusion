@@ -570,6 +570,9 @@ class TestFlucstrucs(BasePyfusionTestCase):
             """
             #print from_query[0].binary_svs
             #assert False
+
+TestFlucstrucs.dev = True
+
 class TestSubtractMeanFilter(BasePyfusionTestCase):
     """Test mean subtraction filter for timeseries data."""
 
@@ -711,4 +714,3 @@ class TestDataHistory(BasePyfusionTestCase):
         filtered_tsd.normalise(method='rms')
         self.assertEqual(filtered_tsd.history.split('> ')[-1], "normalise(method='rms')")
 
-TestDataHistory.dev = True

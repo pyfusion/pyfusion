@@ -14,7 +14,6 @@ import pyfusion
 
 def history_reg_method(method):
     def updated_method(input_data, *args, **kwargs):
-        print args, kwargs
         input_data.history += '\n%s > %s' %(datetime.now(), method.__name__ + '(' + ', '.join(map(str,args)) + ', '.join("%s='%s'" %(str(i[0]), str(i[1])) for i in kwargs.items()) + ')')
         return method(input_data, *args, **kwargs)
     return updated_method

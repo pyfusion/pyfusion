@@ -8,7 +8,6 @@ class MDSPlusBaseDataFetcher(BaseDataFetcher):
     def setup(self):
         self.mds_status=self.acq._Data.execute("mdsopen('%(mds_tree)s',%(shot)d)" %{'mds_tree':self.mds_tree, 'shot':self.shot})
     def pulldown(self):
-        print "fetch pulldown"
         self.mds_status=self.acq._Data.execute("mdsclose()")
         
         

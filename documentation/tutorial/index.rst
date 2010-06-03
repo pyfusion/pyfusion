@@ -15,3 +15,4 @@ Pyfusion overview text here.
    gettingdata.rst
    workingwithdata.rst
    datahistory.rst
+   datamining.rst

@@ -38,7 +38,11 @@ class BasePyfusionTestCase(unittest.TestCase):
         pyfusion.config.read(TEST_CONFIG_FILE)
         # read custom user config file to disable/enable certain tests
         pyfusion.config.read(pyfusion.USER_TEST_CONFIG_FILE)
-        
+        # setup ORM to use engine defined in updated config.
+        # (this is done automatically by read_config in pyfusion.conf.utils
+        if pyfusion.USE_ORM:
+            from pyfusion.orm import setup_orm
+            setup_orm()
         
 class TestConfig(BasePyfusionTestCase):
     """Check test config file is as we expect"""

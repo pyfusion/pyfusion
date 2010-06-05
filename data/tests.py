@@ -557,7 +557,6 @@ class TestFlucstrucs(BasePyfusionTestCase):
             session = pyfusion.Session()
             from pyfusion.data.timeseries import FlucStruc
             from_query = session.query(FlucStruc).all()
-            self.assertEqual(len(fs_data), len(from_query))
             """
             for fs in fs_data:
                 if 0 in fs.svs:

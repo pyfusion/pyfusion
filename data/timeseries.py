@@ -157,10 +157,10 @@ class FlucStruc(BaseData):
         return phase_val
 
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, Integer, String
+    from sqlalchemy import Table, Column, Integer, String, ForeignKey
     from sqlalchemy.orm import mapper
     flucstruc_table = Table('flucstrucs', pyfusion.metadata,
-                            Column('id', Integer, primary_key=True),
+                            Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True),
                             Column('_binary_svs', Integer))    
     pyfusion.metadata.create_all()
-    mapper(FlucStruc, flucstruc_table)
+    mapper(FlucStruc, flucstruc_table, inherits=BaseData, polymorphic_identity='flucstruc')

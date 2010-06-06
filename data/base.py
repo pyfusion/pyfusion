@@ -74,7 +74,18 @@ class BaseData(object):
             session.add(self)
             session.commit()
             session.close()
-            
+
+if pyfusion.USE_ORM:
+    from sqlalchemy import Table, Column, String, Integer
+    from sqlalchemy.orm import mapper
+    basedata_table = Table('basedata', pyfusion.metadata,
+                            Column('basedata_id', Integer, primary_key=True),
+                            Column('type', String(30), nullable=False))
+    pyfusion.metadata.create_all()
+    mapper(BaseData, basedata_table, polymorphic_on=basedata_table.c.type, polymorphic_identity='basedata')
+
+
+
 class DataSet(set):
     __metaclass__ = MetaMethods
 
@@ -87,20 +98,30 @@ class DataSet(set):
             # this may be inefficient: get it working, then get it fast
             session = pyfusion.Session()
             session.add(self)
+            session.flush()
+            for item in self:
+                self.data.append(item)
+                item.save()
             session.commit()
             session.close()
-            for item in self:
-                item.save()
 
 
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, String, Integer, DateTime
-    from sqlalchemy.orm import mapper
+    from sqlalchemy import Table, Column, String, Integer, DateTime, ForeignKey
+    from sqlalchemy.orm import mapper, relationship
     dataset_table = Table('datasets', pyfusion.metadata,
                             Column('id', Integer, primary_key=True),
                             Column('created', DateTime))
+
+    # many to many mapping of data to datasets
+    data_datasets = Table('data_datasets', pyfusion.metadata,
+                          Column('dataset_id', Integer, ForeignKey('datasets.id')),
+                          Column('data_id', Integer, ForeignKey('basedata.basedata_id'))
+                          )
     pyfusion.metadata.create_all()
-    mapper(DataSet, dataset_table)
+    mapper(DataSet, dataset_table, properties={
+        'data': relationship(BaseData, secondary=data_datasets, backref='datasets')})
+
 
 class BaseCoordTransform(object):
     """Base class does nothing useful at the moment"""

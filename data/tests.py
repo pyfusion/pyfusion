@@ -567,21 +567,17 @@ class TestFlucstrucs(BasePyfusionTestCase):
             # get our dataset from database
             our_dataset = session.query(DataSet).order_by("id").first()
             self.assertEqual(our_dataset.created, fs_data.created)
-            #from_query = session.query(FlucStruc).all()
-            #print len(from_query)
+
+            print [i for i in our_dataset.data]
+            assert False
+            
             
             """
-            for fs in fs_data:
-                if 0 in fs.svs:
-                    fs1 = fs
-            for fs in from_query:
-                if 0 in fs.svs:
-                    fs2 = fs
-            print fs1, fs2
+            want to have foreignkeys between dataset and data items
+            dataset.save() should update a many to many table, and data.dataset and dataset(.items or whatever) should work after pulled from database.
+            
             assert False
             """
-            #print from_query[0].binary_svs
-            #assert False
 
 TestFlucstrucs.dev = True
 

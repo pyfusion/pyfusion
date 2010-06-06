@@ -11,8 +11,9 @@ def setup_orm():
 
     pyfusion.orm_engine = create_engine(pyfusion.config.get('global', 'database'))
     pyfusion.Session = scoped_session(sessionmaker(autocommit=False,
-                                      autoflush=True,
-                                      bind=pyfusion.orm_engine))
+                                                   autoflush=True,
+                                                   bind=pyfusion.orm_engine,
+                                                   expire_on_commit=False))
     if not hasattr(pyfusion, 'metadata'):
         pyfusion.metadata = MetaData()
     pyfusion.metadata.bind = pyfusion.orm_engine

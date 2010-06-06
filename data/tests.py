@@ -552,11 +552,24 @@ class TestFlucstrucs(BasePyfusionTestCase):
                                                         timebase = Timebase(arange(n_samples)*1.e-6),
                                                         modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                         noise = 0.01)
+            # produce a dataset of flucstrucs
             fs_data = multichannel_data.flucstruc(min_dphase = -2*pi)
+            # save our dataset to the database
             fs_data.save()
             session = pyfusion.Session()
             from pyfusion.data.timeseries import FlucStruc
-            from_query = session.query(FlucStruc).all()
+            from pyfusion.data.base import DataSet
+            d1 = DataSet()
+            d1.save()
+            d2 = DataSet()
+            d2.save()
+            
+            # get our dataset from database
+            our_dataset = session.query(DataSet).order_by("id").first()
+            self.assertEqual(our_dataset.created, fs_data.created)
+            #from_query = session.query(FlucStruc).all()
+            #print len(from_query)
+            
             """
             for fs in fs_data:
                 if 0 in fs.svs:

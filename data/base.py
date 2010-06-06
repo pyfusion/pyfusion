@@ -80,10 +80,27 @@ class DataSet(set):
 
     def __init__(self):
         self.history = "%s > New %s" %(datetime.now(), self.__class__.__name__)
+        self.created = datetime.now()
 
     def save(self):
-        for item in self:
-            item.save()
+        if pyfusion.USE_ORM:
+            # this may be inefficient: get it working, then get it fast
+            session = pyfusion.Session()
+            session.add(self)
+            session.commit()
+            session.close()
+            for item in self:
+                item.save()
+
+
+if pyfusion.USE_ORM:
+    from sqlalchemy import Table, Column, String, Integer, DateTime
+    from sqlalchemy.orm import mapper
+    dataset_table = Table('datasets', pyfusion.metadata,
+                            Column('id', Integer, primary_key=True),
+                            Column('created', DateTime))
+    pyfusion.metadata.create_all()
+    mapper(DataSet, dataset_table)
 
 class BaseCoordTransform(object):
     """Base class does nothing useful at the moment"""

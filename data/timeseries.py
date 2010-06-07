@@ -126,6 +126,7 @@ class FlucStruc(BaseData):
         # peak frequency for fluctuation structure
         self.freq = peak_freq(svd_data.chronos[sv_list[0]], timebase)
         self.timebase = timebase
+        self.t0 = timebase[0]
         # singular value filtered signals
         self.signal = np.dot(np.transpose(svd_data.topos[sv_list,:]),
                            np.dot(np.diag(svd_data.svs.take(sv_list)), svd_data.chronos[sv_list,:]))
@@ -157,10 +158,12 @@ class FlucStruc(BaseData):
         return phase_val
 
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, Integer, String, ForeignKey
+    from sqlalchemy import Table, Column, Integer, String, ForeignKey, Float
     from sqlalchemy.orm import mapper
     flucstruc_table = Table('flucstrucs', pyfusion.metadata,
                             Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True),
-                            Column('_binary_svs', Integer))    
+                            Column('_binary_svs', Integer),
+                            Column('freq', Float),
+                            Column('t0', Float))    
     pyfusion.metadata.create_all()
     mapper(FlucStruc, flucstruc_table, inherits=BaseData, polymorphic_identity='flucstruc')

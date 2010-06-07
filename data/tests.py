@@ -571,6 +571,14 @@ class TestFlucstrucs(BasePyfusionTestCase):
 
             self.assertEqual(len(our_dataset.data), len(our_dataset))
 
+            #check flucstrucs have freq, t0 and d_phase..
+
+            #our guinea pig flucstruc:
+            test_fs = list(our_dataset)[0]
+            self.assertTrue(isinstance(test_fs.freq, float))
+            self.assertTrue(isinstance(test_fs.t0, float))
+
+
 
 TestFlucstrucs.dev = True
 

@@ -11,6 +11,9 @@ from pyfusion.data.filters import filter_reg
 from pyfusion.data.plots import plot_reg
 import pyfusion
 
+if pyfusion.USE_ORM:
+    from sqlalchemy.orm import reconstructor
+
 
 def history_reg_method(method):
     def updated_method(input_data, *args, **kwargs):
@@ -105,10 +108,19 @@ class DataSet(set):
             session.commit()
             session.close()
 
-
+    # the set elements are stored in the database as foreign keys, after retrieving them
+    # from the database the elements are stored at DataSet.data; we then need to put them back
+    # in the set:
+    if pyfusion.USE_ORM:
+        @reconstructor
+        def repopulate(self):
+            for i in self.data:
+                if not i in self: self.add(i)
+        
 if pyfusion.USE_ORM:
     from sqlalchemy import Table, Column, String, Integer, DateTime, ForeignKey
     from sqlalchemy.orm import mapper, relationship
+
     dataset_table = Table('datasets', pyfusion.metadata,
                             Column('id', Integer, primary_key=True),
                             Column('created', DateTime))

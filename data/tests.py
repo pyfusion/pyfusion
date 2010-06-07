@@ -14,6 +14,7 @@ def get_multimode_test_data(n_channels = 10,
                             timebase = Timebase(arange(0.0,0.01,1.e-5)),
                             modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                             noise = 0.2):
+
     data_array = zeros((n_channels, len(timebase)))
     timebase_matrix = resize(timebase, (n_channels, len(timebase)))
     angle_matrix = resize(array([i.cylindrical[1] for i in ch_coords]), (len(timebase), n_channels)).T
@@ -568,16 +569,8 @@ class TestFlucstrucs(BasePyfusionTestCase):
             our_dataset = session.query(DataSet).order_by("id").first()
             self.assertEqual(our_dataset.created, fs_data.created)
 
-            print [i for i in our_dataset.data]
-            assert False
-            
-            
-            """
-            want to have foreignkeys between dataset and data items
-            dataset.save() should update a many to many table, and data.dataset and dataset(.items or whatever) should work after pulled from database.
-            
-            assert False
-            """
+            self.assertEqual(len(our_dataset.data), len(our_dataset))
+
 
 TestFlucstrucs.dev = True
 

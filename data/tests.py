@@ -587,13 +587,26 @@ class TestFlucstrucs(BasePyfusionTestCase):
         
 TestFlucstrucs.dev = False
 
-class TestDeltaPhase(BasePyfusionTestCase):
+class TestFloatDelta(BasePyfusionTestCase):
     """delta phase data class."""
 
     def test_d_phase(self):
-        from pyfusion.data.timeseries import DeltaPhase
+        from pyfusion.data.base import FloatDelta
+
+        fd = FloatDelta('channel_01', 'channel_02', 0.45)
         
-TestDeltaPhase.dev = False
+    def test_ORM_floatdelta(self):
+        """ check that floatdelta can be saved to database"""
+        from pyfusion.data.base import FloatDelta
+        import pyfusion
+        if pyfusion.USE_ORM:
+            fd = FloatDelta('channel_01', 'channel_02', 0.45)
+            fd.save()
+            session = pyfusion.Session()
+            db_fd = session.query(FloatDelta).first()
+            print db_fd.delta
+            assert False
+TestFloatDelta.dev = True
 
 
 class TestOrderedDataSet(BasePyfusionTestCase):
@@ -668,10 +681,6 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         self.assertEqual(ds[1].a.a, 2)
         self.assertEqual(ds[2].a.a, 3)
 
-    #def test_ordered_dataset_ORM(self):
-    #    make sure things come out of database in correct order.
-        
-TestOrderedDataSet.dev = True
 
 
 class TestSubtractMeanFilter(BasePyfusionTestCase):

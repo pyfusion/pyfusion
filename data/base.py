@@ -161,3 +161,22 @@ class BaseCoordTransform(object):
 
     def transform(self, coords):
         return coords
+
+class FloatDelta(BaseData):
+    def __init__(self, label_1, label_2, delta, **kwargs):
+        self.label_1 = label_1
+        self.label_2 = label_2
+        self.delta = delta
+        super(FloatDelta, self).__init__(**kwargs)
+
+if pyfusion.USE_ORM:
+    from sqlalchemy import Table, Column, Integer, String, ForeignKey, Float
+    from sqlalchemy.orm import mapper
+    floatdelta_table = Table('floatdelta', pyfusion.metadata,
+                            Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True),
+                            Column('label_1', String(50)),
+                            Column('label_2', String(50)),
+                            Column('delta', Float))    
+    pyfusion.metadata.create_all()
+    mapper(FloatDelta, floatdelta_table, inherits=BaseData, polymorphic_identity='floatdelta')
+

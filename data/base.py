@@ -135,6 +135,19 @@ if pyfusion.USE_ORM:
         'data': relationship(BaseData, secondary=data_datasets, backref='datasets')})
 
 
+class OrderedDataSet(list):
+
+    def __init__(self, *args, **kwargs):
+        self.ordered_by = kwargs.pop('ordered_by')
+        super(OrderedDataSet, self).__init__(*args, **kwargs)
+
+    def sort(self):
+        super(OrderedDataSet, self).sort(key=lambda x:x.__getattribute__(self.ordered_by))
+
+    def add(self, item):
+        self.append(item)
+        self.sort()
+
 class BaseCoordTransform(object):
     """Base class does nothing useful at the moment"""
     input_coords = 'base_input'

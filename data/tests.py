@@ -578,9 +578,84 @@ class TestFlucstrucs(BasePyfusionTestCase):
             self.assertTrue(isinstance(test_fs.freq, float))
             self.assertTrue(isinstance(test_fs.t0, float))
 
+            # now, are the phase data correct?
+            """
+            from pyfusion.data.timeseries import DPhase
+            print len(test_fs.dphase)
+            assert False
+            """
+        
+TestFlucstrucs.dev = False
+
+class TestDeltaPhase(BasePyfusionTestCase):
+    """delta phase data class."""
+
+    def test_d_phase(self):
+        from pyfusion.data.timeseries import DeltaPhase
+        
+TestDeltaPhase.dev = False
 
 
-TestFlucstrucs.dev = True
+class TestOrderedDataSet(BasePyfusionTestCase):
+    """test the ordered dataset"""
+
+    def test_ordereddataset(self):
+        from pyfusion.data.base import OrderedDataSet, BaseData
+        #pretend these are datapoints
+        class TestData(BaseData):
+            def __init__(self, a, b):
+                self.a = a
+                self.b = b
+                super(TestData, self).__init__()
+
+        d1=TestData(1,2)
+        d2=TestData(2,1)
+
+        # append doesnt sort. leaves to user to sort later
+        # add() should always sort (=append then sort())
+
+        ds1 = OrderedDataSet(ordered_by='b')
+        for d in [d1,d2]:
+            ds1.append(d)
+
+        
+        self.assertEqual(ds1[0], d1)
+        self.assertEqual(ds1[1], d2)
+
+        # sort should use ordered_by to sort these by b
+        ds1.sort() 
+
+        self.assertEqual(ds1[0], d2)
+        self.assertEqual(ds1[1], d1)
+
+        ds1.ordered_by = 'a'
+        ds1.sort() 
+
+        self.assertEqual(ds1[0], d1)
+        self.assertEqual(ds1[1], d2)        
+
+        #now test add, to make sure the ordered dataset is always sorted...
+        ds2 = OrderedDataSet(ordered_by='b')
+
+        d3=TestData(1,6)
+        d4=TestData(2,4)
+        d5=TestData(1,5)
+        d6=TestData(2,3)
+
+        for d in [d1,d2,d3,d4,d5,d6]:
+            ds2.add(d)
+            for x,y in enumerate(ds2[:-1]):
+                self.assertTrue(ds2[x].b < ds2[x+1].b)
+
+        self.assertEqual(len(ds2), 6)
+
+        
+
+    #def test_ordered_dataset_ORM(self):
+    #    make sure things come out of database in correct order.
+        
+TestOrderedDataSet.dev = True
+
 
 class TestSubtractMeanFilter(BasePyfusionTestCase):
     """Test mean subtraction filter for timeseries data."""

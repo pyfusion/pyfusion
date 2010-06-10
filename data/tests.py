@@ -649,7 +649,24 @@ class TestOrderedDataSet(BasePyfusionTestCase):
 
         self.assertEqual(len(ds2), 6)
 
-        
+
+    def test_submethod(self):
+        from pyfusion.data.base import OrderedDataSet, BaseData
+        class TestData(BaseData):
+            def __init__(self, a):
+                self.a = a
+                super(TestData, self).__init__()
+
+        d1 = TestData(TestData(1))
+        d2 = TestData(TestData(2))
+        d3 = TestData(TestData(3))
+
+        ds = OrderedDataSet(ordered_by='a.a')
+        for d in [d3, d1, d2]:
+            ds.add(d)
+        self.assertEqual(ds[0].a.a, 1)
+        self.assertEqual(ds[1].a.a, 2)
+        self.assertEqual(ds[2].a.a, 3)
 
     #def test_ordered_dataset_ORM(self):
     #    make sure things come out of database in correct order.

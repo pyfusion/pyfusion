@@ -141,8 +141,14 @@ class OrderedDataSet(list):
         self.ordered_by = kwargs.pop('ordered_by')
         super(OrderedDataSet, self).__init__(*args, **kwargs)
 
+    def _get_order_attr(self, item):
+        ret_value = item
+        for attribute in self.ordered_by.split('.'):
+            ret_value = ret_value.__getattribute__(attribute)
+        return ret_value
+
     def sort(self):
-        super(OrderedDataSet, self).sort(key=lambda x:x.__getattribute__(self.ordered_by))
+        super(OrderedDataSet, self).sort(key=self._get_order_attr)
 
     def add(self, item):
         self.append(item)

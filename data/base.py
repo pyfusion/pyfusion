@@ -154,6 +154,48 @@ class OrderedDataSet(list):
         self.append(item)
         self.sort()
 
+    def save(self):
+        if pyfusion.USE_ORM:
+            # this may be inefficient: get it working, then get it fast
+            session = pyfusion.Session()
+            session.add(self)
+            session.flush()
+            for item in self:
+                self.data.append(item)
+                item.save()
+            session.commit()
+            session.close()
+
+    # the set elements are stored in the database as foreign keys, after retrieving them
+    # from the database the elements are stored at DataSet.data; we then need to put them back
+    # in the set:
+    if pyfusion.USE_ORM:
+        @reconstructor
+        def repopulate(self):
+            for i in self.data:
+                if not i in self: self.add(i)
+
+
+if pyfusion.USE_ORM:
+    from sqlalchemy import Table, Column, String, Integer, DateTime, ForeignKey
+    from sqlalchemy.orm import mapper, relationship
+
+    ordered_dataset_table = Table('ordered_datasets', pyfusion.metadata,
+                                  Column('id', Integer, primary_key=True),
+                                  Column('created', DateTime),
+                                  Column('ordered_by', String(50)))
+
+    # many to many mapping of data to datasets
+    data_ordered_datasets_table = Table('data_ordered_datasets', pyfusion.metadata,
+                                        Column('ordered_dataset_id', Integer, ForeignKey('ordered_datasets.id')),
+                                        Column('data_id', Integer, ForeignKey('basedata.basedata_id'))
+                                        )
+    pyfusion.metadata.create_all()
+    mapper(OrderedDataSet, ordered_dataset_table, properties={
+        'data': relationship(BaseData, secondary=data_ordered_datasets_table, backref='ordered_datasets')})
+
+
+
 class BaseCoordTransform(object):
     """Base class does nothing useful at the moment"""
     input_coords = 'base_input'

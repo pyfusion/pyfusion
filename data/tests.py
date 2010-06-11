@@ -604,9 +604,7 @@ class TestFloatDelta(BasePyfusionTestCase):
             fd.save()
             session = pyfusion.Session()
             db_fd = session.query(FloatDelta).first()
-            print db_fd.delta
-            assert False
-TestFloatDelta.dev = True
+            self.assertEqual(db_fd.delta, 0.45)
 
 
 class TestOrderedDataSet(BasePyfusionTestCase):
@@ -681,7 +679,32 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         self.assertEqual(ds[1].a.a, 2)
         self.assertEqual(ds[2].a.a, 3)
 
+    def test_ordered_dataset_ORM(self):
+        from pyfusion.data.base import FloatDelta, OrderedDataSet
 
+        fd1 = FloatDelta('channel_01', 'channel_02', 0.45)
+        fd2 = FloatDelta('channel_02', 'channel_03', 0.25)
+        fd3 = FloatDelta('channel_03', 'channel_04', 0.49)
+
+        ods = OrderedDataSet(ordered_by="label_1")
+
+        for fd in [fd3, fd1, fd2]:
+            ods.add(fd)
+
+        self.assertEqual(ods[0], fd1)
+
+        ods.save()
+
+        # now read out of database
+        import pyfusion
+        if pyfusion.USE_ORM:
+            session = pyfusion.Session()
+            db_ods = session.query(OrderedDataSet).first()
+            self.assertEqual(db_ods[0].label_1, 'channel_01')
+
+        
+        
+TestOrderedDataSet.dev = True
 
 class TestSubtractMeanFilter(BasePyfusionTestCase):
     """Test mean subtraction filter for timeseries data."""

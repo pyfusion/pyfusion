@@ -88,8 +88,7 @@ if pyfusion.USE_ORM:
     mapper(BaseData, basedata_table, polymorphic_on=basedata_table.c.type, polymorphic_identity='basedata')
 
 
-
-class DataSet(set):
+class BaseDataSet(object):
     __metaclass__ = MetaMethods
 
     def __init__(self):
@@ -116,26 +115,41 @@ class DataSet(set):
         def repopulate(self):
             for i in self.data:
                 if not i in self: self.add(i)
-        
+
 if pyfusion.USE_ORM:
     from sqlalchemy import Table, Column, String, Integer, DateTime, ForeignKey
     from sqlalchemy.orm import mapper, relationship
 
-    dataset_table = Table('datasets', pyfusion.metadata,
-                            Column('id', Integer, primary_key=True),
-                            Column('created', DateTime))
+    basedataset_table = Table('basedataset', pyfusion.metadata,
+                              Column('id', Integer, primary_key=True),
+                              Column('created', DateTime),
+                              Column('type', String(30), nullable=False))
 
     # many to many mapping of data to datasets
-    data_datasets = Table('data_datasets', pyfusion.metadata,
-                          Column('dataset_id', Integer, ForeignKey('datasets.id')),
-                          Column('data_id', Integer, ForeignKey('basedata.basedata_id'))
-                          )
+    data_basedataset_table = Table('data_basedataset', pyfusion.metadata,
+                                   Column('basedataset_id', Integer, ForeignKey('basedataset.id')),
+                                   Column('data_id', Integer, ForeignKey('basedata.basedata_id'))
+                                   )
     pyfusion.metadata.create_all()
-    mapper(DataSet, dataset_table, properties={
-        'data': relationship(BaseData, secondary=data_datasets, backref='datasets')})
+    mapper(BaseDataSet, basedataset_table,
+           polymorphic_on=basedataset_table.c.type, polymorphic_identity='base_dataset',
+           properties={'data': relationship(BaseData, secondary=data_basedataset_table, backref='datasets')})
 
 
-class OrderedDataSet(list):
+
+class DataSet(BaseDataSet, set):
+    pass
+        
+if pyfusion.USE_ORM:
+    from sqlalchemy import Table, Column, Integer, ForeignKey
+    from sqlalchemy.orm import mapper
+    dataset_table = Table('dataset', pyfusion.metadata,
+                            Column('basedataset_id', Integer, ForeignKey('basedataset.id'), primary_key=True))
+    pyfusion.metadata.create_all()
+    mapper(DataSet, dataset_table, inherits=BaseDataSet, polymorphic_identity='dataset')
+
+
+class OrderedDataSet(BaseDataSet, list):
 
     def __init__(self, *args, **kwargs):
         self.ordered_by = kwargs.pop('ordered_by')
@@ -154,47 +168,16 @@ class OrderedDataSet(list):
         self.append(item)
         self.sort()
 
-    def save(self):
-        if pyfusion.USE_ORM:
-            # this may be inefficient: get it working, then get it fast
-            session = pyfusion.Session()
-            session.add(self)
-            session.flush()
-            for item in self:
-                self.data.append(item)
-                item.save()
-            session.commit()
-            session.close()
-
-    # the set elements are stored in the database as foreign keys, after retrieving them
-    # from the database the elements are stored at DataSet.data; we then need to put them back
-    # in the set:
-    if pyfusion.USE_ORM:
-        @reconstructor
-        def repopulate(self):
-            for i in self.data:
-                if not i in self: self.add(i)
-
-
 if pyfusion.USE_ORM:
     from sqlalchemy import Table, Column, String, Integer, DateTime, ForeignKey
     from sqlalchemy.orm import mapper, relationship
 
-    ordered_dataset_table = Table('ordered_datasets', pyfusion.metadata,
-                                  Column('id', Integer, primary_key=True),
-                                  Column('created', DateTime),
+    ordered_dataset_table = Table('ordered_dataset', pyfusion.metadata,
+                                  Column('basedataset_id', Integer, ForeignKey('basedataset.id'), primary_key=True),
                                   Column('ordered_by', String(50)))
 
-    # many to many mapping of data to datasets
-    data_ordered_datasets_table = Table('data_ordered_datasets', pyfusion.metadata,
-                                        Column('ordered_dataset_id', Integer, ForeignKey('ordered_datasets.id')),
-                                        Column('data_id', Integer, ForeignKey('basedata.basedata_id'))
-                                        )
     pyfusion.metadata.create_all()
-    mapper(OrderedDataSet, ordered_dataset_table, properties={
-        'data': relationship(BaseData, secondary=data_ordered_datasets_table, backref='ordered_datasets')})
-
-
+    mapper(OrderedDataSet, ordered_dataset_table, inherits=BaseDataSet, polymorphic_identity='ordered_dataset')
 
 class BaseCoordTransform(object):
     """Base class does nothing useful at the moment"""

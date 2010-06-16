@@ -12,8 +12,8 @@ from pyfusion.data.plots import plot_reg
 import pyfusion
 
 if pyfusion.USE_ORM:
-    from sqlalchemy.orm import reconstructor
-
+    from sqlalchemy import Table, Column, String, Integer, Float, ForeignKey, DateTime
+    from sqlalchemy.orm import reconstructor, mapper, relationship
 
 def history_reg_method(method):
     def updated_method(input_data, *args, **kwargs):
@@ -30,7 +30,12 @@ class MetaMethods(type):
 
 
 class Coords(object):
-    def __init__(self, **kwargs):
+    def __init__(self, default_coords_name, default_coords_tuple,  **kwargs):
+        self.default_name = default_coords_name
+        self.default_value_1 = default_coords_tuple[0]
+        self.default_value_2 = default_coords_tuple[1]
+        self.default_value_3 = default_coords_tuple[2]
+        kwargs.update(((default_coords_name, default_coords_tuple),))
         self.__dict__.update(kwargs)
 
     def add_coords(self, **kwargs):
@@ -53,6 +58,84 @@ class Coords(object):
             return transform_class().transform(self.__dict__.get(transform_class.input_coords),**kwargs)
         self.__dict__.update({transform_class.output_coords:_new_transform_method})
 
+    def save(self):
+        if pyfusion.USE_ORM:
+            # this may be inefficient: get it working, then get it fast
+            session = pyfusion.Session()
+            session.add(self)
+            session.commit()
+            session.close()
+        
+
+if pyfusion.USE_ORM:
+    coords_table = Table('coords', pyfusion.metadata,
+                            Column('id', Integer, primary_key=True),
+                            Column('default_name', String(30), nullable=False),
+                            Column('default_value_1', Float),
+                            Column('default_value_2', Float),
+                            Column('default_value_3', Float))
+    pyfusion.metadata.create_all()
+    mapper(Coords, coords_table)
+
+
+class Channel(object):
+    def __init__(self, name, coords):
+        self.name = name
+        self.coords = coords
+
+    def save(self):
+        if pyfusion.USE_ORM:
+            # this may be inefficient: get it working, then get it fast
+            self.coords.save()
+            session = pyfusion.Session()
+            session.add(self)
+            session.commit()
+            session.close()
+
+if pyfusion.USE_ORM:
+    channel_table = Table('channel', pyfusion.metadata,
+                            Column('id', Integer, primary_key=True),
+                            Column('name', String(30), nullable=False),
+                            Column('coords_id', Integer, ForeignKey('coords.id'), nullable=False))
+    pyfusion.metadata.create_all()
+    mapper(Channel, channel_table, properties={'coords': relationship(Coords)})
+
+
+    
+if pyfusion.USE_ORM:
+    channel_association_table = Table('channel_association', pyfusion.metadata,
+                                      Column('channellist_id', Integer, ForeignKey('channellist.id'), primary_key=True),
+                                      Column('channel_id', Integer, ForeignKey('channel.id'), primary_key=True),
+                                      )
+
+class ChannelList(list):
+    def __init__(self, *args):
+        self.extend(args)
+
+    def save(self):
+        if pyfusion.USE_ORM:
+            self._channels.extend(self)
+            session = pyfusion.Session()
+            session.add(self)
+            session.commit()
+            session.close()
+
+    if pyfusion.USE_ORM:
+        @reconstructor
+        def repopulate(self):
+            for i in self._channels:
+                if not i in self: self.append(i)
+    
+if pyfusion.USE_ORM:
+    channellist_table = Table('channellist', pyfusion.metadata,
+                              Column('id', Integer, primary_key=True))
+                              
+    pyfusion.metadata.create_all()
+    mapper(ChannelList, channellist_table,
+           properties={'_channels': relationship(Channel, secondary=channel_association_table)})
+    
+
+
 class MetaData(dict):
     pass
 
@@ -69,18 +152,19 @@ class BaseData(object):
     def __init__(self):
         self.meta = MetaData()
         self.history = "%s > New %s" %(datetime.now(), self.__class__.__name__)
+        if not hasattr(self, 'channels'):
+            self.channels = ChannelList()
         
     def save(self):
         if pyfusion.USE_ORM:
             # this may be inefficient: get it working, then get it fast
+            self.channels.save()
             session = pyfusion.Session()
             session.add(self)
             session.commit()
             session.close()
 
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, String, Integer
-    from sqlalchemy.orm import mapper
     basedata_table = Table('basedata', pyfusion.metadata,
                             Column('basedata_id', Integer, primary_key=True),
                             Column('type', String(30), nullable=False))
@@ -117,9 +201,6 @@ class BaseDataSet(object):
                 if not i in self: self.add(i)
 
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, String, Integer, DateTime, ForeignKey
-    from sqlalchemy.orm import mapper, relationship
-
     basedataset_table = Table('basedataset', pyfusion.metadata,
                               Column('id', Integer, primary_key=True),
                               Column('created', DateTime),
@@ -141,8 +222,6 @@ class DataSet(BaseDataSet, set):
     pass
         
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, Integer, ForeignKey
-    from sqlalchemy.orm import mapper
     dataset_table = Table('dataset', pyfusion.metadata,
                             Column('basedataset_id', Integer, ForeignKey('basedataset.id'), primary_key=True))
     pyfusion.metadata.create_all()
@@ -169,9 +248,6 @@ class OrderedDataSet(BaseDataSet, list):
         self.sort()
 
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, String, Integer, DateTime, ForeignKey
-    from sqlalchemy.orm import mapper, relationship
-
     ordered_dataset_table = Table('ordered_dataset', pyfusion.metadata,
                                   Column('basedataset_id', Integer, ForeignKey('basedataset.id'), primary_key=True),
                                   Column('ordered_by', String(50)))
@@ -188,20 +264,19 @@ class BaseCoordTransform(object):
         return coords
 
 class FloatDelta(BaseData):
-    def __init__(self, label_1, label_2, delta, **kwargs):
-        self.label_1 = label_1
-        self.label_2 = label_2
+    def __init__(self, channel_1, channel_2, delta, **kwargs):
+        self.channel_1 = channel_1
+        self.channel_2 = channel_2
         self.delta = delta
         super(FloatDelta, self).__init__(**kwargs)
 
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, Integer, String, ForeignKey, Float
-    from sqlalchemy.orm import mapper
     floatdelta_table = Table('floatdelta', pyfusion.metadata,
                             Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True),
-                            Column('label_1', String(50)),
-                            Column('label_2', String(50)),
+                            Column('channel_1_id', Integer, ForeignKey('channel.id')),
+                            Column('channel_2_id', Integer, ForeignKey('channel.id')),
                             Column('delta', Float))    
     pyfusion.metadata.create_all()
-    mapper(FloatDelta, floatdelta_table, inherits=BaseData, polymorphic_identity='floatdelta')
-
+    mapper(FloatDelta, floatdelta_table, inherits=BaseData, polymorphic_identity='floatdelta',
+           properties={'channel_1': relationship(Channel, primaryjoin=floatdelta_table.c.channel_1_id==channel_table.c.id),
+                       'channel_2': relationship(Channel, primaryjoin=floatdelta_table.c.channel_2_id==channel_table.c.id)})

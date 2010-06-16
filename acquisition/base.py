@@ -2,6 +2,7 @@
 from numpy.testing import assert_array_almost_equal
 from pyfusion.conf.utils import import_setting, kwarg_config_handler, get_config_as_dict, import_from_str
 from pyfusion.data.timeseries import Signal, Timebase, TimeseriesData
+from pyfusion.data.base import ChannelList
 
 class BaseAcquisition(object):
     """Base class for data acquisition.
@@ -85,7 +86,7 @@ class DataFetcher(BaseDataFetcher):
 
 class MultiChannelFetcher(BaseDataFetcher):
     """... for timeseries..."""
-    def ordered_channels(self):
+    def ordered_channel_names(self):
         channel_list = []
         for k in self.__dict__.keys():
             if k.startswith('channel_'):
@@ -95,14 +96,14 @@ class MultiChannelFetcher(BaseDataFetcher):
     
     def fetch(self):
         ## initially, assume only single channel signals
-        ordered_channels = self.ordered_channels()
+        ordered_channel_names = self.ordered_channel_names()
         data_list = []
-        coord_list = []
+        channels = ChannelList()
         timebase = None
-        for chan in ordered_channels:
+        for chan in ordered_channel_names:
             fetcher_class = import_setting('Diagnostic', chan, 'data_fetcher')
             tmp_data = fetcher_class(self.acq, self.shot, config_name=chan).fetch()
-            coord_list.append(tmp_data.coordinates)
+            channels.append(tmp_data.channels)
             if timebase == None:
                 timebase = tmp_data.timebase
                 data_list.append(tmp_data.signal)
@@ -114,7 +115,7 @@ class MultiChannelFetcher(BaseDataFetcher):
                     raise
         signal=Signal(data_list)
         output_data = TimeseriesData(signal=signal, timebase=timebase,
-                                     coords=coord_list)
+                                     channels=channels)
         output_data.meta.update({'shot':self.shot})
         return output_data
 

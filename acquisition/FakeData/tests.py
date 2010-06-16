@@ -99,7 +99,7 @@ class TestMultiChannel(BasePyfusionTestCase):
         test_shot = 12345
         from pyfusion.acquisition.base import MultiChannelFetcher
         fetcher = MultiChannelFetcher(None, test_shot, config_name=multichannel_name)
-        self.assertEqual(fetcher.ordered_channels(), ['test_timeseries_channel_1', 'test_timeseries_channel_2'])
+        self.assertEqual(fetcher.ordered_channel_names(), ['test_timeseries_channel_1', 'test_timeseries_channel_2'])
         
     
     def test_multichannel_single_channels(self):

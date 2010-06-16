@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from pyfusion.data.base import BaseData
+from pyfusion.data.base import BaseData, OrderedDataSet, FloatDelta
 from utils import cps, peak_freq, remap_periodic, list2bin, bin2list
 
 import pyfusion
@@ -82,26 +82,23 @@ class Signal(np.ndarray):
     
 
 class TimeseriesData(BaseData):
-    def __init__(self, timebase = None, signal=None, coords=None, **kwargs):
+    def __init__(self, timebase = None, signal=None, channels=None, **kwargs):
         self.timebase = timebase
+        self.channels = channels
         if signal.n_samples() == len(timebase):
             self.signal = signal
         else:
             raise ValueError, "signal has different number of samples to timebase"
-        if signal.n_channels() == len(coords):
-            self.coordinates = coords
-        else:
-            raise ValueError, "different number of signal channels and coordinates"
         super(TimeseriesData, self).__init__(**kwargs)
 
 
 class SVDData(BaseData):
-    def __init__(self, dim1, dim2, svd_input):
+    def __init__(self, chrono_labels, topo_channels, svd_input):
         """
         svd_input is a tuple as outputted by numpy.linalg.svd(data, 0)
         """
-        self.dim1 = dim1
-        self.dim2 = dim2
+        self.channels = topo_channels
+        self.chrono_labels = chrono_labels
         self.topos = np.transpose(svd_input[0])
         self.svs = svd_input[1]
         self.chronos = svd_input[2]
@@ -121,6 +118,8 @@ class SVDData(BaseData):
 class FlucStruc(BaseData):
     def __init__(self, svd_data, sv_list, timebase, min_dphase = -np.pi):
         # NOTE I'd prefer not to duplicate info here which is in svd_data - should be able to refer to that, once sqlalchemy is hooked in
+        #self.topo_channels = svd_data.topo_channels
+        self.channels = svd_data.channels
         #self.svs = sv_list
         self._binary_svs = list2bin(sv_list)
         # peak frequency for fluctuation structure
@@ -136,6 +135,10 @@ class FlucStruc(BaseData):
         self.H = svd_data.H
         super(FlucStruc, self).__init__()
 
+    def save(self):
+        self.dphase.save()
+        super(FlucStruc, self).save()
+
     def svs(self):
         return bin2list(self._binary_svs)
 
@@ -144,7 +147,14 @@ class FlucStruc(BaseData):
         remap to [min_dphase, min_dphase+2pi]
         """
         phases = np.array([self._get_single_channel_phase(i) for i in range(self.signal.shape[0])])
-        return remap_periodic(phases[1:]-phases[:-1], min_val = min_dphase)
+        d_phases = remap_periodic(phases[1:]-phases[:-1], min_val = min_dphase)
+        d_phase_dataset = OrderedDataSet(ordered_by="channel_1.name")
+        ## append then sort should be faster than ordereddataset.add() [ fewer sorts()]
+        for i, d_ph in enumerate(d_phases):
+            d_phase_dataset.append(FloatDelta(self.channels[i], self.channels[i+1], d_ph))
+
+        d_phase_dataset.sort()
+        return d_phase_dataset
 
     def _get_single_channel_phase(self, ch_id):
         data_fft = np.fft.fft(self.signal[ch_id])
@@ -159,11 +169,13 @@ class FlucStruc(BaseData):
 
 if pyfusion.USE_ORM:
     from sqlalchemy import Table, Column, Integer, String, ForeignKey, Float
-    from sqlalchemy.orm import mapper
+    from sqlalchemy.orm import mapper, relationship
     flucstruc_table = Table('flucstrucs', pyfusion.metadata,
                             Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True),
                             Column('_binary_svs', Integer),
                             Column('freq', Float),
-                            Column('t0', Float))    
+                            Column('t0', Float),    
+                            Column('dphase_id', Integer, ForeignKey('ordered_dataset.basedataset_id'), nullable=False))    
     pyfusion.metadata.create_all()
-    mapper(FlucStruc, flucstruc_table, inherits=BaseData, polymorphic_identity='flucstruc')
+    mapper(FlucStruc, flucstruc_table, inherits=BaseData,
+           polymorphic_identity='flucstruc', properties={'dphase': relationship(OrderedDataSet)})

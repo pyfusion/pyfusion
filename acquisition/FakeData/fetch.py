@@ -1,7 +1,7 @@
 """Fake data acquisition fetchers used for testing pyfusion code."""
 
 from pyfusion.acquisition.base import BaseDataFetcher
-from pyfusion.data.base import Coords
+from pyfusion.data.base import Coords, ChannelList, Channel
 
 class SingleChannelSineDF(BaseDataFetcher):
     """Data fetcher for single channel sine wave."""
@@ -20,6 +20,6 @@ class SingleChannelSineDF(BaseDataFetcher):
         from numpy import sin, pi
         tb = generate_timebase(t0=self.t0, n_samples=self.n_samples, sample_freq=self.sample_freq)
         sig = Signal(self.amplitude*sin(2*pi*self.frequency*tb))
-        output_data = TimeseriesData(timebase=tb, signal=sig, coords=[Coords()])
+        output_data = TimeseriesData(timebase=tb, signal=sig, channels=ChannelList(Channel('ch_01',Coords('dummy', (0,0,0)))))
         output_data.meta.update({'shot':self.shot})
         return output_data

@@ -158,6 +158,21 @@ class TestTimebase(BasePyfusionTestCase):
         self.assertTrue((test_tb == local_tb).all())
         self.assertAlmostEqual(test_tb.sample_freq, sample_freq, 4)
 
+    def test_timebase_slice(self):
+        from pyfusion.data.timeseries import generate_timebase
+        from numpy import arange
+        t0=0.3
+        n_samples=500
+        sample_freq=1.e6
+        test_tb = generate_timebase(t0=t0,n_samples=n_samples, sample_freq=sample_freq)
+
+        self.assertTrue(hasattr(test_tb, 'sample_freq'))
+
+        sliced_tb = test_tb[:10]
+
+        self.assertTrue(hasattr(sliced_tb, 'sample_freq'))
+
+TestTimebase.dev = True
 
 class TestSignal(BasePyfusionTestCase):
     """Test Signal class."""

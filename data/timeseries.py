@@ -19,7 +19,7 @@ class Timebase(np.ndarray):
         return obj
 
     def is_contiguous(self):
-        return max(((self[1:]-self[:-1])-1.0/self.sample_freq)**2) < (0.01/self.sample_freq)**2
+        return max(((self[1:]-self[:-1])-1.0/self.sample_freq)**2) < (0.1/self.sample_freq)**2
 
     def __array_finalize__(self, obj):
         # ``self`` is a new object resulting from

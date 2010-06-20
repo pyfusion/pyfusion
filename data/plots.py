@@ -33,6 +33,17 @@ def plot_signals(input_data, filename=None):
     else:
         pl.show()
 
+@register("TimeseriesData")
+def plot_spectrogram(input_data, channel_number=0, filename=None):
+    import pylab as pl
+
+    pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq)
+
+    pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[0].name))
+    if filename != None:
+        pl.savefig(filename)
+    else:
+        pl.show()
 
 #def plot_multichannel_coord(input_data, coord=None, savefig=None):
 #    pass

@@ -7,7 +7,6 @@ from utils import cps, peak_freq, remap_periodic, list2bin, bin2list
 
 import pyfusion
         
-
 class Timebase(np.ndarray):
     """Timebase vector with parameterised internal representation.
 
@@ -19,11 +18,11 @@ class Timebase(np.ndarray):
         obj.sample_freq = 1./(obj[1]-obj[0])
         return obj
 
+    def is_contiguous(self):
+        return max(((self[1:]-self[:-1])-1.0/self.sample_freq)**2) < (0.01/self.sample_freq)**2
 
     def __array_finalize__(self,obj):
         pass
-
-    
 
 def generate_timebase(t0=0.0, n_samples=1.e4, sample_freq=1.e6):
     sample_time = 1./sample_freq

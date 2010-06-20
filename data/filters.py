@@ -81,6 +81,15 @@ def segment(input_data, n_samples):
         output_data.add(tmp_data)
     return output_data
 
+@register("DataSet")
+def remove_noncontiguous(input_dataset):
+    remove_list = []
+    for item in input_dataset:
+        if not item.timebase.is_contiguous():
+            remove_list.append(item)
+    for item in remove_list:
+        input_dataset.remove(item)
+    return input_dataset
 
 @register("TimeseriesData", "DataSet")
 def normalise(input_data, method='peak', separate=False):

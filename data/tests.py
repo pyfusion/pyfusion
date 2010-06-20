@@ -790,6 +790,46 @@ class TestOrderedDataSet(BasePyfusionTestCase):
             self.assertEqual(db_ods[0].channel_1.name, 'channel_01')
 
         
+class TestRemoveNonContiguousFilter(BasePyfusionTestCase):
+
+    def test_remove_noncontiguous(self):
+        from pyfusion.data.filters import reduce_time
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from pyfusion.data.base import DataSet
+        from numpy import arange, searchsorted,mean
+
+        tb1 = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        tb2 = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        tb3 = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        # nonzero signal mean
+        tsd1 = TimeseriesData(timebase=tb1,
+                              signal=Signal(arange(len(tb1))), channels=ChannelList(Channel('ch_01',Coords('dummy',(0,0,0)))))
+        tsd2 = TimeseriesData(timebase=tb2,
+                              signal=Signal(arange(len(tb2))), channels=ChannelList(Channel('ch_01',Coords('dummy',(0,0,0)))))
+        tsd3 = TimeseriesData(timebase=tb3,
+                              signal=Signal(arange(len(tb3))), channels=ChannelList(Channel('ch_01',Coords('dummy',(0,0,0)))))
+
+        self.assertTrue(tb1.is_contiguous())
+        self.assertTrue(tb2.is_contiguous())
+        self.assertTrue(tb3.is_contiguous())
+        tsd2.timebase[-50:] += 1.0
+        self.assertFalse(tb2.is_contiguous())
+
+        ds = DataSet()
+        for tsd in [tsd1, tsd2, tsd3]:
+            ds.add(tsd)
+        
+        for tsd in [tsd1, tsd2, tsd3]:
+            self.assertTrue(tsd in ds)
+
+        filtered_ds = ds.remove_noncontiguous()
+        for tsd in [tsd1, tsd3]:
+            self.assertTrue(tsd in filtered_ds)
+            
+        self.assertFalse(tsd2 in filtered_ds)
+
+
+TestRemoveNonContiguousFilter.dev = True
         
 class TestSubtractMeanFilter(BasePyfusionTestCase):
     """Test mean subtraction filter for timeseries data."""

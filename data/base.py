@@ -214,7 +214,7 @@ if pyfusion.USE_ORM:
     pyfusion.metadata.create_all()
     mapper(BaseDataSet, basedataset_table,
            polymorphic_on=basedataset_table.c.type, polymorphic_identity='base_dataset',
-           properties={'data': relationship(BaseData, secondary=data_basedataset_table, backref='datasets')})
+           properties={'data': dynamic_loader(BaseData, secondary=data_basedataset_table, backref='datasets')})
 
 
 

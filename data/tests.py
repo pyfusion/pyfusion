@@ -172,7 +172,6 @@ class TestTimebase(BasePyfusionTestCase):
 
         self.assertTrue(hasattr(sliced_tb, 'sample_freq'))
 
-TestTimebase.dev = True
 
 class TestSignal(BasePyfusionTestCase):
     """Test Signal class."""
@@ -663,7 +662,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
             our_dataset = session.query(DataSet).order_by("id").first()
             self.assertEqual(our_dataset.created, fs_data.created)
 
-            self.assertEqual(len(our_dataset.data), len(our_dataset))
+            self.assertEqual(len([i for i in our_dataset.data]), len(our_dataset))
 
             #check flucstrucs have freq, t0 and d_phase..
 
@@ -678,6 +677,19 @@ class TestFlucstrucs(BasePyfusionTestCase):
             self.assertTrue(isinstance(test_fs.dphase, OrderedDataSet))
             self.assertEqual(len(test_fs.dphase), n_ch-1)
 
+            # what if we close the session and try again?
+
+            session.close()
+            session = pyfusion.Session()
+
+            ds_again = session.query(DataSet).order_by("id").first()
+            fs_again = list(ds_again)[0]
+            """
+            for i in fs_again.dphase:
+                print i
+            assert False
+            """
+TestFlucstrucs.dev = True
 
 class TestFloatDelta(BasePyfusionTestCase):
     """delta phase data class."""
@@ -844,7 +856,6 @@ class TestRemoveNonContiguousFilter(BasePyfusionTestCase):
         self.assertFalse(tsd2 in filtered_ds)
 
 
-TestRemoveNonContiguousFilter.dev = True
         
 class TestSubtractMeanFilter(BasePyfusionTestCase):
     """Test mean subtraction filter for timeseries data."""

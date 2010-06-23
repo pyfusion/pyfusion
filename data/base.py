@@ -13,7 +13,7 @@ import pyfusion
 
 if pyfusion.USE_ORM:
     from sqlalchemy import Table, Column, String, Integer, Float, ForeignKey, DateTime
-    from sqlalchemy.orm import reconstructor, mapper, relationship
+    from sqlalchemy.orm import reconstructor, mapper, relationship, dynamic_loader
 
 def history_reg_method(method):
     def updated_method(input_data, *args, **kwargs):

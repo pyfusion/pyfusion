@@ -586,7 +586,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
                                                     noise = 0.01)
         fs_data = multichannel_data.flucstruc(min_dphase = -2*pi)
         self.assertTrue(isinstance(fs_data, DataSet))
-        self.assertTrue(len(fs_data) > 0)
+        self.assertTrue(len([i for i in fs_data.data]) > 0)
         E = 0.7**2 + 0.5**2
         for fs in fs_data:
             self.assertTrue(isinstance(fs, FlucStruc))
@@ -646,6 +646,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
             # produce a dataset of flucstrucs
             #print ">> ", multichannel_data.channels
             fs_data = multichannel_data.flucstruc(min_dphase = -2*pi)
+            print type(fs_data)
             #print list(fs_data)[0].dphase[0].channel_1
             #print '---'
             # save our dataset to the database
@@ -665,9 +666,13 @@ class TestFlucstrucs(BasePyfusionTestCase):
             self.assertEqual(len([i for i in our_dataset.data]), len(our_dataset))
 
             #check flucstrucs have freq, t0 and d_phase..
+            #for i in our_dataset.data:
+            #    print i
+            #print 'w'
+            #assert False
 
             #our guinea pig flucstruc:
-            test_fs = list(our_dataset)[0]
+            test_fs = our_dataset.data[0]
             self.assertTrue(isinstance(test_fs.freq, float))
             self.assertTrue(isinstance(test_fs.t0, float))
 
@@ -675,7 +680,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
 
             from pyfusion.data.base import OrderedDataSet
             self.assertTrue(isinstance(test_fs.dphase, OrderedDataSet))
-            self.assertEqual(len(test_fs.dphase), n_ch-1)
+            self.assertEqual(len([i for i in test_fs.dphase.data]), n_ch-1)
 
             # what if we close the session and try again?
 
@@ -803,9 +808,9 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         ods = OrderedDataSet(ordered_by="channel_1.name")
 
         for fd in [fd3, fd1, fd2]:
-            ods.add(fd)
+            ods.data.append(fd)
 
-        self.assertEqual(ods[0], fd1)
+        self.assertEqual(ods.data.order_by(FloatDelta.), fd1)
 
         ods.save()
 
@@ -814,7 +819,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         if pyfusion.USE_ORM:
             session = pyfusion.Session()
             db_ods = session.query(OrderedDataSet).first()
-            self.assertEqual(db_ods[0].channel_1.name, 'channel_01')
+            self.assertEqual(db_ods.data[0].channel_1.name, 'channel_01')
 
         
 class TestRemoveNonContiguousFilter(BasePyfusionTestCase):

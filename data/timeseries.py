@@ -176,9 +176,9 @@ class FlucStruc(BaseData):
         d_phase_dataset = OrderedDataSet(ordered_by="channel_1.name")
         ## append then sort should be faster than ordereddataset.add() [ fewer sorts()]
         for i, d_ph in enumerate(d_phases):
-            d_phase_dataset.append(FloatDelta(self.channels[i], self.channels[i+1], d_ph))
+            d_phase_dataset.data.append(FloatDelta(self.channels[i], self.channels[i+1], d_ph))
 
-        d_phase_dataset.sort()
+        #d_phase_dataset.sort()
         return d_phase_dataset
 
     def _get_single_channel_phase(self, ch_id):

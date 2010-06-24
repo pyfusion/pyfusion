@@ -184,10 +184,10 @@ class BaseDataSet(object):
             # this may be inefficient: get it working, then get it fast
             session = pyfusion.Session()
             session.add(self)
-            session.flush()
-            for item in self:
-                self.data.append(item)
-                item.save()
+            #session.flush()
+            #for item in self:
+            #    self.data.append(item)
+            #    item.save()
             session.commit()
             session.close()
 
@@ -214,7 +214,7 @@ if pyfusion.USE_ORM:
     pyfusion.metadata.create_all()
     mapper(BaseDataSet, basedataset_table,
            polymorphic_on=basedataset_table.c.type, polymorphic_identity='base_dataset',
-           properties={'data': dynamic_loader(BaseData, secondary=data_basedataset_table, backref='datasets')})
+           properties={'data': dynamic_loader(BaseData, secondary=data_basedataset_table, backref='datasets', cascade='all')})
 
 
 

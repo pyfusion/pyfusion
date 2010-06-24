@@ -142,7 +142,7 @@ def flucstruc(input_data, min_dphase = -pi):
     svd_data = input_data.subtract_mean().normalise(method="var").svd()
 
     for fs_gr in svd_data.fs_group():
-        fs_dataset.add(FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase))
+        fs_dataset.data.append(FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase))
     
     return fs_dataset
 

@@ -201,6 +201,8 @@ if pyfusion.USE_ORM:
                             Column('_binary_svs', Integer),
                             Column('freq', Float),
                             Column('t0', Float),    
+                            Column('p', Float),    
+                            Column('H', Float),    
                             Column('dphase_id', Integer, ForeignKey('baseordereddataset.id'), nullable=False))    
     pyfusion.metadata.create_all()
     mapper(FlucStruc, flucstruc_table, inherits=BaseData,

@@ -288,10 +288,13 @@ class TestDataSet(BasePyfusionTestCase):
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
         self.assertTrue(tsd_1 in test_dataset)
+        
+        """
+        # we don't support removing items from dataset yet...
         test_dataset.remove(tsd_1)
         self.assertFalse(tsd_1 in test_dataset)
         self.assertTrue(tsd_2 in test_dataset)
-        
+        """
 
     def test_dataset_filters_2(self):
         from pyfusion.data.base import DataSet
@@ -309,7 +312,6 @@ class TestDataSet(BasePyfusionTestCase):
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
         test_dataset.reduce_time(new_times)
-        test_dataset.add(3)
 
 class TestSegmentFilter(BasePyfusionTestCase):
     
@@ -672,7 +674,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
             #assert False
 
             #our guinea pig flucstruc:
-            test_fs = our_dataset.data[0]
+            test_fs = our_dataset.pop()
             self.assertTrue(isinstance(test_fs.freq, float))
             self.assertTrue(isinstance(test_fs.t0, float))
 
@@ -680,7 +682,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
 
             from pyfusion.data.base import OrderedDataSet
             self.assertTrue(isinstance(test_fs.dphase, OrderedDataSet))
-            self.assertEqual(len([i for i in test_fs.dphase.data]), n_ch-1)
+            self.assertEqual(len(test_fs.dphase), n_ch-1)
 
             # what if we close the session and try again?
 
@@ -735,45 +737,16 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         d1=TestData(1,2)
         d2=TestData(2,1)
 
-        # append doesnt sort. leaves to user to sort later
-        # add() should always sort (=append then sort())
+        ods = OrderedDataSet()
+        ods.append(d1)
+        ods.append(d2)
 
-        ds1 = OrderedDataSet(ordered_by='b')
-        for d in [d1,d2]:
-            ds1.append(d)
+        self.assertEqual(ods[0], d1)
+        self.assertEqual(ods[1], d2)
 
         
-        self.assertEqual(ds1[0], d1)
-        self.assertEqual(ds1[1], d2)
 
-        # sort should use ordered_by to sort these by b
-        ds1.sort() 
-
-        self.assertEqual(ds1[0], d2)
-        self.assertEqual(ds1[1], d1)
-
-        ds1.ordered_by = 'a'
-        ds1.sort() 
-
-        self.assertEqual(ds1[0], d1)
-        self.assertEqual(ds1[1], d2)        
-
-        #now test add, to make sure the ordered dataset is always sorted...
-        ds2 = OrderedDataSet(ordered_by='b')
-
-        d3=TestData(1,6)
-        d4=TestData(2,4)
-        d5=TestData(1,5)
-        d6=TestData(2,3)
-
-        for d in [d1,d2,d3,d4,d5,d6]:
-            ds2.add(d)
-            for x,y in enumerate(ds2[:-1]):
-                self.assertTrue(ds2[x].b < ds2[x+1].b)
-
-        self.assertEqual(len(ds2), 6)
-
-
+    """
     def test_submethod(self):
         from pyfusion.data.base import OrderedDataSet, BaseData
         class TestData(BaseData):
@@ -791,7 +764,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         self.assertEqual(ds[0].a.a, 1)
         self.assertEqual(ds[1].a.a, 2)
         self.assertEqual(ds[2].a.a, 3)
-
+    """
     def test_ordered_dataset_ORM(self):
         from pyfusion.data.base import FloatDelta, OrderedDataSet, Channel, Coords
 
@@ -805,12 +778,11 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         fd2 = FloatDelta(channel_02, channel_03, 0.25)
         fd3 = FloatDelta(channel_03, channel_04, 0.49)
 
-        ods = OrderedDataSet(ordered_by="channel_1.name")
-
+        #ods = OrderedDataSet(ordered_by="channel_1.name")
+        ods = OrderedDataSet()
+        
         for fd in [fd3, fd1, fd2]:
-            ods.data.append(fd)
-
-        self.assertEqual(ods.data.order_by(FloatDelta.), fd1)
+            ods.append(fd)
 
         ods.save()
 
@@ -819,8 +791,9 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         if pyfusion.USE_ORM:
             session = pyfusion.Session()
             db_ods = session.query(OrderedDataSet).first()
-            self.assertEqual(db_ods.data[0].channel_1.name, 'channel_01')
-
+            self.assertEqual(db_ods[0].channel_1.name, 'channel_03')
+            self.assertEqual(db_ods[1].channel_1.name, 'channel_01')
+            self.assertEqual(db_ods[2].channel_1.name, 'channel_02')
         
 class TestRemoveNonContiguousFilter(BasePyfusionTestCase):
 

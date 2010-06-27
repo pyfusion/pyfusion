@@ -35,11 +35,12 @@ class MetaFilter(type):
 def reduce_time(input_data, new_time_range):
     from pyfusion.data.base import DataSet
     if isinstance(input_data, DataSet):
-        output_dataset = input_data.copy()
-        output_dataset.clear()
+        #output_dataset = input_data.copy()
+        #output_dataset.clear()
+        output_dataset = DataSet()
         for data in input_data:
             try:
-                output_dataset.add(data.reduce_time(new_time_range))
+                output_dataset.append(data.reduce_time(new_time_range))
             except AttributeError:
                 pyfusion.logger.warning("Data filter 'reduce_time' not applied to item in dataset")
         return output_dataset
@@ -142,7 +143,7 @@ def flucstruc(input_data, min_dphase = -pi):
     svd_data = input_data.subtract_mean().normalise(method="var").svd()
 
     for fs_gr in svd_data.fs_group():
-        fs_dataset.data.append(FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase))
+        fs_dataset.add(FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase))
     
     return fs_dataset
 

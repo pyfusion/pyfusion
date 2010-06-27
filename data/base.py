@@ -176,9 +176,10 @@ if pyfusion.USE_ORM:
 class BaseDataSet(object):
     __metaclass__ = MetaMethods
 
-    def __init__(self):
+    def __init__(self, label):
         self.created = datetime.now()
         self.history = "%s > New %s" %(self.created, self.__class__.__name__)
+        self.label = label
         if not pyfusion.USE_ORM:
             self.data = set()
         
@@ -214,6 +215,7 @@ if pyfusion.USE_ORM:
     basedataset_table = Table('basedataset', pyfusion.metadata,
                               Column('id', Integer, primary_key=True),
                               Column('created', DateTime),
+                              Column('label', String(100), nullable=False),
                               Column('type', String(30), nullable=False))
 
     # many to many mapping of data to datasets
@@ -258,8 +260,9 @@ class OrderedDataSetItem(object):
 class BaseOrderedDataSet(object):
     __metaclass__ = MetaMethods
 
-    def __init__(self):
+    def __init__(self, label):
         self.created = datetime.now()
+        self.label = label
         self.history = "%s > New %s" %(self.created, self.__class__.__name__)
         if not pyfusion.USE_ORM:
             self.data_items = []
@@ -292,6 +295,7 @@ if pyfusion.USE_ORM:
     baseordereddataset_table = Table('baseordereddataset', pyfusion.metadata,
                                      Column('id', Integer, primary_key=True),
                                      Column('created', DateTime),
+                                     Column('label', String(50), nullable=False),
                                      Column('type', String(30), nullable=False))
 
     ordereditems_table = Table('ordereddata_items', pyfusion.metadata,

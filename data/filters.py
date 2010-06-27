@@ -2,6 +2,8 @@
 Some un-pythonic code here (checking instance type inside
 function). Need to figure out a better way to do this.
 """
+from datetime import datetime
+
 from numpy import searchsorted, arange, mean, resize, repeat, fft, conjugate, linalg, array, zeros_like, take, argmin, pi
 from numpy import correlate as numpy_correlate
 import pyfusion
@@ -37,7 +39,7 @@ def reduce_time(input_data, new_time_range):
     if isinstance(input_data, DataSet):
         #output_dataset = input_data.copy()
         #output_dataset.clear()
-        output_dataset = DataSet()
+        output_dataset = DataSet(input_data.label+'_reduce_time')
         for data in input_data:
             try:
                 output_dataset.append(data.reduce_time(new_time_range))
@@ -67,7 +69,7 @@ def segment(input_data, n_samples):
             except AttributeError:
                 pyfusion.logger.warning("Data filter 'segment' not applied to item in dataset")
         return output_dataset
-    output_data = DataSet()
+    output_data = DataSet('segmented_%s' %datetime.now())
     for el in arange(0,len(input_data.timebase), n_samples):
         if input_data.signal.ndim == 1:
             tmp_data = TimeseriesData(timebase=input_data.timebase[el:el+n_samples],
@@ -97,7 +99,7 @@ def normalise(input_data, method='peak', separate=False):
     from numpy import mean, sqrt, max, abs, var, atleast_2d
     from pyfusion.data.base import DataSet
     if isinstance(input_data, DataSet):
-        output_dataset = DataSet()
+        output_dataset = DataSet(input_data.label+"_normalise")
         for d in input_data:
             output_dataset.add(normalise(d, method=method, separate=separate))
         return output_dataset
@@ -134,12 +136,14 @@ def svd(input_data):
     return SVDData(input_data.timebase, input_data.channels, linalg.svd(input_data.signal, 0))
 
 @register("TimeseriesData")
-def flucstruc(input_data, min_dphase = -pi):
+def flucstruc(input_data, min_dphase = -pi, label=None):
     from pyfusion.data.base import DataSet
     from pyfusion.data.timeseries import FlucStruc
 
-    fs_dataset = DataSet()
-
+    if label:
+        fs_dataset = DataSet(label)
+    else:
+        fs_dataset = DataSet('flucstrucs_%s' %datetime.now())
     svd_data = input_data.subtract_mean().normalise(method="var").svd()
 
     for fs_gr in svd_data.fs_group():
@@ -190,7 +194,7 @@ def fs_group(input_data):
 def subtract_mean(input_data):
     from pyfusion.data.base import DataSet
     if isinstance(input_data, DataSet):
-        output_dataset = DataSet()
+        output_dataset = DataSet(input_data.label+"_subtract_mean")
         for d in input_data:
             output_dataset.add(subtract_mean(d))
         return output_dataset

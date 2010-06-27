@@ -265,7 +265,7 @@ class TestFilters(BasePyfusionTestCase):
                                channels=get_n_channels(5))
         tsd_2 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb))+1,(5,len(tb)))),
                                channels=get_n_channels(5))
-        test_dataset = DataSet()
+        test_dataset = DataSet('test_dataset')
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
         test_dataset.reduce_time(new_times)
@@ -284,7 +284,7 @@ class TestDataSet(BasePyfusionTestCase):
         tsd_2 = TimeseriesData(timebase=tb,
                                signal=Signal(resize(arange(5*len(tb))+1, (5,len(tb)))),
                                channels=ch)
-        test_dataset = DataSet()
+        test_dataset = DataSet('test_ds_1')
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
         self.assertTrue(tsd_1 in test_dataset)
@@ -308,7 +308,7 @@ class TestDataSet(BasePyfusionTestCase):
         tsd_2 = TimeseriesData(timebase=tb,
                                signal=Signal(resize(arange(5*len(tb))+1,(5,len(tb)))),
                                channels=ch)
-        test_dataset = DataSet()
+        test_dataset = DataSet('test_ds_2')
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
         test_dataset.reduce_time(new_times)
@@ -347,7 +347,7 @@ class TestSegmentFilter(BasePyfusionTestCase):
         tsd_2 = TimeseriesData(timebase=tb,
                                signal=Signal(resize(arange(3*len(tb)+1),(3,len(tb)))),
                                channels=get_n_channels(3))
-        input_dataset = DataSet()
+        input_dataset = DataSet('test_dataset')
         input_dataset.add(tsd_1)
         input_dataset.add(tsd_2)
         seg_dataset = input_dataset.segment(n_samples=10)
@@ -420,7 +420,7 @@ class TestNormalise(BasePyfusionTestCase):
         from pyfusion.data.base import DataSet
         channel_data_for_set = test_acq.getdata(self.shot_number, "test_timeseries_channel_2")
 
-        test_dataset = DataSet()
+        test_dataset = DataSet('test_dataset')
         test_dataset.add(channel_data_for_set)
         test_dataset.normalise(method='rms')
         for d in test_dataset:
@@ -656,9 +656,9 @@ class TestFlucstrucs(BasePyfusionTestCase):
             session = pyfusion.Session()
             from pyfusion.data.timeseries import FlucStruc
             from pyfusion.data.base import DataSet
-            d1 = DataSet()
+            d1 = DataSet('test_dataset_1')
             d1.save()
-            d2 = DataSet()
+            d2 = DataSet('test_dataset_2')
             d2.save()
             
             # get our dataset from database
@@ -680,8 +680,8 @@ class TestFlucstrucs(BasePyfusionTestCase):
 
             # now, are the phase data correct?
 
-            from pyfusion.data.base import OrderedDataSet
-            self.assertTrue(isinstance(test_fs.dphase, OrderedDataSet))
+            from pyfusion.data.base import BaseOrderedDataSet
+            self.assertTrue(isinstance(test_fs.dphase, BaseOrderedDataSet))
             self.assertEqual(len(test_fs.dphase), n_ch-1)
 
             # what if we close the session and try again?
@@ -696,7 +696,6 @@ class TestFlucstrucs(BasePyfusionTestCase):
                 print i
             assert False
             """
-TestFlucstrucs.dev = True
 
 class TestFloatDelta(BasePyfusionTestCase):
     """delta phase data class."""
@@ -726,7 +725,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
     """test the ordered dataset"""
 
     def test_ordereddataset(self):
-        from pyfusion.data.base import OrderedDataSet, BaseData
+        from pyfusion.data.base import BaseOrderedDataSet, BaseData
         #pretend these are datapoints
         class TestData(BaseData):
             def __init__(self, a, b):
@@ -737,7 +736,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         d1=TestData(1,2)
         d2=TestData(2,1)
 
-        ods = OrderedDataSet()
+        ods = BaseOrderedDataSet('test_ods')
         ods.append(d1)
         ods.append(d2)
 
@@ -766,7 +765,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         self.assertEqual(ds[2].a.a, 3)
     """
     def test_ordered_dataset_ORM(self):
-        from pyfusion.data.base import FloatDelta, OrderedDataSet, Channel, Coords
+        from pyfusion.data.base import FloatDelta, BaseOrderedDataSet, Channel, Coords
 
         channel_01 = Channel('channel_01', Coords('dummy', (0,0,0)))
         channel_02 = Channel('channel_02', Coords('dummy', (0,0,0)))
@@ -779,7 +778,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         fd3 = FloatDelta(channel_03, channel_04, 0.49)
 
         #ods = OrderedDataSet(ordered_by="channel_1.name")
-        ods = OrderedDataSet()
+        ods = BaseOrderedDataSet('test_ods')
         
         for fd in [fd3, fd1, fd2]:
             ods.append(fd)
@@ -790,7 +789,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         import pyfusion
         if pyfusion.USE_ORM:
             session = pyfusion.Session()
-            db_ods = session.query(OrderedDataSet).first()
+            db_ods = session.query(BaseOrderedDataSet).first()
             self.assertEqual(db_ods[0].channel_1.name, 'channel_03')
             self.assertEqual(db_ods[1].channel_1.name, 'channel_01')
             self.assertEqual(db_ods[2].channel_1.name, 'channel_02')
@@ -820,7 +819,7 @@ class TestRemoveNonContiguousFilter(BasePyfusionTestCase):
         tsd2.timebase[-50:] += 1.0
         self.assertFalse(tb2.is_contiguous())
 
-        ds = DataSet()
+        ds = DataSet('ds')
         for tsd in [tsd1, tsd2, tsd3]:
             ds.add(tsd)
         
@@ -891,7 +890,7 @@ class TestSubtractMeanFilter(BasePyfusionTestCase):
         multichannel_data_1.signal += random.rand(*multichannel_data_1.signal.shape)
         multichannel_data_2.signal += random.rand(*multichannel_data_2.signal.shape)
 
-        test_dataset = DataSet()
+        test_dataset = DataSet('test_dataset')
         test_dataset.add(multichannel_data_1)
         test_dataset.add(multichannel_data_2)
 
@@ -977,3 +976,27 @@ class TestDataHistory(BasePyfusionTestCase):
         filtered_tsd.normalise(method='rms')
         self.assertEqual(filtered_tsd.history.split('> ')[-1], "normalise(method='rms')")
 
+
+class TestDataSetLabels(BasePyfusionTestCase):
+    def test_dataset_label(self):
+        import pyfusion
+        from pyfusion.data.base import DataSet
+        test_ds = DataSet('test_ds_1')
+        test_ds.save()
+        self.assertEqual(test_ds.label, 'test_ds_1')
+        if pyfusion.USE_ORM:
+            session = pyfusion.Session()
+            db_ods = session.query(DataSet).filter_by(label='test_ds_1')
+            
+    def test_baseordereddataset_label(self):
+        import pyfusion
+        from pyfusion.data.base import BaseOrderedDataSet
+        test_ds = BaseOrderedDataSet('test_ods_1')
+        test_ds.save()
+        self.assertEqual(test_ds.label, 'test_ods_1')
+        if pyfusion.USE_ORM:
+            session = pyfusion.Session()
+            db_ods = session.query(BaseOrderedDataSet).filter_by(label='test_ods_1')
+            
+        
+        

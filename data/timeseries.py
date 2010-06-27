@@ -1,5 +1,6 @@
 """Timeseries data classes."""
 
+from datetime import datetime
 import numpy as np
 
 from pyfusion.data.base import BaseData, BaseOrderedDataSet, FloatDelta
@@ -174,7 +175,7 @@ class FlucStruc(BaseData):
         phases = np.array([self._get_single_channel_phase(i) for i in range(self.signal.shape[0])])
         d_phases = remap_periodic(phases[1:]-phases[:-1], min_val = min_dphase)
         #d_phase_dataset = OrderedDataSet(ordered_by="channel_1.name")
-        d_phase_dataset = BaseOrderedDataSet()
+        d_phase_dataset = BaseOrderedDataSet('d_phase_%s' %datetime.now())
         ## append then sort should be faster than ordereddataset.add() [ fewer sorts()]
         for i, d_ph in enumerate(d_phases):
             d_phase_dataset.append(FloatDelta(self.channels[i], self.channels[i+1], d_ph))

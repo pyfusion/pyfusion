@@ -192,6 +192,9 @@ class BaseDataSet(object):
     def remove(self, item):
         self.data.remove(item)
 
+    def update(self, item):
+        self.data.update(item)
+    
     def copy(self):
         return self.data.copy()
         
@@ -313,18 +316,19 @@ if pyfusion.USE_ORM:
         'item': relationship(BaseData, lazy='joined', backref='dataitem')
         })
 
-
+"""
 class OrderedDataSet(BaseOrderedDataSet):
     pass
 
 if pyfusion.USE_ORM:
     ordered_dataset_table = Table('ordered_dataset', pyfusion.metadata,
-                                  Column('baseordereddataset_id', Integer, ForeignKey('baseordereddataset.id'), primary_key=True))
+                                  Column('base_ordered_dataset_id', Integer,
+                                         ForeignKey('baseordereddataset.id'), primary_key=True))
                                   #Column('ordered_by', String(50)))
 
     pyfusion.metadata.create_all()
-    mapper(OrderedDataSet, ordered_dataset_table, inherits=BaseOrderedDataSet, polymorphic_identity='ordered_dataset')
-
+    mapper(OrderedDataSet, ordered_dataset_table, inherits=BaseOrderedDataSet, polymorphic_identity='ordered_datasets')
+"""
 class BaseCoordTransform(object):
     """Base class does nothing useful at the moment"""
     input_coords = 'base_input'

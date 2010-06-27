@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from pyfusion.data.base import BaseData, OrderedDataSet, FloatDelta
+from pyfusion.data.base import BaseData, BaseOrderedDataSet, FloatDelta
 from utils import cps, peak_freq, remap_periodic, list2bin, bin2list
 
 import pyfusion
@@ -174,7 +174,7 @@ class FlucStruc(BaseData):
         phases = np.array([self._get_single_channel_phase(i) for i in range(self.signal.shape[0])])
         d_phases = remap_periodic(phases[1:]-phases[:-1], min_val = min_dphase)
         #d_phase_dataset = OrderedDataSet(ordered_by="channel_1.name")
-        d_phase_dataset = OrderedDataSet()
+        d_phase_dataset = BaseOrderedDataSet()
         ## append then sort should be faster than ordereddataset.add() [ fewer sorts()]
         for i, d_ph in enumerate(d_phases):
             d_phase_dataset.append(FloatDelta(self.channels[i], self.channels[i+1], d_ph))
@@ -201,7 +201,7 @@ if pyfusion.USE_ORM:
                             Column('_binary_svs', Integer),
                             Column('freq', Float),
                             Column('t0', Float),    
-                            Column('dphase_id', Integer, ForeignKey('ordered_dataset.baseordereddataset_id'), nullable=False))    
+                            Column('dphase_id', Integer, ForeignKey('baseordereddataset.id'), nullable=False))    
     pyfusion.metadata.create_all()
     mapper(FlucStruc, flucstruc_table, inherits=BaseData,
-           polymorphic_identity='flucstruc', properties={'dphase': relationship(OrderedDataSet)})
+           polymorphic_identity='flucstruc', properties={'dphase': relationship(BaseOrderedDataSet)})

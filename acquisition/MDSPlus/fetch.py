@@ -2,7 +2,7 @@
 
 from pyfusion.acquisition.base import BaseDataFetcher
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
-from pyfusion.data.base import Coords
+from pyfusion.data.base import Coords, ChannelList, Channel
 
 class MDSPlusBaseDataFetcher(BaseDataFetcher):    
     def setup(self):
@@ -17,9 +17,10 @@ class MDSPlusTimeseriesDataFetcher(MDSPlusBaseDataFetcher):
         timebase = self.acq._Data.execute("mdsvalue('dim_of(%(mds_path)s)')" %{'mds_path':self.mds_path})
         #coords = Coords()
         #coords.load_from_config(**self.__dict__)
+        ch = Channel(self.mds_path, Coords('dummy', (0,0,0)))
 
         output_data = TimeseriesData(timebase=Timebase(timebase.value),
-                                     signal=Signal(data.value))#,
+                                     signal=Signal(data.value), channels=ch)#,
                                      #coords=[coords])
         output_data.meta.update({'shot':self.shot})
         return output_data

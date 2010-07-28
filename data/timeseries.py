@@ -196,7 +196,7 @@ class FlucStruc(BaseData):
 
 if pyfusion.USE_ORM:
     from sqlalchemy import Table, Column, Integer, String, ForeignKey, Float
-    from sqlalchemy.orm import mapper, relationship
+    from sqlalchemy.orm import mapper, relation
     flucstruc_table = Table('flucstrucs', pyfusion.metadata,
                             Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True),
                             Column('_binary_svs', Integer),

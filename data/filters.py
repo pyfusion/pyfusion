@@ -135,24 +135,9 @@ def svd(input_data):
     from timeseries import SVDData
     return SVDData(input_data.timebase, input_data.channels, linalg.svd(input_data.signal, 0))
 
-@register("TimeseriesData")
-def flucstruc(input_data, min_dphase = -pi, label=None):
-    from pyfusion.data.base import DataSet
-    from pyfusion.data.timeseries import FlucStruc
-
-    if label:
-        fs_dataset = DataSet(label)
-    else:
-        fs_dataset = DataSet('flucstrucs_%s' %datetime.now())
-    svd_data = input_data.subtract_mean().normalise(method="var").svd()
-
-    for fs_gr in svd_data.fs_group():
-        fs_dataset.add(FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase))
-    
-    return fs_dataset
 
 @register("TimeseriesData", "SVDData")
-def fs_group(input_data):
+def fs_group_geometric(input_data):
     """
     no filtering implemented yet
     """
@@ -188,6 +173,58 @@ def fs_group(input_data):
         output_fs_list.append(remaining_ids)
 
     return output_fs_list
+
+
+@register("SVDData")
+def fs_group_threshold(input_data, threshold=0.2):
+    """
+    no filtering implemented yet
+    """
+    from timeseries import SVDData
+
+    if not isinstance(input_data, SVDData):
+        input_data = input_data.subtract_mean().normalise(method="var").svd()
+    
+    
+    #svd_data = linalg.svd(norm_data.signal,0)
+    output_fs_list = []
+
+    #svs_norm_energy = array([i**2 for i in svd_data[1]])/input_data.E
+
+    #max_element = searchsorted(cumsum(svs_norm_energy), energy_threshold)
+    #remaining_ids = range(max_element)
+    remaining_ids = range(len(input_data.svs))
+    
+    self_cps = input_data.self_cps()
+
+    while len(remaining_ids) > 1:
+        rsv0 = remaining_ids[0]
+        tmp_cp = [mean(abs(cps(input_data.chronos[rsv0], input_data.chronos[sv])))**2/(self_cps[rsv0]*self_cps[sv]) for sv in remaining_ids]
+        filtered_elements = [i for [i,val] in enumerate(tmp_cp) if val > threshold]
+        output_fs_list.append([remaining_ids[i] for i in filtered_elements])
+            
+
+        for i in output_fs_list[-1]: remaining_ids.remove(i)
+    if len(remaining_ids) == 1:
+        output_fs_list.append(remaining_ids)
+
+    return output_fs_list
+
+@register("TimeseriesData")
+def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, label=None):
+    from pyfusion.data.base import DataSet
+    from pyfusion.data.timeseries import FlucStruc
+
+    if label:
+        fs_dataset = DataSet(label)
+    else:
+        fs_dataset = DataSet('flucstrucs_%s' %datetime.now())
+    svd_data = input_data.subtract_mean().normalise(method="var").svd()
+
+    for fs_gr in group(svd_data):
+        fs_dataset.add(FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase))
+    
+    return fs_dataset
 
 
 @register("TimeseriesData", "DataSet")

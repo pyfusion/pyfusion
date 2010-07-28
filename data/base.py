@@ -13,7 +13,7 @@ import pyfusion
 
 if pyfusion.USE_ORM:
     from sqlalchemy import Table, Column, String, Integer, Float, ForeignKey, DateTime
-    from sqlalchemy.orm import reconstructor, mapper, relationship, dynamic_loader
+    from sqlalchemy.orm import reconstructor, mapper, relation, dynamic_loader
     from sqlalchemy.orm.collections import column_mapped_collection
 
 def history_reg_method(method):
@@ -215,7 +215,7 @@ if pyfusion.USE_ORM:
     basedataset_table = Table('basedataset', pyfusion.metadata,
                               Column('id', Integer, primary_key=True),
                               Column('created', DateTime),
-                              Column('label', String(100), nullable=False),
+                              Column('label', String(100), nullable=False, unique=True),
                               Column('type', String(30), nullable=False))
 
     # many to many mapping of data to datasets
@@ -295,7 +295,7 @@ if pyfusion.USE_ORM:
     baseordereddataset_table = Table('baseordereddataset', pyfusion.metadata,
                                      Column('id', Integer, primary_key=True),
                                      Column('created', DateTime),
-                                     Column('label', String(50), nullable=False),
+                                     Column('label', String(50), nullable=False, unique=True),
                                      Column('type', String(30), nullable=False))
 
     ordereditems_table = Table('ordereddata_items', pyfusion.metadata,

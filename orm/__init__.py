@@ -1,5 +1,7 @@
 """Object relational mapping for Pyfusion"""
 
+# is there some problem with this file being commited in git?
+
 import pyfusion
 
 if pyfusion.USE_ORM:
@@ -18,3 +20,4 @@ def setup_orm():
         pyfusion.metadata = MetaData()
     pyfusion.metadata.bind = pyfusion.orm_engine
     pyfusion.metadata.create_all()
+

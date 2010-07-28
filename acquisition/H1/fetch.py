@@ -14,10 +14,10 @@ class H1TimeseriesDataFetcher(MDSPlusBaseDataFetcher):
     def do_fetch(self):
         data = self.acq._Data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':self.mds_path})
         timebase = self.acq._Data.execute("mdsvalue('dim_of(%(mds_path)s)')" %{'mds_path':self.mds_path})
-        coords = Coords()
-        coords.load_from_config(**self.__dict__)
+        #coords = Coords('dummy',(0.0,0.0,0.0))
+        #coords.load_from_config(**self.__dict__)
         output_data = TimeseriesData(timebase=Timebase(timebase.value),
-                                     signal=Signal(data.value), coords=[coords])
+                                     signal=Signal(data.value))#, coords=[coords])
         output_data.meta.update({'shot':self.shot, 'kh':get_kh(self.acq._Data)})
         return output_data
 

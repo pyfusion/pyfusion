@@ -540,7 +540,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
                                                     modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                     noise = 0.5)
 
-        fs_groups = multichannel_data.fs_group()
+        fs_groups = multichannel_data.fs_group_geometric()
         self.assertEqual(fs_groups[0], [0,1])
         self.assertEqual(fs_groups[1], [2,3])
         
@@ -555,7 +555,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
                                                     noise = 0.5)
 
         test_svd = multichannel_data.svd()
-        fs_groups = test_svd.fs_group()
+        fs_groups = test_svd.fs_group_geometric()
 
     def test_flucstruc_signals(self):
         # make sure that flucstruc derived from all singular values

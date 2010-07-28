@@ -96,7 +96,7 @@ class Channel(object):
 if pyfusion.USE_ORM:
     channel_table = Table('channel', pyfusion.metadata,
                             Column('id', Integer, primary_key=True),
-                            Column('name', String(30), nullable=False),
+                            Column('name', String(200), nullable=False),
                             Column('coords_id', Integer, ForeignKey('coords.id'), nullable=False))
     pyfusion.metadata.create_all()
     mapper(Channel, channel_table, properties={'coords': relation(Coords)})

@@ -99,7 +99,7 @@ if pyfusion.USE_ORM:
                             Column('name', String(30), nullable=False),
                             Column('coords_id', Integer, ForeignKey('coords.id'), nullable=False))
     pyfusion.metadata.create_all()
-    mapper(Channel, channel_table, properties={'coords': relationship(Coords)})
+    mapper(Channel, channel_table, properties={'coords': relation(Coords)})
 
 
     
@@ -133,7 +133,7 @@ if pyfusion.USE_ORM:
                               
     pyfusion.metadata.create_all()
     mapper(ChannelList, channellist_table,
-           properties={'_channels': relationship(Channel, secondary=channel_association_table)})
+           properties={'_channels': relation(Channel, secondary=channel_association_table)})
     
 
 
@@ -227,7 +227,7 @@ if pyfusion.USE_ORM:
 
     mapper(BaseDataSet, basedataset_table,
            polymorphic_on=basedataset_table.c.type, polymorphic_identity='base_dataset')
-#           properties={'data': relationship(BaseData, secondary=data_basedataset_table, backref='basedatasets', cascade='all', collection_class=set)})
+#           properties={'data': relation(BaseData, secondary=data_basedataset_table, backref='basedatasets', cascade='all', collection_class=set)})
 
 
 class DynamicDataSet(BaseDataSet):
@@ -249,7 +249,7 @@ if pyfusion.USE_ORM:
                             Column('basedataset_id', Integer, ForeignKey('basedataset.id'), primary_key=True))
     pyfusion.metadata.create_all()
     mapper(DataSet, dataset_table, inherits=BaseDataSet, polymorphic_identity='dataset',
-           properties={'data': relationship(BaseData, secondary=data_basedataset_table, backref='datasets', cascade='all', collection_class=set)})
+           properties={'data': relation(BaseData, secondary=data_basedataset_table, backref='datasets', cascade='all', collection_class=set)})
 
 
 class OrderedDataSetItem(object):
@@ -310,14 +310,14 @@ if pyfusion.USE_ORM:
 
     mapper(BaseOrderedDataSet, baseordereddataset_table,
            polymorphic_on=baseordereddataset_table.c.type, polymorphic_identity='base_ordered_dataset',
-           properties={'data_items': relationship(OrderedDataSetItem,
+           properties={'data_items': relation(OrderedDataSetItem,
                                                   backref='ordered_datasets_items',
                                                   cascade='all, delete-orphan',
                                                   collection_class=column_mapped_collection(ordereditems_table.c.index))
                        }
            )
     mapper(OrderedDataSetItem, ordereditems_table, properties={
-        'item': relationship(BaseData, lazy='joined', backref='dataitem')
+        'item': relation(BaseData, lazy='joined', backref='dataitem')
         })
 
 """
@@ -356,5 +356,5 @@ if pyfusion.USE_ORM:
                             Column('delta', Float))    
     pyfusion.metadata.create_all()
     mapper(FloatDelta, floatdelta_table, inherits=BaseData, polymorphic_identity='floatdelta',
-           properties={'channel_1': relationship(Channel, primaryjoin=floatdelta_table.c.channel_1_id==channel_table.c.id),
-                       'channel_2': relationship(Channel, primaryjoin=floatdelta_table.c.channel_2_id==channel_table.c.id)})
+           properties={'channel_1': relation(Channel, primaryjoin=floatdelta_table.c.channel_1_id==channel_table.c.id),
+                       'channel_2': relation(Channel, primaryjoin=floatdelta_table.c.channel_2_id==channel_table.c.id)})

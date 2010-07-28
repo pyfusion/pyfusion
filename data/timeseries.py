@@ -207,4 +207,4 @@ if pyfusion.USE_ORM:
                             Column('dphase_id', Integer, ForeignKey('baseordereddataset.id'), nullable=False))    
     pyfusion.metadata.create_all()
     mapper(FlucStruc, flucstruc_table, inherits=BaseData,
-           polymorphic_identity='flucstruc', properties={'dphase': relationship(BaseOrderedDataSet)})
+           polymorphic_identity='flucstruc', properties={'dphase': relation(BaseOrderedDataSet)})

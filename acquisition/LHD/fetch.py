@@ -24,10 +24,13 @@ class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
         self.basename = path.join(self.filepath, data_filename %filename_dict)
 
         files_exist = path.exists(self.basename + ".dat") and path.exists(self.basename + ".prm")
-        if files_exist: 
-            return fetch_data_from_file(self)
-        else:
-            raise NotImplementedError
+        if not files_exist:
+            tmp = retrieve_to_file(diagg_name=self.diag_name, shot=self.shot, subshot=1, 
+                                   channel=int(self.channel_number), outdir = self.filepath)
+            if not path.exists(self.basename + ".dat") and path.exists(self.basename + ".prm"):
+                raise Exception, "something is buggered."
+
+        return fetch_data_from_file(self)
 
 def fetch_data_from_file(fetcher):
     prm_dict = read_prm_file(fetcher.basename+".prm")
@@ -94,3 +97,26 @@ def read_prm_file(filename):
         prm_dict.update({key: toks[2:]})
     f.close()
     return prm_dict
+
+def retrieve_to_file(diagg_name=None, shot=None, subshot=None, 
+                     channel=None, outdir = None, get_data=True):
+    """ run the retrieve standalone program to get data to files,
+    and/or extract the parameter and summary information.
+
+    Retrieve Usage from Oct 2009 tar file:
+    Retrieve DiagName ShotNo SubShotNo ChNo [FileName] [-f FrameNo] [-h TransdServer] [-p root] [-n port] [-w|--wait [-t timeout] ] [-R|--real ]
+    """
+    import subprocess, sys, tempfile
+    cmd = str("retrieve %s %d %d %d %s" % (diagg_name, shot, subshot, channel, path.join(outdir, diagg_name)))
+
+    retr_pipe = subprocess.Popen(cmd,  shell=True, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+    (resp,err) = retr_pipe.communicate()
+    if (err != '') or (retr_pipe.returncode != 0):
+        print("Error %d accessing retrieve: cmd=%s\nstdout=%s, stderr=%s" % 
+              (retr_pipe.poll(), cmd, resp, err))
+
+    for lin in resp.split('\n'):
+        if lin.find('parameter file')>=0:
+            fileroot = lin.split('[')[1].split('.prm')[0]
+    return(resp, err, fileroot)

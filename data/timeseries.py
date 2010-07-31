@@ -147,6 +147,10 @@ class FlucStruc(BaseData):
         #self.topo_channels = svd_data.topo_channels
         self.channels = svd_data.channels
         #self.svs = sv_list
+        if len(sv_list) == 1:
+            self.a12 = 0
+        else:
+            self.a12 = svd_data.svs[sv_list[0]]/svd_data.svs[sv_list[1]]
         self._binary_svs = list2bin(sv_list)
         # peak frequency for fluctuation structure
         self.freq = peak_freq(svd_data.chronos[sv_list[0]], timebase)
@@ -201,6 +205,7 @@ if pyfusion.USE_ORM:
                             Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True),
                             Column('_binary_svs', Integer),
                             Column('freq', Float),
+                            Column('a12', Float),
                             Column('t0', Float),    
                             Column('p', Float),    
                             Column('H', Float),    

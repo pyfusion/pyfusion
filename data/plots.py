@@ -137,8 +137,8 @@ def svdplot(input_data):
     n_SV = len(input_data.svs)
 
     from pyfusion.data.utils import peak_freq
-    for chrono in input_data.chronos:
-        print peak_freq(chrono, input_data.dim1)
+    #for chrono in input_data.chronos:
+    #    print peak_freq(chrono, input_data.dim1)
 
     # define axes 
     ax1 = pl.subplot(221)
@@ -184,8 +184,9 @@ def svdplot(input_data):
     pl.ylabel('Amplitude [a.u.]')
     plot_list_1 = range(n_SV)
     for sv_i in range(n_SV):
-	plot_list_1[sv_i], = ax1.plot(array(input_data.dim1), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
-    pl.xlim(min(input_data.dim1), max(input_data.dim1))
+	#plot_list_1[sv_i], = ax1.plot(array(input_data.dim1), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
+	plot_list_1[sv_i], = ax1.plot(arange(len(input_data.chronos[sv_i])), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
+    #pl.xlim(min(input_data.dim1), max(input_data.dim1))
 
     # axes 2: SVs
     plot_list_2 = range(n_SV)
@@ -210,8 +211,8 @@ def svdplot(input_data):
     plot_list_3 = range(n_SV)
     pl.xlabel('Frequency [kHz]')
     pl.ylabel('Power Spectrum')
-    pl.grid('True')
-    nyquist_kHz = 1.e-3*0.5/(input_data.dim1[1]-input_data.dim1[0])
+    #pl.grid('True')
+    nyquist_kHz = 250.0#1.e-3*0.5/(input_data.dim1[1]-input_data.dim1[0])
     for sv_i in range(n_SV):
         col = plot_list_1[sv_i].get_color()
         tmp_chrono = input_data.chronos[sv_i]

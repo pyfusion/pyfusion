@@ -11,26 +11,70 @@ from pyfusion.acquisition.base import BaseDataFetcher
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
 from pyfusion.data.base import Coords, Channel, ChannelList
 
+this_dir = path.dirname(path.abspath(__file__)) 
+
+VERBOSE = 1
 data_filename = "%(diag_name)s-%(shot)d-1-%(channel_number)s"
 
 class LHDBaseDataFetcher(BaseDataFetcher):
     pass
 
 class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
+
     def do_fetch(self):
-        filename_dict = {'diag_name':self.diag_name, 
-                         'channel_number':self.channel_number, 
+        # Allow for movement of Mirnov signals from A14 to PXI crate
+        chnl = int(self.channel_number)
+        dggn = self.diag_name
+        if (dggn == 'FMD'):
+            if (self.shot < 72380):
+                dggn = 'SX8O'
+                if chnl != 0: 
+                    chnl = chnl + 33
+                    if self.shot < 26208: chnl = chnl +1
+
+        filename_dict = {'diag_name':dggn, 
+                         'channel_number':chnl, 
                          'shot':self.shot}
         self.basename = path.join(self.filepath, data_filename %filename_dict)
 
         files_exist = path.exists(self.basename + ".dat") and path.exists(self.basename + ".prm")
         if not files_exist:
-            tmp = retrieve_to_file(diagg_name=self.diag_name, shot=self.shot, subshot=1, 
-                                   channel=int(self.channel_number), outdir = self.filepath)
+            if VERBOSE>3: print('RETR: retrieving %d chn %d to %s' % 
+                              (self.shot, int(chnl),
+                               self.filepath))
+            tmp = retrieve_to_file(diagg_name=dggn, shot=self.shot, subshot=1, 
+                                   channel=int(chnl), outdir = self.filepath)
             if not path.exists(self.basename + ".dat") and path.exists(self.basename + ".prm"):
                 raise Exception, "something is buggered."
 
         return fetch_data_from_file(self)
+
+
+from numpy import array, load
+zfile = load(path.join(this_dir,'a14_clock_div.npz'))
+a14_clock_div = zfile['a14_clock_div']
+
+from numpy import array
+def LHD_A14_clk(shot):
+    """ Helper routine to fix up the undocumented clock speed chenges in the A14"""
+
+    """
+    # not sure about the exact turn over at 30240 and many others, not checked above 52k yet
+    rate  = array([500,    1000,   500, 1000,    500,   250,  500,     250,   500,   250,   500,   250,   500,   250,   500])
+    shots = array([26220, 30240, 30754, 31094, 31315, 49960,  51004, 51330, 51475, 51785, 52010, 52025, 52680, 52690, 52810, 999999])
+    where_ge = (shot >= shots).nonzero()[0]
+    if len(where_ge) < 1: 
+        raise LookupError, 'a14_clock lookup: shot out of range'
+
+    last_index = max(where_ge)
+    rateHz = 1000.*rate[last_index]
+    """
+    div = a14_clock_div[shot]
+    if div > 0: clk = 1e6/div
+    else: clk = 0
+    rateHz=clk
+    # print(rateHz)
+    return(rateHz)
 
 def fetch_data_from_file(fetcher):
     prm_dict = read_prm_file(fetcher.basename+".prm")
@@ -68,6 +112,7 @@ def fetch_data_from_file(fetcher):
         if clockHz != None:
             pyfusion.utils.warn('Apparent duplication of clock speed information')
         clockHz =  double(prm_dict['ClockSpeed'][0])
+        clockHz = LHD_A14_clk(fetcher.shot)  # see above
     if clockHz != None:
         timebase = arange(len(arr))/clockHz
     else:  raise NotImplementedError, "timebase not recognised"
@@ -107,8 +152,10 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
     Retrieve DiagName ShotNo SubShotNo ChNo [FileName] [-f FrameNo] [-h TransdServer] [-p root] [-n port] [-w|--wait [-t timeout] ] [-R|--real ]
     """
     import subprocess, sys, tempfile
+
     cmd = str("retrieve %s %d %d %d %s" % (diagg_name, shot, subshot, channel, path.join(outdir, diagg_name)))
 
+    if (VERBOSE > 1): print('RETR: %s' % (cmd))
     retr_pipe = subprocess.Popen(cmd,  shell=True, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
     (resp,err) = retr_pipe.communicate()

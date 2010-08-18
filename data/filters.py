@@ -74,11 +74,11 @@ def segment(input_data, n_samples):
         if input_data.signal.ndim == 1:
             tmp_data = TimeseriesData(timebase=input_data.timebase[el:el+n_samples],
                                       signal=input_data.signal[el:el+n_samples],
-                                      channels=input_data.channels)
+                                      channels=input_data.channels, bypass_length_check=True)
         else:
             tmp_data = TimeseriesData(timebase=input_data.timebase[el:el+n_samples],
                                       signal=input_data.signal[:,el:el+n_samples],
-                                      channels=input_data.channels)
+                                      channels=input_data.channels, bypass_length_check=True)
             
         tmp_data.meta = input_data.meta.copy()
         output_data.add(tmp_data)

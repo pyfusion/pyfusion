@@ -16,5 +16,5 @@ Pyfusion reference overview text here.
    acquisition
    config
    orm
-
+   coords
 

@@ -1000,3 +1000,12 @@ class TestDataSetLabels(BasePyfusionTestCase):
             
         
         
+class TestGetCoords(BasePyfusionTestCase):
+    def test_get_coords_for_channel_config(self):
+        from pyfusion.data.base import get_coords_for_channel
+        channel_name = "H1_mirnov_array_1_coil_15"
+        coords = get_coords_for_channel(channel_name)
+        self.assertTrue(isinstance(coords, Coords))
+        self.assertEqual(coords.default_name, 'cylindrical')
+        #print coords.magnetic(kh=1.2)
+TestGetCoords.dev = True

@@ -100,10 +100,12 @@ class MultiChannelFetcher(BaseDataFetcher):
         data_list = []
         channels = ChannelList()
         timebase = None
+        meta_dict={}
         for chan in ordered_channel_names:
             fetcher_class = import_setting('Diagnostic', chan, 'data_fetcher')
             tmp_data = fetcher_class(self.acq, self.shot, config_name=chan).fetch()
             channels.append(tmp_data.channels)
+            meta_dict.update(tmp_data.meta)
             if timebase == None:
                 timebase = tmp_data.timebase
                 data_list.append(tmp_data.signal)
@@ -116,6 +118,7 @@ class MultiChannelFetcher(BaseDataFetcher):
         signal=Signal(data_list)
         output_data = TimeseriesData(signal=signal, timebase=timebase,
                                      channels=channels)
-        output_data.meta.update({'shot':self.shot})
+        #output_data.meta.update({'shot':self.shot})
+        output_data.meta.update(meta_dict)
         return output_data
 

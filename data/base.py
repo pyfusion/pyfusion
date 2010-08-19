@@ -6,7 +6,7 @@ except NameError:
 
 from datetime import datetime
 
-from pyfusion.conf.utils import import_from_str
+from pyfusion.conf.utils import import_from_str, get_config_as_dict
 from pyfusion.data.filters import filter_reg
 from pyfusion.data.plots import plot_reg
 import pyfusion
@@ -78,6 +78,28 @@ if pyfusion.USE_ORM:
     pyfusion.metadata.create_all()
     mapper(Coords, coords_table)
 
+
+
+def get_coords_for_channel(channel_name=None, **kwargs):
+    config_dict = kwargs.copy()
+    if channel_name:
+        config_dict.update(get_config_as_dict('Diagnostic', channel_name))
+    coord_name = 'dummy'
+    coord_values = (0.0,0.0,0.0)
+    transforms = []
+    for k in config_dict.keys():
+        if k.startswith('coords_'):
+            coord_name = k[7:]
+            coord_values = tuple(map(float,config_dict[k].split(',')))
+    coords_instance = Coords(coord_name, coord_values)
+    if config_dict.has_key('coord_transform'):
+        transform_list = pyfusion.config.pf_options('CoordTransform', config_dict['coord_transform'])
+        for transform_name in transform_list:
+            transform_class_str = pyfusion.config.pf_get('CoordTransform', config_dict['coord_transform'], transform_name)
+            transform_class = import_from_str(transform_class_str)
+            coords_instance.load_transform(transform_class)
+
+    return coords_instance
 
 class Channel(object):
     def __init__(self, name, coords):

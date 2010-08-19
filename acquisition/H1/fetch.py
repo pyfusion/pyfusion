@@ -16,7 +16,6 @@ class H1TimeseriesDataFetcher(MDSPlusBaseDataFetcher):
         timebase = self.acq._Data.execute("mdsvalue('dim_of(%(mds_path)s)')" %{'mds_path':self.mds_path})
         coords = get_coords_for_channel(**self.__dict__)
         ch = Channel(self.mds_path, coords)
-        print get_kh(self.acq._Data)
         output_data = TimeseriesData(timebase=Timebase(timebase.value),
                                      signal=Signal(data.value), channels=ch)
         output_data.meta.update({'shot':self.shot, 'kh':get_kh(self.acq._Data)})

@@ -6,7 +6,7 @@ from pyfusion.data.base import Coords, Channel, ChannelList, get_coords_for_chan
 def get_kh(mds_data):
     imain2 = mds_data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':'.operations.magnetsupply.lcu.setup_main.i2'})
     isec2 = mds_data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':'.operations.magnetsupply.lcu.setup_sec.i2'})
-    return isec2/imain2
+    return float(isec2/imain2)
 
 class H1TimeseriesDataFetcher(MDSPlusBaseDataFetcher):
     """ subclass of mds fetcher which grabs kh config data"""

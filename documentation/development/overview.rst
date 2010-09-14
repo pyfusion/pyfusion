@@ -8,6 +8,8 @@ Design principles
 Documentation
 -------------
 
+Documentation is maintained in the code repository. An online version is kept up to date `here http://h1nf.anu.edu.au/collaborate/pyfusion/docs/`_
+
 
 Test-driven design (TDD)
 ------------------------

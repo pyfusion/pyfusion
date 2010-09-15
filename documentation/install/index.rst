@@ -11,6 +11,4 @@ Pyfusion overview text here.
 
 .. toctree::
    
-   fedora/index
-   ubuntu/index
-
+   ubuntu.rst

@@ -1,15 +1,18 @@
 Pyfusion development roadmap
 ============================
 
-0.0.2 (current)
----------------
+version 0.8
+-----------
 
-* documentation up-to-date
-* local data cache
+* full documentation of existing code
 
-0.0.3
------
 
-* multi-channel timeseries
-* pylab plotting, callable from data.plot()
+version 0.9
+-----------
+
+
+version 1.0
+-----------
+
+* full feature compatibility with original version
 

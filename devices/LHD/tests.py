@@ -7,4 +7,5 @@ class TestLHDDevice(BasePyfusionTestCase):
         import pyfusion as pf
         lhd = pf.getDevice('LHD')
         data = lhd.acq.getdata(90091, 'LHD_Mirnov_toroidal')
+TestLHDDevice.net = True
 TestLHDDevice.lhd = True

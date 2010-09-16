@@ -724,6 +724,8 @@ class TestFloatDelta(BasePyfusionTestCase):
 class TestOrderedDataSet(BasePyfusionTestCase):
     """test the ordered dataset"""
 
+    ## need to fix for datasetitems..
+    """
     def test_ordereddataset(self):
         from pyfusion.data.base import BaseOrderedDataSet, BaseData
         #pretend these are datapoints
@@ -743,7 +745,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
         self.assertEqual(ods[0], d1)
         self.assertEqual(ods[1], d2)
 
-        
+    """ 
 
     """
     def test_submethod(self):
@@ -1009,3 +1011,41 @@ class TestGetCoords(BasePyfusionTestCase):
         self.assertEqual(coords.default_name, 'cylindrical')
         #print coords.magnetic(kh=1.2)
 TestGetCoords.dev = True
+
+
+class TestStoredMetaData(BasePyfusionTestCase):
+    def test_stored_metadata(self):
+        """Make sure metadata attached to data classes is saved to sql."""
+        import pyfusion
+        if pyfusion.USE_ORM:
+            n_ch = 3
+            n_samples = 1024
+            multichannel_data = get_multimode_test_data(n_channels = n_ch,
+                                                        channels=get_n_channels(n_ch),
+                                                        timebase = Timebase(arange(n_samples)*1.e-6),
+                                                        modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
+                                                        noise = 0.01)
+            # put in some fake metadata 
+            print multichannel_data.meta
+            multichannel_data.meta = {'hello':'world'}
+
+            # produce a dataset of flucstrucs
+            fs_data = multichannel_data.flucstruc(min_dphase = -2*pi)
+
+            # check that metadata is carried to the flucstrucs
+            
+            self.assertEqual(fs_data.meta, multichannel_data.meta)
+            
+            # save our dataset to the database
+            fs_data.save()
+
+            session = pyfusion.Session()
+            from pyfusion.data.timeseries import FlucStruc
+
+            some_fs = session.query(FlucStruc).all().pop()
+
+            #print 
+            #print some_fs.meta
+            assert False
+
+TestStoredMetaData.dev = True

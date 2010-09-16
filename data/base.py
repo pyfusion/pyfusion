@@ -12,14 +12,17 @@ from pyfusion.data.plots import plot_reg
 import pyfusion
 
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, String, Integer, Float, ForeignKey, DateTime
+    from sqlalchemy import Table, Column, String, Integer, Float, ForeignKey, DateTime, PickleType
     from sqlalchemy.orm import reconstructor, mapper, relation, dynamic_loader
     from sqlalchemy.orm.collections import column_mapped_collection
 
 def history_reg_method(method):
     def updated_method(input_data, *args, **kwargs):
         input_data.history += '\n%s > %s' %(datetime.now(), method.__name__ + '(' + ', '.join(map(str,args)) + ', '.join("%s='%s'" %(str(i[0]), str(i[1])) for i in kwargs.items()) + ')')
-        return method(input_data, *args, **kwargs)
+        #return method(input_data, *args, **kwargs)
+        output = method(input_data, *args, **kwargs)
+        output.meta.update(input_data.meta)
+        return output
     return updated_method
 
 class MetaMethods(type):
@@ -190,7 +193,8 @@ class BaseData(object):
 if pyfusion.USE_ORM:
     basedata_table = Table('basedata', pyfusion.metadata,
                             Column('basedata_id', Integer, primary_key=True),
-                            Column('type', String(30), nullable=False))
+                            Column('type', String(30), nullable=False),
+                            Column('meta', PickleType))
     pyfusion.metadata.create_all()
     mapper(BaseData, basedata_table, polymorphic_on=basedata_table.c.type, polymorphic_identity='basedata')
 
@@ -199,6 +203,7 @@ class BaseDataSet(object):
     __metaclass__ = MetaMethods
 
     def __init__(self, label):
+        self.meta = MetaData()
         self.created = datetime.now()
         self.history = "%s > New %s" %(self.created, self.__class__.__name__)
         self.label = label
@@ -238,7 +243,8 @@ if pyfusion.USE_ORM:
                               Column('id', Integer, primary_key=True),
                               Column('created', DateTime),
                               Column('label', String(100), nullable=False, unique=True),
-                              Column('type', String(30), nullable=False))
+                              Column('type', String(30), nullable=False),
+                              Column('meta', PickleType))
 
     # many to many mapping of data to datasets
     data_basedataset_table = Table('data_basedataset', pyfusion.metadata,

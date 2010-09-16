@@ -5,6 +5,7 @@ except NameError:
     from sets import Set as set # Python 2.3 fallback
 
 from datetime import datetime
+import operator
 
 from pyfusion.conf.utils import import_from_str, get_config_as_dict
 from pyfusion.data.filters import filter_reg
@@ -193,8 +194,8 @@ class BaseData(object):
 if pyfusion.USE_ORM:
     basedata_table = Table('basedata', pyfusion.metadata,
                             Column('basedata_id', Integer, primary_key=True),
-                            Column('type', String(30), nullable=False),
-                            Column('meta', PickleType))
+                            Column('type', String(30), nullable=False))
+                            #Column('meta', PickleType(comparator=operator.eq)))
     pyfusion.metadata.create_all()
     mapper(BaseData, basedata_table, polymorphic_on=basedata_table.c.type, polymorphic_identity='basedata')
 
@@ -244,7 +245,7 @@ if pyfusion.USE_ORM:
                               Column('created', DateTime),
                               Column('label', String(100), nullable=False, unique=True),
                               Column('type', String(30), nullable=False),
-                              Column('meta', PickleType))
+                              Column('meta', PickleType(comparator=operator.eq)))
 
     # many to many mapping of data to datasets
     data_basedataset_table = Table('data_basedataset', pyfusion.metadata,
@@ -271,6 +272,7 @@ if pyfusion.USE_ORM:
 
 class DataSet(BaseDataSet):
     pass
+        
         
 if pyfusion.USE_ORM:
     dataset_table = Table('dataset', pyfusion.metadata,

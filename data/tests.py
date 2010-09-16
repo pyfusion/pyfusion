@@ -1014,8 +1014,8 @@ TestGetCoords.dev = True
 
 
 class TestStoredMetaData(BasePyfusionTestCase):
-    def test_stored_metadata(self):
-        """Make sure metadata attached to data classes is saved to sql."""
+    def test_stored_metadata_datasets(self):
+        """Make sure metadata attached to dataset classes is saved to sql."""
         import pyfusion
         if pyfusion.USE_ORM:
             n_ch = 3
@@ -1026,8 +1026,9 @@ class TestStoredMetaData(BasePyfusionTestCase):
                                                         modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                         noise = 0.01)
             # put in some fake metadata 
-            print multichannel_data.meta
             multichannel_data.meta = {'hello':'world'}
+            print multichannel_data.meta
+
 
             # produce a dataset of flucstrucs
             fs_data = multichannel_data.flucstruc(min_dphase = -2*pi)
@@ -1040,12 +1041,16 @@ class TestStoredMetaData(BasePyfusionTestCase):
             fs_data.save()
 
             session = pyfusion.Session()
-            from pyfusion.data.timeseries import FlucStruc
+            from pyfusion.data.base import DataSet
 
-            some_fs = session.query(FlucStruc).all().pop()
+            some_ds = session.query(DataSet).all().pop()
+            print type(some_ds)
+            self.assertEqual(some_ds.meta, multichannel_data.meta)
 
-            #print 
-            #print some_fs.meta
-            assert False
+            #print some_ds.meta
+            #assert False
 
+    def test_stored_metadata_data(self):
+        pass
+    
 TestStoredMetaData.dev = True

@@ -5,7 +5,7 @@ except NameError:
     from sets import Set as set # Python 2.3 fallback
 
 from datetime import datetime
-import operator
+import operator, uuid
 
 from pyfusion.conf.utils import import_from_str, get_config_as_dict
 from pyfusion.data.filters import filter_reg
@@ -203,10 +203,12 @@ if pyfusion.USE_ORM:
 class BaseDataSet(object):
     __metaclass__ = MetaMethods
 
-    def __init__(self, label):
+    def __init__(self, label=''):
         self.meta = MetaData()
         self.created = datetime.now()
         self.history = "%s > New %s" %(self.created, self.__class__.__name__)
+        if label == '':
+            label = str(uuid.uuid4())
         self.label = label
         if not pyfusion.USE_ORM:
             self.data = set()
@@ -290,10 +292,12 @@ class OrderedDataSetItem(object):
 class BaseOrderedDataSet(object):
     __metaclass__ = MetaMethods
 
-    def __init__(self, label):
+    def __init__(self, label=''):
         self.created = datetime.now()
         self.label = label
         self.history = "%s > New %s" %(self.created, self.__class__.__name__)
+        if label == '':
+            label = str(uuid.uuid4())
         if not pyfusion.USE_ORM:
             self.data_items = []
         
@@ -350,10 +354,10 @@ if pyfusion.USE_ORM:
         'item': relation(BaseData, lazy='joined', backref='dataitem')
         })
 
-"""
+
 class OrderedDataSet(BaseOrderedDataSet):
     pass
-
+"""
 if pyfusion.USE_ORM:
     ordered_dataset_table = Table('ordered_dataset', pyfusion.metadata,
                                   Column('base_ordered_dataset_id', Integer,
@@ -363,6 +367,7 @@ if pyfusion.USE_ORM:
     pyfusion.metadata.create_all()
     mapper(OrderedDataSet, ordered_dataset_table, inherits=BaseOrderedDataSet, polymorphic_identity='ordered_datasets')
 """
+
 class BaseCoordTransform(object):
     """Base class does nothing useful at the moment"""
     input_coords = 'base_input'

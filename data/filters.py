@@ -8,6 +8,9 @@ from numpy import searchsorted, arange, mean, resize, repeat, fft, conjugate, li
 from numpy import correlate as numpy_correlate
 import pyfusion
 
+
+
+
 def cps(a,b):
     return fft.fft(a)*conjugate(fft.fft(b))
 
@@ -61,9 +64,8 @@ def segment(input_data, n_samples):
     from pyfusion.data.base import DataSet
     from pyfusion.data.timeseries import TimeseriesData
     if isinstance(input_data, DataSet):
-        output_dataset = input_data.copy()
-        output_dataset.clear()
-        for data in input_data:
+        output_dataset = DataSet()
+        for ii,data in enumerate(input_data):
             try:
                 output_dataset.update(data.segment(n_samples))
             except AttributeError:
@@ -136,12 +138,14 @@ def svd(input_data):
     return SVDData(input_data.timebase, input_data.channels, linalg.svd(input_data.signal, 0))
 
 
-@register("TimeseriesData", "SVDData")
+#@register("TimeseriesData", "SVDData")
 def fs_group_geometric(input_data):
     """
     no filtering implemented yet
+    we don't register this as a filter, because it doesn't return a Data or DataSet subclass
     """
     from timeseries import SVDData
+    #from base import OrderedDataSet
 
     if not isinstance(input_data, SVDData):
         input_data = input_data.subtract_mean().normalise(method="var").svd()
@@ -149,7 +153,7 @@ def fs_group_geometric(input_data):
     #energy_threshold = 0.9999
     
     #svd_data = linalg.svd(norm_data.signal,0)
-    output_fs_list = []
+    output_fs_list = []#OrderedDataSet()
 
     #svs_norm_energy = array([i**2 for i in svd_data[1]])/input_data.E
 
@@ -165,6 +169,7 @@ def fs_group_geometric(input_data):
         tmp_cp_argsort = array(tmp_cp).argsort()[::-1]
         sort_cp = take(tmp_cp,tmp_cp_argsort)
         delta_cp = sort_cp[1:]-sort_cp[:-1]
+        
         output_fs_list.append([remaining_ids[i] for i in tmp_cp_argsort[:argmin(delta_cp)+1]])
             
 
@@ -175,10 +180,11 @@ def fs_group_geometric(input_data):
     return output_fs_list
 
 
-@register("SVDData")
+#@register("SVDData")
 def fs_group_threshold(input_data, threshold=0.2):
     """
     no filtering implemented yet
+    we don't register this as a filter, because it doesn't return a Data or DataSet subclass
     """
     from timeseries import SVDData
 
@@ -222,7 +228,9 @@ def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, label=None
     svd_data = input_data.subtract_mean().normalise(method="var").svd()
 
     for fs_gr in group(svd_data):
-        fs_dataset.add(FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase))
+        tmp = FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase)
+        #tmp.meta = input_data.meta
+        fs_dataset.add(tmp)
     
     return fs_dataset
 

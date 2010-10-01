@@ -5,7 +5,7 @@ import numpy as np
 
 from pyfusion.data.base import BaseData, BaseOrderedDataSet, FloatDelta
 from utils import cps, peak_freq, remap_periodic, list2bin, bin2list
-
+from base import MetaData
 import pyfusion
         
 class Timebase(np.ndarray):
@@ -72,10 +72,12 @@ class Signal(np.ndarray):
     """
     def __new__(cls, input_array):
         obj = np.asarray(input_array).view(cls).copy()
+        obj.meta = MetaData()
         return obj
 
     def __array_finalize__(self,obj):
-        pass
+        self.meta = getattr(obj, 'meta', None)
+
 
     def n_channels(self):
         if self.ndim == 1:

@@ -166,6 +166,9 @@ if pyfusion.USE_ORM:
 class MetaData(dict):
     pass
 
+
+
+
 class BaseData(object):
     """Base class for handling processed data.
 
@@ -194,8 +197,8 @@ class BaseData(object):
 if pyfusion.USE_ORM:
     basedata_table = Table('basedata', pyfusion.metadata,
                             Column('basedata_id', Integer, primary_key=True),
-                            Column('type', String(30), nullable=False))
-                            #Column('meta', PickleType(comparator=operator.eq)))
+                            Column('type', String(30), nullable=False),
+                            Column('meta', PickleType(comparator=operator.eq)))
     pyfusion.metadata.create_all()
     mapper(BaseData, basedata_table, polymorphic_on=basedata_table.c.type, polymorphic_identity='basedata')
 
@@ -393,3 +396,5 @@ if pyfusion.USE_ORM:
     mapper(FloatDelta, floatdelta_table, inherits=BaseData, polymorphic_identity='floatdelta',
            properties={'channel_1': relation(Channel, primaryjoin=floatdelta_table.c.channel_1_id==channel_table.c.id),
                        'channel_2': relation(Channel, primaryjoin=floatdelta_table.c.channel_2_id==channel_table.c.id)})
+
+

@@ -229,7 +229,7 @@ def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, label=None
 
     for fs_gr in group(svd_data):
         tmp = FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase)
-        #tmp.meta = input_data.meta
+        tmp.meta = input_data.meta
         fs_dataset.add(tmp)
     
     return fs_dataset

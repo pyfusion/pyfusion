@@ -1014,10 +1014,10 @@ class TestGetCoords(BasePyfusionTestCase):
         self.assertTrue(isinstance(coords, Coords))
         self.assertEqual(coords.default_name, 'cylindrical')
         #print coords.magnetic(kh=1.2)
-TestGetCoords.dev = True
 
 
-class TestStoredMetaData(BasePyfusionTestCase):
+
+class TestStoredMetaDataForDataSets(BasePyfusionTestCase):
     def test_stored_metadata_datasets(self):
         """Make sure metadata attached to dataset classes is saved to sql."""
         import pyfusion
@@ -1054,6 +1054,7 @@ class TestStoredMetaData(BasePyfusionTestCase):
             #print some_ds.meta
             #assert False
     
+class TestStoredMetaData(BasePyfusionTestCase):
     def test_stored_metadata_data(self):
         """ metadata should be stored to data instances, rather than datasets - this might be slower, but more likely to guarantee data is kept track of."""
         import pyfusion
@@ -1065,6 +1066,10 @@ class TestStoredMetaData(BasePyfusionTestCase):
                                                         timebase = Timebase(arange(n_samples)*1.e-6),
                                                         modes = [[0.7, 3., 24.e3, 0.2], [0.5, 4., 37.e3, 0.3]],
                                                         noise = 0.01)
+
+
+
+
             # put in some fake metadata 
             multichannel_data.meta = {'hello':'world'}
             print multichannel_data.meta
@@ -1079,13 +1084,17 @@ class TestStoredMetaData(BasePyfusionTestCase):
             # save our dataset to the database
             fs_data.save()
 
+            ## now test to make sure metadata is saved in database
+
             session = pyfusion.Session()
             from pyfusion.data.timeseries import FlucStruc
 
             some_fs = session.query(FlucStruc).all().pop()
             
 
-            #self.assertEqual(some_fs.meta, multichannel_data.meta)
+            self.assertEqual(some_fs.meta, multichannel_data.meta)
 
-    
+
+            
+
 TestStoredMetaData.dev = True

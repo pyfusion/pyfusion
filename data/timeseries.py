@@ -17,6 +17,7 @@ class Timebase(np.ndarray):
         # should this follow the example in doc/subclassing.py?... (it doesn't)
         obj = np.asarray(input_array).view(cls).copy()
         obj.sample_freq = 1.0/(obj[1]-obj[0])
+        obj.meta = MetaData()
         return obj
 
     def is_contiguous(self):
@@ -47,6 +48,7 @@ class Timebase(np.ndarray):
         # InfoArray.__new__ constructor, but also with
         # arr.view(InfoArray).
         self.sample_freq = getattr(obj, 'sample_freq', None)
+        self.meta = getattr(obj, 'meta', None)
         # We do not need to return anything
         
 
@@ -113,6 +115,7 @@ class TimeseriesData(BaseData):
     def __init__(self, timebase = None, signal=None, channels=None, bypass_length_check=False, **kwargs):
         self.timebase = timebase
         self.channels = channels
+        
         if bypass_length_check == True:
             self.signal = signal
         else:
@@ -121,6 +124,17 @@ class TimeseriesData(BaseData):
             else:
                 raise ValueError, "signal has different number of samples to timebase"
         super(TimeseriesData, self).__init__(**kwargs)
+
+
+if pyfusion.USE_ORM:
+    from sqlalchemy import Table, Column, Integer, ForeignKey
+    from sqlalchemy.orm import mapper
+    tsd_table = Table('timeseriesdata', pyfusion.metadata,
+                            Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True))
+    pyfusion.metadata.create_all()
+    mapper(TimeseriesData, tsd_table, inherits=BaseData, polymorphic_identity='tsd')
+
+
 
 
 class SVDData(BaseData):
@@ -145,6 +159,16 @@ class SVDData(BaseData):
         except AttributeError:
             self._self_cps = np.array([np.mean(cps(i,i)) for i in self.chronos])
             return self._self_cps
+
+
+if pyfusion.USE_ORM:
+    from sqlalchemy import Table, Column, Integer, ForeignKey
+    from sqlalchemy.orm import mapper
+    svd_table = Table('svddata', pyfusion.metadata,
+                      Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True))
+    pyfusion.metadata.create_all()
+    mapper(SVDData, svd_table, inherits=BaseData, polymorphic_identity='svddata')
+
 
 class FlucStruc(BaseData):
     def __init__(self, svd_data, sv_list, timebase, min_dphase = -np.pi):
@@ -204,7 +228,7 @@ class FlucStruc(BaseData):
         return phase_val
 
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, Integer, String, ForeignKey, Float
+    from sqlalchemy import Table, Column, Integer, ForeignKey, Float
     from sqlalchemy.orm import mapper, relation
     flucstruc_table = Table('flucstrucs', pyfusion.metadata,
                             Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True),

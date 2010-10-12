@@ -4,7 +4,7 @@ Pyfusion development roadmap
 version 0.8
 -----------
 
-* default nosetests pass without sqlalchemy, matplotlib or specific data acq libraries
+* separate out test code for sqlalchemy, matplotlib, specific data acq libraries, network accees
 * full documentation of existing code
 
 

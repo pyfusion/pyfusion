@@ -34,3 +34,19 @@ Tests
 * use nosetests
 
 * running nosetest pyfusion should be *very* fast. The idea behind regular testing is that the tests should be so fast that you don't hesitate to run the test. Any test which requires significant computation or hard disk / network access should be disabled by default. Using $HOME/.pyfusion/tests.cfg you can enable any of these tests when you need them.
+
+* selection of which tests are run is done with nosetest attributes, `see nose docs for detail <http://somethingaboutorange.com/mrl/projects/nose/0.11.2/plugins/attrib.html>`_. For example, to run all tests except those which use SQL::
+
+   > nosetests -a '!sql' pyfusion
+
+The available attributes are:
+
+========  =========================================================================
+``sql``   test requires sqlalchemy module
+``net``   test requires internet access
+``lhd``   test connects to LHD data acquisition system
+``tjii``  test connects to TJII data acquisition system
+``h1``    test connects to H-1 data acquisition system
+``plot``  test requires matplotlib module 
+``daq``   test connects to a data system (superset of ``lhd``, ``tjii`` and ``h1``)
+========  =========================================================================

@@ -4,9 +4,12 @@ from pyfusion.acquisition.MDSPlus.fetch import MDSPlusBaseDataFetcher
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
 from pyfusion.data.base import Coords, Channel, ChannelList, get_coords_for_channel
 def get_kh(mds_data):
-    imain2 = mds_data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':'.operations.magnetsupply.lcu.setup_main.i2'})
-    isec2 = mds_data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':'.operations.magnetsupply.lcu.setup_sec.i2'})
-    return float(isec2/imain2)
+    try:
+        imain2 = mds_data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':'.operations.magnetsupply.lcu.setup_main.i2'})
+        isec2 = mds_data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':'.operations.magnetsupply.lcu.setup_sec.i2'})
+        return float(isec2/imain2)
+    except:
+        return None
 
 class H1TimeseriesDataFetcher(MDSPlusBaseDataFetcher):
     """ subclass of mds fetcher which grabs kh config data"""

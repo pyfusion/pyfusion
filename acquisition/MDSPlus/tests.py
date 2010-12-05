@@ -12,7 +12,10 @@ class DummyMDSData(BaseData):
 class DummyMDSDataFetcher(MDSPlusBaseDataFetcher):
     """Check that we have a mds data object passed though"""
     def do_fetch(self):
-        data = DummyMDSData()
+        # this breaks unit tests:
+        #data = DummyMDSData()
+        # this doesn't. Why??
+        data = BaseData()
         data.meta['mds_Data'] = self.acq._Data
         return data
 

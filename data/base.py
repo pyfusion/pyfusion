@@ -169,6 +169,7 @@ class MetaData(dict):
 
 
 
+
 class BaseData(object):
     """Base class for handling processed data.
 
@@ -198,9 +199,11 @@ if pyfusion.USE_ORM:
     basedata_table = Table('basedata', pyfusion.metadata,
                             Column('basedata_id', Integer, primary_key=True),
                             Column('type', String(30), nullable=False),
-                            Column('meta', PickleType(comparator=operator.eq)))
+                            Column('meta', PickleType(comparator=operator.eq))
+                           )
     pyfusion.metadata.create_all()
     mapper(BaseData, basedata_table, polymorphic_on=basedata_table.c.type, polymorphic_identity='basedata')
+
 
 
 class BaseDataSet(object):

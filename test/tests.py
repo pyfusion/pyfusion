@@ -35,7 +35,11 @@ class BasePyfusionTestCase(unittest.TestCase):
         unittest.TestCase.__init__(self, *args)
 
     def setUp(self):
-        pyfusion.config.read(TEST_CONFIG_FILE)
+        try:
+            pyfusion.config.read(self.test_config_file)
+        except AttributeError:
+            pyfusion.config.read(TEST_CONFIG_FILE)
+            
         # read custom user config file to disable/enable certain tests
         pyfusion.config.read(pyfusion.USER_TEST_CONFIG_FILE)
         # setup ORM to use engine defined in updated config.

@@ -12,3 +12,4 @@ Pyfusion overview text here.
 .. toctree::
    
    ubuntu.rst
+   windowsxp.rst

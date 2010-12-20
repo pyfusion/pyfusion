@@ -19,3 +19,7 @@ class MDSPlusAcquisition(BaseAcquisition):
         kwargs.update({'_Data':self._Data})
         return super(MDSPlusAcquisition, self).getdata(shot,*args, **kwargs)
     """
+
+
+class MDSPlusLocalAcquisition(BaseAcquisition):
+    pass

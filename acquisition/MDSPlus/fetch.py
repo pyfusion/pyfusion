@@ -3,6 +3,7 @@
 from pyfusion.acquisition.base import BaseDataFetcher
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
 from pyfusion.data.base import Coords, ChannelList, Channel
+import MDSplus,os
 
 class MDSPlusBaseDataFetcher(BaseDataFetcher):    
     def setup(self):
@@ -10,6 +11,16 @@ class MDSPlusBaseDataFetcher(BaseDataFetcher):
     def pulldown(self):
         self.mds_status=self.acq._Data.execute("mdsclose()")
         
+
+class MDSPlusLocalBaseDataFetcher(BaseDataFetcher):    
+    def setup(self):
+        #self.mds_status=self.acq._Data.execute("mdsopen('%(mds_tree)s',%(shot)d)" %{'mds_tree':self.mds_tree, 'shot':self.shot})
+        os.environ['%s_path' %(self.mds_tree.lower())] = self.acq.__getattribute__('%s_path' %(self.mds_tree.lower()))
+        self.tree = MDSplus.Tree(self.mds_tree, self.shot)
+    def pulldown(self):
+        pass
+        #self.mds_status=self.acq._Data.execute("mdsclose()")
+
         
 class MDSPlusTimeseriesDataFetcher(MDSPlusBaseDataFetcher):
     def do_fetch(self):

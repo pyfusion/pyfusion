@@ -39,7 +39,11 @@ def plot_spectrogram(input_data, channel_number=0, filename=None):
 
     pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq)
 
-    pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[0].name))
+    try:
+        pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[0].name))
+    except:
+        pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels.name))
+        
     if filename != None:
         pl.savefig(filename)
     else:

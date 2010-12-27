@@ -13,3 +13,4 @@ Pyfusion overview text here.
    
    ubuntu.rst
    windowsxp.rst
+   centos/centos4.8.rst

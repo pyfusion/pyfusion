@@ -21,11 +21,6 @@ class Device(object):
 
     """
     
-    #__tablename__ = 'devices'
-    #id = Column(Integer, primary_key=True)
-    #name = Column(String(50), unique=True)
-
-
     def __init__(self, config_name, **kwargs):
         if pyfusion.config.pf_has_section('Device', config_name):
             self.__dict__.update(get_config_as_dict('Device', config_name))

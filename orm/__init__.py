@@ -1,7 +1,5 @@
 """Object relational mapping for Pyfusion"""
 
-# is there some problem with this file being commited in git?
-
 import pyfusion
 
 if pyfusion.USE_ORM:

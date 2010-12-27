@@ -26,7 +26,9 @@ First, set up some environment variables::
    export LOCALDIR=$HOME/local
    mkdir $LOCALDIR
 
-The PYTHONPATH export should also go in your ``$HOME/.bashrc`` file.
+   export PATH=$LOCALDIR/bin:$PATH
+
+The PYTHONPATH and PATH (and LOCALDIR if PATH refers to it) exports should also go in your ``$HOME/.bashrc`` file. 
 
 ------
 Python
@@ -41,6 +43,18 @@ Now install Python - the version number is the latest in December 2010, you can 
   ./configure --prefix=$LOCALDIR
   make
   make install
+
+
+Make sure the default python is now python2.7 (it should be this because $LOCALDIR/bin is first in your PATH environment variable)::
+
+  > python
+
+  Python 2.7.1 (r271:86832, Dec 26 2010, 03:33:20)
+  [GCC 3.4.6 20060404 (Red Hat 3.4.6-11)] on linux2
+  Type "help", "copyright", "credits" or "license" for more information.
+  >>>
+
+
 
 ----------
 Setuptools

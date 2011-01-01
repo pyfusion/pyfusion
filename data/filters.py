@@ -61,8 +61,11 @@ def reduce_time(input_data, new_time_range):
 
 @register("TimeseriesData", "DataSet")
 def segment(input_data, n_samples, overlap=1.0):
-    """ Break into segments length n_samples.  overlap of 2.0 starts a new segment halfway into previous, overlap=1 is no overlap.  overlap should divide into 
-n_samples.  Probably should consider a nicer definition such as in pyfusion 0
+    """Break into segments length n_samples.
+
+    Overlap of 2.0 starts a new segment halfway into previous, overlap=1 is
+    no overlap.  overlap should divide into n_samples.  Probably should
+    consider a nicer definition such as in pyfusion 0
     """
     from pyfusion.data.base import DataSet
     from pyfusion.data.timeseries import TimeseriesData
@@ -225,7 +228,7 @@ def fs_group_threshold(input_data, threshold=0.2):
     return output_fs_list
 
 @register("TimeseriesData")
-def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, method='rms', separate=1, label=None):
+def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, method='rms', separate=True, label=None):
     from pyfusion.data.base import DataSet
     from pyfusion.data.timeseries import FlucStruc
 

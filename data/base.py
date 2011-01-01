@@ -22,7 +22,7 @@ def history_reg_method(method):
         input_data.history += '\n%s > %s' %(datetime.now(), method.__name__ + '(' + ', '.join(map(str,args)) + ', '.join("%s='%s'" %(str(i[0]), str(i[1])) for i in kwargs.items()) + ')')
         #return method(input_data, *args, **kwargs)
         output = method(input_data, *args, **kwargs)
-        if output != None:  # bdb? help! dave! hack to suppress Nonetype has no meta
+        if output != None:  # bdb? help! dave! hack to suppress Nonetype has no meta # dgp: hack doesn't cause any tests to fail, fine for now.
             output.meta.update(input_data.meta)
         return output
     return updated_method

@@ -1,11 +1,13 @@
 """LHD data fetchers.
 Large chunks of code copied from Boyd, not covered by unit tests.
 """
-
+import subprocess
+import sys
+import tempfile
 from os import path
-from numpy import mean, array, double, arange, dtype
-import numpy as np
 import array as Array
+from numpy import mean, array, double, arange, dtype, load
+import numpy as np
 
 from pyfusion.acquisition.base import BaseDataFetcher
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
@@ -50,13 +52,12 @@ class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
         return fetch_data_from_file(self)
 
 
-from numpy import array, load
+
 zfile = load(path.join(this_dir,'a14_clock_div.npz'))
 a14_clock_div = zfile['a14_clock_div']
 
-from numpy import array
 def LHD_A14_clk(shot):
-    """ Helper routine to fix up the undocumented clock speed chenges in the A14"""
+    """ Helper routine to fix up the undocumented clock speed changes in the A14"""
 
     """
     # The file a14_clock_div.npz replaces all this hard coded stuff
@@ -156,7 +157,6 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
     Retrieve Usage from Oct 2009 tar file:
     Retrieve DiagName ShotNo SubShotNo ChNo [FileName] [-f FrameNo] [-h TransdServer] [-p root] [-n port] [-w|--wait [-t timeout] ] [-R|--real ]
     """
-    import subprocess, sys, tempfile
 
     cmd = str("retrieve %s %d %d %d %s" % (diagg_name, shot, subshot, channel, path.join(outdir, diagg_name)))
 

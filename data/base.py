@@ -28,9 +28,13 @@ def history_reg_method(method):
                                                args_string, kwargs_string)
         input_data.history += history_string
         output = method(input_data, *args, **kwargs)
-        # TODO This looks wrong - if a filter modifies a meta value, does this
+
+        # TODO output.meta.update() looks wrong - if a filter modifies a meta value, does this
         # overwrite the modified version with the original?
-        output.meta.update(input_data.meta)
+
+        if output != None:
+            output.meta.update(input_data.meta)
+
         return output
     return updated_method
 

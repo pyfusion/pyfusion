@@ -42,3 +42,43 @@ def bin2list(input_value):
         if i == '1':
             output_list.append(ind)
     return output_list
+
+def split_names(names, pad=' '):
+    """ return an array of the part of the name that varies, and optionally the 
+    prefix and suffix.  The array is first in the tuple in case others are not
+    wanted.  This is used to make the x labels of probe plots simpler.
+    e.g.
+    >>> split_names(['MP01','MP10'])
+    (['01','10'], 'MP', '')
+    """
+    # make a new array with elements padded to the same length with <pad>
+    nms = []
+    maxlen = max([len(nm) for nm in names])
+    for nm in names:
+        nmarr = [c for c in nm]
+        while len(nmarr)< maxlen: nmarr.append(pad)
+        nms.append(nmarr)
+    
+    # the following numpy array comparisons look simple, but require the name string
+    # to be exploded into chars.  Although a single string can be interchangeably 
+    # referred to as a string or array of chars, these arrays they have to be 
+    # re-constituted before return.
+    #
+    #for nm in nms:     # for each nm
+    #find the first mismatch - first will be the first char of the extracted arr
+    nms_arr=array(nms)
+    first=0
+    while (first < maxlen and
+           (nms_arr[:,first] == nms_arr[0,first]).all()):
+        first += 1
+    # and the last        
+    last = maxlen-1
+    while ((last >= 0) and
+           (nms_arr[:,last] == nms_arr[0,last]).all()):
+        last -= 1
+    # check for no mismatch        
+    if first==maxlen: return(['' for nm in names], ''.join(nms[0]),'')
+    # otherwise return, (no need for special code for the case of no match at all)
+    return(([''.join(s) for s in nms_arr[:,first:last+1]],
+            ''.join(nms_arr[0,0:first]),
+            ''.join(nms_arr[0,last+1:maxlen+1])))

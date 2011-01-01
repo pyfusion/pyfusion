@@ -1,11 +1,12 @@
 """
 Note, plots (this file) doesn't have unittests
 """
-
 from matplotlib.widgets import CheckButtons
 import pylab as pl
 
-from numpy import *
+import numpy as np
+
+from pyfusion.data.utils import peak_freq, split_names
 
 plot_reg = {}
 
@@ -34,10 +35,10 @@ def plot_signals(input_data, filename=None):
         pl.show()
 
 @register("TimeseriesData")
-def plot_spectrogram(input_data, channel_number=0, filename=None):
+def plot_spectrogram(input_data, channel_number=0, filename=None, **kwargs):
     import pylab as pl
 
-    pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq)
+    pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq, **kwargs)
 
     try:
         pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[0].name))
@@ -55,7 +56,7 @@ def plot_spectrogram(input_data, channel_number=0, filename=None):
 
 def join_ends(inarray,add_2pi = False,add_360deg=False,add_lenarray=False,add_one=False):
     """used in old code, needs clean up...."""
-    output = resize(inarray,(len(inarray)+1,))
+    output = np.resize(inarray,(len(inarray)+1,))
     if add_2pi:
         output[-1] = output[-1]+2*pi
     elif add_360deg:
@@ -134,13 +135,52 @@ def findZero(i,x,y1,y2):
     yZero = m1*xZero + b1
     return (xZero, yZero)
 
+@register("FlucStruc")
+def fsplot_phase(input_data, closed=True, hold=0):
+    """ plot the phase of a flucstruc, optionally replicating the last point
+    at the beginning (if closed=True).
+    This version does not yet attempt to take into account angles, or check 
+    that adjacent channels are adjacent (i.e. ch2-ch1, ch2-c2 etc).
+    Channel names are taken from the fs and plotted abbreviated
+
+    1/1/2011: TODO This appears to work only for database=None config
+    """
+    # extract by channels
+    ch1n,ch2n,ch12n,dp = [],[],[],[]
+    # bdb this line should be replaced by a call to a routine names something
+    #like <plotted_width> to help in deciding if the label will fit on the 
+    #current graph.
+    if (2*len(input_data.dphase)*len(input_data.dphase[0].item.channel_1.name))> 50:
+        sep = '\n-'
+    else: sep = '-'
+    #sep = '-'
+    for dpn in input_data.dphase:
+        ch1n.append(dpn.item.channel_1.name)
+        ch2n.append(dpn.item.channel_2.name)
+        ch12n.append(dpn.item.channel_1.name+sep+dpn.item.channel_2.name)
+        dp.append(dpn.item.delta)
+
+#    short_names,p,s = split_names(ch1n)  # need to break up loops to do this
+
+    if closed:
+        ch1n.insert(0, ch1n[-1])
+        ch2n.insert(0, ch2n[-1])
+        ch12n.insert(0, ch12n[-1])
+        dp.insert(0,dp[-1])
+
+    pl.plot(dp,hold=hold)
+    ax=pl.gca()
+    ax.set_xticks(range(len(dp)))
+    ax.set_xticklabels(ch12n)
+    pl.show()
 
 @register("SVDData")
-def svdplot(input_data):
+def svdplot(input_data, fmax=None, hold=0):
+
+    if hold==0: pl.clf(); # erase the figure, as this is a mult- axis plot
 
     n_SV = len(input_data.svs)
 
-    from pyfusion.data.utils import peak_freq
     #for chrono in input_data.chronos:
     #    print peak_freq(chrono, input_data.dim1)
 
@@ -189,22 +229,30 @@ def svdplot(input_data):
     plot_list_1 = range(n_SV)
     for sv_i in range(n_SV):
 	#plot_list_1[sv_i], = ax1.plot(array(input_data.dim1), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
-	plot_list_1[sv_i], = ax1.plot(arange(len(input_data.chronos[sv_i])), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
+	plot_list_1[sv_i], = ax1.plot(np.arange(len(input_data.chronos[sv_i])), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
     #pl.xlim(min(input_data.dim1), max(input_data.dim1))
 
     # axes 2: SVs
     plot_list_2 = range(n_SV)
     pl.axes(ax2)
     sv_sv = [input_data.svs[i] for i in range(n_SV)]
-    ax2.semilogy(arange(n_SV),sv_sv,'ko',markersize=3)
+    ax2.semilogy(np.arange(n_SV),sv_sv,'ko',markersize=3)
     entropy = input_data.H
     pl.xlabel('Singular Value number')
     pl.ylabel('Singular Value')
-    pl.figtext(0.75,0.83,'1/H = %.2f' %(1./entropy),fontsize=12, color='r')
-    pl.figtext(0.75,0.81,'H = %.2f' %(entropy),fontsize=12, color='b')
+#    pl.figtext(0.75,0.83,'1/H = %.2f' %(1./entropy),fontsize=12, color='r')
+#    pl.figtext(0.75,0.81,'H = %.2f' %(entropy),fontsize=12, color='b')
+# Use kwargs so that most formatting is common to all three labels.    
+    kwargs={'fontsize':12,'transform':ax2.transAxes,
+            'horizontalalignment':'right'}
+    ax2.text(0.96,0.83,'1/H = %.2f' %(1./entropy), color='r', **kwargs)
+    ax2.text(0.96,0.75,'H = %.2f' %(entropy), color='b', **kwargs)
     energy = Energy(input_data.p,button_setting_list)
-    # this is done in two places - potential for inconsistency - wish I knew better
-    energy_label = pl.figtext(0.75,0.78,'E = %.2f %%' %(100.*energy.value),fontsize=12, color='b')
+    # this is done in two places - potential for inconsistency - wish I knew better -dgp
+    # These changes make it easier to adjust the subplot layout
+    # was pl.figtext(0.75,0.78, (relative to figure), make it relative to axes
+    energy_label = ax2.text(0.96,0.67,'E = %.2f %%' %(100.*energy.value),
+                            color='b', **kwargs)
     # grid('True')
     for sv_i in range(n_SV):
 	col = plot_list_1[sv_i].get_color()
@@ -215,30 +263,31 @@ def svdplot(input_data):
     plot_list_3 = range(n_SV)
     pl.xlabel('Frequency [kHz]')
     pl.ylabel('Power Spectrum')
-    #pl.grid('True')
-    nyquist_kHz = 250.0#1.e-3*0.5/(input_data.dim1[1]-input_data.dim1[0])
+    pl.grid(True)            # matplotlib 1.0.X wants a boolean (unquoted)
+    nyquist_kHz = 1.e-3*0.5/np.average(np.diff(input_data.chrono_labels))
     for sv_i in range(n_SV):
         col = plot_list_1[sv_i].get_color()
         tmp_chrono = input_data.chronos[sv_i]
-        tmp_fft = fft.fft(tmp_chrono)[:len(tmp_chrono)/2]
-        freq_array = nyquist_kHz*arange(len(tmp_fft))/(len(tmp_fft)-1)
+        tmp_fft = np.fft.fft(tmp_chrono)[:len(tmp_chrono)/2]
+        freq_array = nyquist_kHz*np.arange(len(tmp_fft))/(len(tmp_fft)-1)
         plot_list_3[sv_i], = ax3.plot(freq_array, abs(tmp_fft), col,visible= button_setting_list[sv_i],alpha=0.5)
         
-    pl.xlim(0,nyquist_kHz)
+    if fmax == None: fmax = nyquist_kHz
+    pl.xlim(0,fmax)
 
     # axes 4: topo
     pl.axes(ax4)
     plot_list_4 = range(n_SV)
     pl.xlabel('Channel')
     pl.ylabel('Topo [a.u.]')
-    angle_array = arange(n_SV+1)
+    angle_array = np.arange(n_SV+1)
     #channel_names = input_data.timesegment.data[input_data.diagnostic.name].ordered_channel_list
     #channel_names.append(channel_names[0])
     #pl.xticks(angle_array,channel_names, rotation=90)
     for sv_i in range(n_SV):
 	col = plot_list_1[sv_i].get_color()
 	tmp_topo = join_ends(input_data.topos[sv_i])
-	pos,neg =  posNegFill(angle_array,zeros(len(angle_array)),tmp_topo)
+	pos,neg =  posNegFill(angle_array,np.zeros(len(angle_array)),tmp_topo)
 	### BUG: it looks like ax4.fill doesn't work in a couple of cases, leaving sub_plot_4_list[i] as int, which raises a set_visible() bug in button_action - also has problems with draw(). other subplots all worked fine before I started with subplot 4
 	sub_plot_4_list = range(len(pos)+len(neg)+2)
 	for j in range(len(pos)):

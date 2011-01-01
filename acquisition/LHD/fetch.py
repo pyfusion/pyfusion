@@ -1,11 +1,13 @@
 """LHD data fetchers.
 Large chunks of code copied from Boyd, not covered by unit tests.
 """
-
+import subprocess
+import sys
+import tempfile
 from os import path
-from numpy import mean, array, double, arange, dtype
-import numpy as np
 import array as Array
+from numpy import mean, array, double, arange, dtype, load
+import numpy as np
 
 from pyfusion.acquisition.base import BaseDataFetcher
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
@@ -50,15 +52,15 @@ class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
         return fetch_data_from_file(self)
 
 
-from numpy import array, load
+
 zfile = load(path.join(this_dir,'a14_clock_div.npz'))
 a14_clock_div = zfile['a14_clock_div']
 
-from numpy import array
 def LHD_A14_clk(shot):
-    """ Helper routine to fix up the undocumented clock speed chenges in the A14"""
+    """ Helper routine to fix up the undocumented clock speed changes in the A14"""
 
     """
+    # The file a14_clock_div.npz replaces all this hard coded stuff
     # not sure about the exact turn over at 30240 and many others, not checked above 52k yet
     rate  = array([500,    1000,   500, 1000,    500,   250,  500,     250,   500,   250,   500,   250,   500,   250,   500])
     shots = array([26220, 30240, 30754, 31094, 31315, 49960,  51004, 51330, 51475, 51785, 52010, 52025, 52680, 52690, 52810, 999999])
@@ -82,24 +84,24 @@ def fetch_data_from_file(fetcher):
     bits = int(prm_dict['Resolution(bit)'][0])
     if not(prm_dict.has_key('ImageType')):      #if so assume unsigned
         bytes_per_sample = 2
-        arr = Array.array('H')
+        dat_arr = Array.array('H')
         offset = 2**(bits-1)
         dtype = np.dtype('uint16')
     else:
         if prm_dict['ImageType'][0] == 'INT16':
             bytes_per_sample = 2
             if prm_dict['BinaryCoding'][0] == 'offset_binary':
-                arr = Array.array('H')
+                dat_arr = Array.array('H')
                 offset = 2**(bits-1)
                 dtype = np.dtype('uint16')
             elif prm_dict['BinaryCoding'][0] == "shifted_2's_complementary":
-                arr = Array.array('h')
+                dat_arr = Array.array('h')
                 offset = 0
                 dtype = np.dtype('int16')
             else: raise NotImplementedError,' binary coding ' + prm_dict['BinaryCoding']
 
     fp = open(fetcher.basename + '.dat', 'rb')
-    arr.fromfile(fp, bytes/bytes_per_sample)
+    dat_arr.fromfile(fp, bytes/bytes_per_sample)
     fp.close()
 
     clockHz = None
@@ -114,12 +116,16 @@ def fetch_data_from_file(fetcher):
         clockHz =  double(prm_dict['ClockSpeed'][0])
         clockHz = LHD_A14_clk(fetcher.shot)  # see above
     if clockHz != None:
-        timebase = arange(len(arr))/clockHz
+        timebase = arange(len(dat_arr))/clockHz
     else:  raise NotImplementedError, "timebase not recognised"
     
     ch = Channel("%s-%s" %(fetcher.diag_name, fetcher.channel_number), Coords('dummy', (0,0,0)))
+    if fetcher.gain != None: 
+        gain = fetcher.gain
+    else: 
+        gain = 1
     output_data = TimeseriesData(timebase=Timebase(timebase),
-                                 signal=Signal(arr), channels=ch)
+                                 signal=Signal(gain*dat_arr), channels=ch)
     output_data.meta.update({'shot':fetcher.shot})
 
     return output_data
@@ -151,7 +157,6 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
     Retrieve Usage from Oct 2009 tar file:
     Retrieve DiagName ShotNo SubShotNo ChNo [FileName] [-f FrameNo] [-h TransdServer] [-p root] [-n port] [-w|--wait [-t timeout] ] [-R|--real ]
     """
-    import subprocess, sys, tempfile
 
     cmd = str("retrieve %s %d %d %d %s" % (diagg_name, shot, subshot, channel, path.join(outdir, diagg_name)))
 

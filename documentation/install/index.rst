@@ -7,7 +7,7 @@ Installing Pyfusion
 :Release: |version|
 :Date: |today|
 
-Pyfusion overview text here.
+Minimum Python version: 2.4. Python 3 not yet supported.
 
 .. toctree::
    

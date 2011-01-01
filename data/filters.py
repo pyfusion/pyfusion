@@ -60,7 +60,10 @@ def reduce_time(input_data, new_time_range):
 
 
 @register("TimeseriesData", "DataSet")
-def segment(input_data, n_samples):
+def segment(input_data, n_samples, overlap=1.0):
+    """ Break into segments length n_samples.  overlap of 2.0 starts a new segment halfway into previous, overlap=1 is no overlap.  overlap should divide into 
+n_samples.  Probably should consider a nicer definition such as in pyfusion 0
+    """
     from pyfusion.data.base import DataSet
     from pyfusion.data.timeseries import TimeseriesData
     if isinstance(input_data, DataSet):
@@ -71,8 +74,8 @@ def segment(input_data, n_samples):
             except AttributeError:
                 pyfusion.logger.warning("Data filter 'segment' not applied to item in dataset")
         return output_dataset
-    output_data = DataSet('segmented_%s' %datetime.now())
-    for el in arange(0,len(input_data.timebase), n_samples):
+    output_data = DataSet('segmented_%s, %d samples, %.3f overlap' %(datetime.now(), n_samples, overlap))
+    for el in arange(0,len(input_data.timebase), n_samples/overlap):
         if input_data.signal.ndim == 1:
             tmp_data = TimeseriesData(timebase=input_data.timebase[el:el+n_samples],
                                       signal=input_data.signal[el:el+n_samples],
@@ -100,6 +103,9 @@ def remove_noncontiguous(input_dataset):
 def normalise(input_data, method='peak', separate=False):
     from numpy import mean, sqrt, max, abs, var, atleast_2d
     from pyfusion.data.base import DataSet
+    # this allows method='0'(or 0) to prevent normalisation for cleaner code
+    # elsewhere
+    if (method == 0) or (method == '0'): return(input_data)
     if isinstance(input_data, DataSet):
         output_dataset = DataSet(input_data.label+"_normalise")
         for d in input_data:
@@ -130,6 +136,8 @@ def normalise(input_data, method='peak', separate=False):
                 var_vals = max(var_vals)
             norm_value = atleast_2d(var_vals).T            
     input_data.signal = input_data.signal / norm_value
+    #print('norm_value = %s' % norm_value)
+    input_data.scales = norm_value
     return input_data
     
 @register("TimeseriesData")
@@ -217,7 +225,7 @@ def fs_group_threshold(input_data, threshold=0.2):
     return output_fs_list
 
 @register("TimeseriesData")
-def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, label=None):
+def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, method='rms', separate=1, label=None):
     from pyfusion.data.base import DataSet
     from pyfusion.data.timeseries import FlucStruc
 
@@ -225,7 +233,7 @@ def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, label=None
         fs_dataset = DataSet(label)
     else:
         fs_dataset = DataSet('flucstrucs_%s' %datetime.now())
-    svd_data = input_data.subtract_mean().normalise(method="var").svd()
+    svd_data = input_data.subtract_mean().normalise(method, separate).svd()
 
     for fs_gr in group(svd_data):
         tmp = FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase)

@@ -2,10 +2,52 @@
 Note, plots (this file) doesn't have unittests
 """
 
+# help! dave - this may be better in a utilities module - ?
+def split_names(names, pad=' '):
+    """ return an array of the part of the name that varies, and optionally the 
+    prefix and suffix.  The array is first in the tuple in case others are not
+    wanted.  This is used to make the x labels of probe plots simpler.
+    e.g.
+    >>> split_names(['MP01','MP10'])
+    (['01','10'], 'MP', '')
+    """
+# make a new array with elements padded to the same length with <pad>
+    nms = []
+    maxlen = max([len(nm) for nm in names])
+    for nm in names:
+        nmarr = [c for c in nm]
+        while len(nmarr)< maxlen: nmarr.append(pad)
+        nms.append(nmarr)
+    
+# the following numpy array comparisons look simple, but require the name string
+# to be exploded into chars.  Although a single string can be interchangeably 
+# referred to as a string or array of chars, these arrays they have to be 
+# re-constituted before return.
+#
+#    for nm in nms:     # for each nm
+    #find the first mismatch - first will be the first char of the extracted arr
+    nms_arr=array(nms)
+    first=0
+    while (first < maxlen and
+           (nms_arr[:,first] == nms_arr[0,first]).all()):
+        first += 1
+# and the last        
+    last = maxlen-1
+    while ((last >= 0) and
+           (nms_arr[:,last] == nms_arr[0,last]).all()):
+        last -= 1
+# check for no mismatch        
+    if first==maxlen: return(['' for nm in names], ''.join(nms[0]),'')
+# otherwise return, (no need for special code for the case of no match at all)
+    return(([''.join(s) for s in nms_arr[:,first:last+1]],
+            ''.join(nms_arr[0,0:first]),
+            ''.join(nms_arr[0,last+1:maxlen+1])))
+
 from matplotlib.widgets import CheckButtons
 import pylab as pl
 
 from numpy import *
+import numpy as np
 
 plot_reg = {}
 
@@ -34,10 +76,10 @@ def plot_signals(input_data, filename=None):
         pl.show()
 
 @register("TimeseriesData")
-def plot_spectrogram(input_data, channel_number=0, filename=None):
+def plot_spectrogram(input_data, channel_number=0, filename=None, **kwargs):
     import pylab as pl
 
-    pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq)
+    pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq, **kwargs)
 
     try:
         pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[0].name))
@@ -134,9 +176,46 @@ def findZero(i,x,y1,y2):
     yZero = m1*xZero + b1
     return (xZero, yZero)
 
+@register("FlucStruc")
+def fsplot_phase(input_data, closed=True, hold=0):
+    """ plot the phase of a flucstruc, optionally replicating the last point
+    at the beginning (if closed=True).
+    This version does not yet attempt to take into account angles, or check 
+    that adjacent channels are adjacent (i.e. ch2-ch1, ch2-c2 etc).
+    Channel names are taken from the fs and plotted abbreviated
+    """
+    # extract by channels
+    (ch1n,ch2n,ch12n,dp) = ([],[],[],[])
+    # bdb this line should be replaced by a call to a routine names something
+    #like <plotted_width> to help in deciding if the label will fit on the 
+    #current graph.
+    if (2*len(input_data.dphase)*len(input_data.dphase[0].item.channel_1))> 50:
+        sep = '\n-'
+    else: sep = '-'
+    for dpn in input_data.dphase:
+        ch1n.append(dpn.item.channel_1)
+        ch2n.append(dpn.item.channel_2)
+        ch12n.append(dpn.item.channel_1+sep+dpn.item.channel_2)
+        dp.append(dpn.item.delta)
+
+#    short_names,p,s = split_names(ch1n)  # need to break up loops to do this
+
+    if closed:
+        ch1n.insert(0, ch1n[-1])
+        ch2n.insert(0, ch2n[-1])
+        ch12n.insert(0, ch12n[-1])
+        dp.insert(0,dp[-1])
+
+    pl.plot(dp,hold=hold)
+    ax=pl.gca()
+    ax.set_xticks(range(len(dp)))
+    ax.set_xticklabels(ch12n)
+
 
 @register("SVDData")
-def svdplot(input_data):
+def svdplot(input_data, fmax=None, hold=0):
+
+    if hold==0: pl.clf(); # erase the figure, as this is a mult- axis plot
 
     n_SV = len(input_data.svs)
 
@@ -200,11 +279,19 @@ def svdplot(input_data):
     entropy = input_data.H
     pl.xlabel('Singular Value number')
     pl.ylabel('Singular Value')
-    pl.figtext(0.75,0.83,'1/H = %.2f' %(1./entropy),fontsize=12, color='r')
-    pl.figtext(0.75,0.81,'H = %.2f' %(entropy),fontsize=12, color='b')
+#    pl.figtext(0.75,0.83,'1/H = %.2f' %(1./entropy),fontsize=12, color='r')
+#    pl.figtext(0.75,0.81,'H = %.2f' %(entropy),fontsize=12, color='b')
+# Use kwargs so that most formatting is common to all three labels.    
+    kwargs={'fontsize':12,'transform':ax2.transAxes,
+            'horizontalalignment':'right'}
+    ax2.text(0.96,0.83,'1/H = %.2f' %(1./entropy), color='r', **kwargs)
+    ax2.text(0.96,0.75,'H = %.2f' %(entropy), color='b', **kwargs)
     energy = Energy(input_data.p,button_setting_list)
-    # this is done in two places - potential for inconsistency - wish I knew better
-    energy_label = pl.figtext(0.75,0.78,'E = %.2f %%' %(100.*energy.value),fontsize=12, color='b')
+    # this is done in two places - potential for inconsistency - wish I knew better -dgp
+    # These changes make it easier to adjust the subplot layout
+    # was pl.figtext(0.75,0.78, (relative to figure), make it relative to axes
+    energy_label = ax2.text(0.96,0.67,'E = %.2f %%' %(100.*energy.value),
+                            color='b', **kwargs)
     # grid('True')
     for sv_i in range(n_SV):
 	col = plot_list_1[sv_i].get_color()
@@ -215,8 +302,8 @@ def svdplot(input_data):
     plot_list_3 = range(n_SV)
     pl.xlabel('Frequency [kHz]')
     pl.ylabel('Power Spectrum')
-    #pl.grid('True')
-    nyquist_kHz = 250.0#1.e-3*0.5/(input_data.dim1[1]-input_data.dim1[0])
+    pl.grid(True)            # matplotlib 1.0.X wants a boolean (unquoted)
+    nyquist_kHz = 1.e-3*0.5/np.average(np.diff(input_data.chrono_labels))
     for sv_i in range(n_SV):
         col = plot_list_1[sv_i].get_color()
         tmp_chrono = input_data.chronos[sv_i]
@@ -224,7 +311,8 @@ def svdplot(input_data):
         freq_array = nyquist_kHz*arange(len(tmp_fft))/(len(tmp_fft)-1)
         plot_list_3[sv_i], = ax3.plot(freq_array, abs(tmp_fft), col,visible= button_setting_list[sv_i],alpha=0.5)
         
-    pl.xlim(0,nyquist_kHz)
+    if fmax == None: fmax = nyquist_kHz
+    pl.xlim(0,fmax)
 
     # axes 4: topo
     pl.axes(ax4)

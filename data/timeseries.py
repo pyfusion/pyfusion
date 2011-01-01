@@ -115,7 +115,7 @@ class TimeseriesData(BaseData):
     def __init__(self, timebase = None, signal=None, channels=None, bypass_length_check=False, **kwargs):
         self.timebase = timebase
         self.channels = channels
-        
+        self.scales = np.array([[1]])  # retain amplitude scaling info for later
         if bypass_length_check == True:
             self.signal = signal
         else:
@@ -179,7 +179,8 @@ class FlucStruc(BaseData):
         if len(sv_list) == 1:
             self.a12 = 0
         else:
-            self.a12 = svd_data.svs[sv_list[0]]/svd_data.svs[sv_list[1]]
+            # this ratio was inverted accidentally at first
+            self.a12 = svd_data.svs[sv_list[1]]/svd_data.svs[sv_list[0]]
         self._binary_svs = list2bin(sv_list)
         # peak frequency for fluctuation structure
         self.freq = peak_freq(svd_data.chronos[sv_list[0]], timebase)
@@ -192,6 +193,7 @@ class FlucStruc(BaseData):
         self.dphase = self._get_dphase(min_dphase=min_dphase)
         self.p = np.sum(svd_data.svs.take(sv_list)**2)/svd_data.E
         self.H = svd_data.H
+        self.E = svd_data.E
         super(FlucStruc, self).__init__()
 
     def save(self):

@@ -41,7 +41,7 @@ def plot_spectrogram(input_data, channel_number=0, filename=None, **kwargs):
     pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq, **kwargs)
 
     try:
-        pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[0].name))
+        pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[channel_number].name))
     except:
         pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels.name))
         

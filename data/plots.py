@@ -1,56 +1,16 @@
 """
 Note, plots (this file) doesn't have unittests
 """
-
-# help! dave - this may be better in a utilities module - ?
-def split_names(names, pad=' '):
-    """ return an array of the part of the name that varies, and optionally the 
-    prefix and suffix.  The array is first in the tuple in case others are not
-    wanted.  This is used to make the x labels of probe plots simpler.
-    e.g.
-    >>> split_names(['MP01','MP10'])
-    (['01','10'], 'MP', '')
-    """
-# make a new array with elements padded to the same length with <pad>
-    nms = []
-    maxlen = max([len(nm) for nm in names])
-    for nm in names:
-        nmarr = [c for c in nm]
-        while len(nmarr)< maxlen: nmarr.append(pad)
-        nms.append(nmarr)
-    
-# the following numpy array comparisons look simple, but require the name string
-# to be exploded into chars.  Although a single string can be interchangeably 
-# referred to as a string or array of chars, these arrays they have to be 
-# re-constituted before return.
-#
-#    for nm in nms:     # for each nm
-    #find the first mismatch - first will be the first char of the extracted arr
-    nms_arr=array(nms)
-    first=0
-    while (first < maxlen and
-           (nms_arr[:,first] == nms_arr[0,first]).all()):
-        first += 1
-# and the last        
-    last = maxlen-1
-    while ((last >= 0) and
-           (nms_arr[:,last] == nms_arr[0,last]).all()):
-        last -= 1
-# check for no mismatch        
-    if first==maxlen: return(['' for nm in names], ''.join(nms[0]),'')
-# otherwise return, (no need for special code for the case of no match at all)
-    return(([''.join(s) for s in nms_arr[:,first:last+1]],
-            ''.join(nms_arr[0,0:first]),
-            ''.join(nms_arr[0,last+1:maxlen+1])))
-
 from matplotlib.widgets import CheckButtons
 import pylab as pl
 
-from numpy import *
 import numpy as np
+
+from pyfusion.data.utils import peak_freq, split_names
 
 plot_reg = {}
 
+# the registration function is similar but separate for plots and filters
 def register(*class_names):
     def reg_item(plot_method):
         for cl_name in class_names:
@@ -80,9 +40,9 @@ def plot_spectrogram(input_data, channel_number=0, filename=None, **kwargs):
     import pylab as pl
 
     pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq, **kwargs)
-
+    #accept multi or single channel data (I think?)
     try:
-        pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[0].name))
+        pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[channel_number].name))
     except:
         pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels.name))
         
@@ -97,7 +57,7 @@ def plot_spectrogram(input_data, channel_number=0, filename=None, **kwargs):
 
 def join_ends(inarray,add_2pi = False,add_360deg=False,add_lenarray=False,add_one=False):
     """used in old code, needs clean up...."""
-    output = resize(inarray,(len(inarray)+1,))
+    output = np.resize(inarray,(len(inarray)+1,))
     if add_2pi:
         output[-1] = output[-1]+2*pi
     elif add_360deg:
@@ -183,34 +143,45 @@ def fsplot_phase(input_data, closed=True, hold=0):
     This version does not yet attempt to take into account angles, or check 
     that adjacent channels are adjacent (i.e. ch2-ch1, ch2-c2 etc).
     Channel names are taken from the fs and plotted abbreviated
+
+    1/1/2011: TODO This appears to work only for database=None config
+    1/17/2011:  bdb: May be fixed - I had used channel instead of channel.name
     """
     # extract by channels
-    (ch1n,ch2n,ch12n,dp) = ([],[],[],[])
+    ch1n,ch2n,ch12n,dp = [],[],[],[]
     # bdb this line should be replaced by a call to a routine names something
     #like <plotted_width> to help in deciding if the label will fit on the 
     #current graph.
-    if (2*len(input_data.dphase)*len(input_data.dphase[0].item.channel_1))> 50:
-        sep = '\n-'
-    else: sep = '-'
     for dpn in input_data.dphase:
-        ch1n.append(dpn.item.channel_1)
-        ch2n.append(dpn.item.channel_2)
-        ch12n.append(dpn.item.channel_1+sep+dpn.item.channel_2)
+        ch1n.append(dpn.item.channel_1.name)
+        ch2n.append(dpn.item.channel_2.name)
+#        ch12n.append(dpn.item.channel_1.name+sep+dpn.item.channel_2.name)
         dp.append(dpn.item.delta)
 
-#    short_names,p,s = split_names(ch1n)  # need to break up loops to do this
+    short_names_1,p,s = split_names(ch1n)  # need to break up loops to do this
+    short_names_2,p,s = split_names(ch2n)  # 
+
+# need to know how big the shortened names are before deciding on the separator
+    if (2*len(input_data.dphase)*len(short_names_1[0]))> 50:
+        sep = '\n-'
+    else: sep = '-'
+
+    ch12n = [ch1n[i]+sep+ch2n[i] for i in range(len(ch1n))]
+    short_ch12n = [short_names_1[i]+sep+short_names_2[i] 
+                   for i in range(len(short_names_1))]
 
     if closed:
         ch1n.insert(0, ch1n[-1])
         ch2n.insert(0, ch2n[-1])
         ch12n.insert(0, ch12n[-1])
+        short_ch12n.insert(0, short_ch12n[-1])
         dp.insert(0,dp[-1])
 
     pl.plot(dp,hold=hold)
     ax=pl.gca()
     ax.set_xticks(range(len(dp)))
-    ax.set_xticklabels(ch12n)
-
+    ax.set_xticklabels(short_ch12n)
+    pl.show()
 
 @register("SVDData")
 def svdplot(input_data, fmax=None, hold=0):
@@ -219,7 +190,6 @@ def svdplot(input_data, fmax=None, hold=0):
 
     n_SV = len(input_data.svs)
 
-    from pyfusion.data.utils import peak_freq
     #for chrono in input_data.chronos:
     #    print peak_freq(chrono, input_data.dim1)
 
@@ -268,14 +238,14 @@ def svdplot(input_data, fmax=None, hold=0):
     plot_list_1 = range(n_SV)
     for sv_i in range(n_SV):
 	#plot_list_1[sv_i], = ax1.plot(array(input_data.dim1), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
-	plot_list_1[sv_i], = ax1.plot(arange(len(input_data.chronos[sv_i])), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
+	plot_list_1[sv_i], = ax1.plot(np.arange(len(input_data.chronos[sv_i])), input_data.chronos[sv_i], visible= button_setting_list[sv_i],alpha=0.5)
     #pl.xlim(min(input_data.dim1), max(input_data.dim1))
 
     # axes 2: SVs
     plot_list_2 = range(n_SV)
     pl.axes(ax2)
     sv_sv = [input_data.svs[i] for i in range(n_SV)]
-    ax2.semilogy(arange(n_SV),sv_sv,'ko',markersize=3)
+    ax2.semilogy(np.arange(n_SV),sv_sv,'ko',markersize=3)
     entropy = input_data.H
     pl.xlabel('Singular Value number')
     pl.ylabel('Singular Value')
@@ -307,8 +277,8 @@ def svdplot(input_data, fmax=None, hold=0):
     for sv_i in range(n_SV):
         col = plot_list_1[sv_i].get_color()
         tmp_chrono = input_data.chronos[sv_i]
-        tmp_fft = fft.fft(tmp_chrono)[:len(tmp_chrono)/2]
-        freq_array = nyquist_kHz*arange(len(tmp_fft))/(len(tmp_fft)-1)
+        tmp_fft = np.fft.fft(tmp_chrono)[:len(tmp_chrono)/2]
+        freq_array = nyquist_kHz*np.arange(len(tmp_fft))/(len(tmp_fft)-1)
         plot_list_3[sv_i], = ax3.plot(freq_array, abs(tmp_fft), col,visible= button_setting_list[sv_i],alpha=0.5)
         
     if fmax == None: fmax = nyquist_kHz
@@ -319,14 +289,14 @@ def svdplot(input_data, fmax=None, hold=0):
     plot_list_4 = range(n_SV)
     pl.xlabel('Channel')
     pl.ylabel('Topo [a.u.]')
-    angle_array = arange(n_SV+1)
+    angle_array = np.arange(n_SV+1)
     #channel_names = input_data.timesegment.data[input_data.diagnostic.name].ordered_channel_list
     #channel_names.append(channel_names[0])
     #pl.xticks(angle_array,channel_names, rotation=90)
     for sv_i in range(n_SV):
 	col = plot_list_1[sv_i].get_color()
 	tmp_topo = join_ends(input_data.topos[sv_i])
-	pos,neg =  posNegFill(angle_array,zeros(len(angle_array)),tmp_topo)
+	pos,neg =  posNegFill(angle_array,np.zeros(len(angle_array)),tmp_topo)
 	### BUG: it looks like ax4.fill doesn't work in a couple of cases, leaving sub_plot_4_list[i] as int, which raises a set_visible() bug in button_action - also has problems with draw(). other subplots all worked fine before I started with subplot 4
 	sub_plot_4_list = range(len(pos)+len(neg)+2)
 	for j in range(len(pos)):

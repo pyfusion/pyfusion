@@ -1,11 +1,8 @@
-"""Base data classes."""
-try:
-    set
-except NameError:
-    from sets import Set as set # Python 2.3 fallback
+"""Base classes for data."""
 
+import operator
+import uuid
 from datetime import datetime
-import operator, uuid
 
 from pyfusion.conf.utils import import_from_str, get_config_as_dict
 from pyfusion.data.filters import filter_reg
@@ -13,29 +10,46 @@ from pyfusion.data.plots import plot_reg
 import pyfusion
 
 if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, String, Integer, Float, ForeignKey, DateTime, PickleType
+    from sqlalchemy import Table, Column, String, Integer, Float, ForeignKey, \
+         DateTime, PickleType
     from sqlalchemy.orm import reconstructor, mapper, relation, dynamic_loader
     from sqlalchemy.orm.collections import column_mapped_collection
 
+
 def history_reg_method(method):
+    """Wrapper for filter and plot methods which updates the data history."""
     def updated_method(input_data, *args, **kwargs):
-        input_data.history += '\n%s > %s' %(datetime.now(), method.__name__ + '(' + ', '.join(map(str,args)) + ', '.join("%s='%s'" %(str(i[0]), str(i[1])) for i in kwargs.items()) + ')')
-        #return method(input_data, *args, **kwargs)
+        args_string = ', '.join(map(str,args))
+        if args_string is not '':
+            args_string += ', '
+        kwargs_string = ', '.join("%s='%s'" %(str(i[0]), str(i[1]))
+                                  for i in kwargs.items())
+        history_string = "\n%s > %s(%s%s)" %(datetime.now(), method.__name__,
+                                               args_string, kwargs_string)
+        input_data.history += history_string
         output = method(input_data, *args, **kwargs)
-        if output != None:  # bdb? help! dave! hack to suppress Nonetype has no meta
+
+        # TODO output.meta.update() looks wrong - if a filter modifies a meta value, does this
+        # overwrite the modified version with the original?
+
+        if output != None:
             output.meta.update(input_data.meta)
+
         return output
     return updated_method
 
 class MetaMethods(type):
+    """Metaclass which provides filter and plot methods for data classes."""
     def __new__(cls, name, bases, attrs):
         for reg in [filter_reg, plot_reg]:
-            filter_methods = reg.get(name, [])
-            attrs.update((i.__name__,history_reg_method(i)) for i in filter_methods)
+            reg_methods = reg.get(name, [])
+            attrs.update((i.__name__,history_reg_method(i))
+                         for i in reg_methods)
         return super(MetaMethods, cls).__new__(cls, name, bases, attrs)
 
 
 class Coords(object):
+    """Stores coordinates with an interface for coordinate transforms."""
     def __init__(self, default_coords_name, default_coords_tuple,  **kwargs):
         self.default_name = default_coords_name
         self.default_value_1 = default_coords_tuple[0]
@@ -384,6 +398,7 @@ class BaseCoordTransform(object):
         return coords
 
 class FloatDelta(BaseData):
+#  Note: channel_1, 2 are channels, not channel names
     def __init__(self, channel_1, channel_2, delta, **kwargs):
         self.channel_1 = channel_1
         self.channel_2 = channel_2

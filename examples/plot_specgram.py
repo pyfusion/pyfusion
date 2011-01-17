@@ -1,21 +1,21 @@
-""" plot a group of signals
+""" simple example to plot a spectrogram, uses command line arguments
 
+    run pyfusion/examples/plot_specgram shot_number=69270
+
+    See process_cmd_line_args.py
 """
-import subprocess, sys, warnings
-from numpy import sqrt
+
 import pyfusion as pf
 import pylab as pl
 
-dev_name='H1Local'   # 'LHD''LHD
+dev_name='H1Local'   # 'LHD'
 device = pf.getDevice(dev_name)
 
-shot_number = 27233
+#shot_number = 27233
 shot_number = 69270
-#shot_range = range(90090, 90110)
 
 diag_name= 'MP'
 diag_name = "H1DTacqAxial"
-exception=Exception
 time_range = None
 channel_number=0
 

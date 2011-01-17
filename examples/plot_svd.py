@@ -1,10 +1,13 @@
 """ plot the svd of a diag, either one with arbitrary time bounds
 or the sequence of svds of numpts starting at start_time (sec)
 keys typed at the terminal allow stepping backward and forward.
+
 Typical usage : run  dm/plot_svd.py start_time=0.01 "normalise='v'" use_getch=0
 """
 
 def order_fs(fs_set, by='p'):
+    """ Dave's code returns an unordered set - need to order by singular value (desc)
+    """
     fsarr_unsort=[]
     for fs in fs_set: fsarr_unsort.append(fs)
     if by == 'p': revord = argsort([fs.p for fs in fsarr_unsort ])
@@ -28,8 +31,6 @@ try:
 except:
     use_getch = False
 print(" getch is %savailable" % (['not ', ''][use_getch]))
-
-
 
 dev_name='H1Local'   # 'LHD'
 #dev_name='LHD'
@@ -62,6 +63,7 @@ except:
 execfile('process_cmd_line_args.py')
 
 print(" %s using getch" % (['not', 'yes, '][use_getch]))
+if use_getch: print('plots most likely will be suppressed - sad!')
 
 if old_shot>0: # we can expect the variables to be still around, run with -i
     if (old_diag != diag_name) or (old_shot != shot_number): old_shot=0
@@ -143,7 +145,7 @@ else:
             if use_getch: 
                 pl.show()
                 k=getch.getch()
-            else: k=raw_input('next - hit return')
+            else: k=raw_input('enter one of "npqegsS" (return->next time segment)')
             if k=='': k='n'
             if k in 'bBpP': i-=1
             # Note - if normalise or separate is toggled, it doesn't

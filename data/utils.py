@@ -1,4 +1,19 @@
+import os, string
+import random as _random
 from numpy import fft, conjugate, array, mean, arange, searchsorted, argsort, pi
+
+
+try:
+    import uuid
+except: # python 2.4
+    pass
+
+def unique_id():
+    try:
+        return str(uuid.uuid4())
+    except:
+        return ''.join(_random.choice(string.letters) for i in range(50))
+
 
 def cps(a,b):
     return fft.fft(a)*conjugate(fft.fft(b))

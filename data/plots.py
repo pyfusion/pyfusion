@@ -36,10 +36,12 @@ def plot_signals(input_data, filename=None):
         pl.show()
 
 @register("TimeseriesData")
-def plot_spectrogram(input_data, channel_number=0, filename=None, **kwargs):
+def plot_spectrogram(input_data, windowfn=None, channel_number=0, filename=None, **kwargs):
     import pylab as pl
+    
+    if windowfn == None: windowfn=pl.window_hanning
 
-    pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq, **kwargs)
+    pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq, window=windowfn, **kwargs)
     #accept multi or single channel data (I think?)
     try:
         pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[channel_number].name))

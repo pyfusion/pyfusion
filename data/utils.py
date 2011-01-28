@@ -59,9 +59,10 @@ def bin2list(input_value):
     return output_list
 
 def split_names(names, pad=' '):
-    """ return an array of the part of the name that varies, and optionally the 
-    prefix and suffix.  The array is first in the tuple in case others are not
-    wanted.  This is used to make the x labels of probe plots simpler.
+    """ Given an array of strings, return an array of the part of the string
+    (e.g. channel name) that varies, and optionally the prefix and suffix.
+    The array of varying parts is first in the tuple in case others are not
+    wanted.  This is used to make the x labels of phase plots simpler and smaller.
     e.g.
     >>> split_names(['MP01','MP10'])
     (['01','10'], 'MP', '')
@@ -79,7 +80,7 @@ def split_names(names, pad=' '):
     # referred to as a string or array of chars, these arrays they have to be 
     # re-constituted before return.
     #
-    #for nm in nms:     # for each nm
+    #    for nm in nms:     # for each nm
     #find the first mismatch - first will be the first char of the extracted arr
     nms_arr=array(nms)
     first=0
@@ -91,6 +92,8 @@ def split_names(names, pad=' '):
     while ((last >= 0) and
            (nms_arr[:,last] == nms_arr[0,last]).all()):
         last -= 1
+
+
     # check for no mismatch        
     if first==maxlen: return(['' for nm in names], ''.join(nms[0]),'')
     # otherwise return, (no need for special code for the case of no match at all)

@@ -54,6 +54,7 @@ class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
 
 
 zfile = load(path.join(this_dir,'a14_clock_div.npz'))
+
 a14_clock_div = zfile['a14_clock_div']
 
 def LHD_A14_clk(shot):

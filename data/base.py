@@ -1,7 +1,12 @@
 """Base classes for data."""
+<<<<<<< HEAD
 
 import operator
+=======
+>>>>>>> boyd
 
+import operator
+import uuid
 from datetime import datetime
 
 from pyfusion.conf.utils import import_from_str, get_config_as_dict
@@ -399,6 +404,7 @@ class BaseCoordTransform(object):
         return coords
 
 class FloatDelta(BaseData):
+#  Note: channel_1, 2 are channels, not channel names
     def __init__(self, channel_1, channel_2, delta, **kwargs):
         self.channel_1 = channel_1
         self.channel_2 = channel_2

@@ -10,6 +10,7 @@ from pyfusion.data.utils import peak_freq, split_names
 
 plot_reg = {}
 
+# the registration function is similar but separate for plots and filters
 def register(*class_names):
     def reg_item(plot_method):
         for cl_name in class_names:
@@ -35,11 +36,13 @@ def plot_signals(input_data, filename=None):
         pl.show()
 
 @register("TimeseriesData")
-def plot_spectrogram(input_data, channel_number=0, filename=None, **kwargs):
+def plot_spectrogram(input_data, windowfn=None, channel_number=0, filename=None, **kwargs):
     import pylab as pl
+    
+    if windowfn == None: windowfn=pl.window_hanning
 
-    pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq, **kwargs)
-
+    pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq, window=windowfn, **kwargs)
+    #accept multi or single channel data (I think?)
     try:
         pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[channel_number].name))
     except:
@@ -144,6 +147,7 @@ def fsplot_phase(input_data, closed=True, hold=0):
     Channel names are taken from the fs and plotted abbreviated
 
     1/1/2011: TODO This appears to work only for database=None config
+    1/17/2011:  bdb: May be fixed - I had used channel instead of channel.name
     """
     # extract by channels
     ch1n,ch2n,ch12n,dp = [],[],[],[]
@@ -160,18 +164,29 @@ def fsplot_phase(input_data, closed=True, hold=0):
         ch12n.append(dpn.item.channel_1.name+sep+dpn.item.channel_2.name)
         dp.append(dpn.item.delta)
 
-#    short_names,p,s = split_names(ch1n)  # need to break up loops to do this
+    short_names_1,p,s = split_names(ch1n)  # need to break up loops to do this
+    short_names_2,p,s = split_names(ch2n)  # 
+
+# need to know how big the shortened names are before deciding on the separator
+    if (2*len(input_data.dphase)*len(short_names_1[0]))> 50:
+        sep = '\n-'
+    else: sep = '-'
+
+    ch12n = [ch1n[i]+sep+ch2n[i] for i in range(len(ch1n))]
+    short_ch12n = [short_names_1[i]+sep+short_names_2[i] 
+                   for i in range(len(short_names_1))]
 
     if closed:
         ch1n.insert(0, ch1n[-1])
         ch2n.insert(0, ch2n[-1])
         ch12n.insert(0, ch12n[-1])
+        short_ch12n.insert(0, short_ch12n[-1])
         dp.insert(0,dp[-1])
 
     pl.plot(dp,hold=hold)
     ax=pl.gca()
     ax.set_xticks(range(len(dp)))
-    ax.set_xticklabels(ch12n)
+    ax.set_xticklabels(short_ch12n)
     pl.show()
 
 @register("SVDData")

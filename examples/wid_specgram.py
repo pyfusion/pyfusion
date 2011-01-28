@@ -7,9 +7,8 @@ Advantage of this simple version is it is toolkit independent. See comments
 in code.
 
 usage:
-run pyfusion/examples/wid_specgram.py shot_number=2723 diag_name='MP_SMALL'
-run pyfusion/examples/wid_specgram.py shot_number=58043 chan_name='mirnov_1_8'
-
+run pyfusion/examples/wid_specgram.py shot_number=27233 diag_name='MP_SMALL'
+run pyfusion/examples/wid_specgram.py NFFT=2048 shot_number=69270 diag_name='H1DTacqAxial' dev_name='H1Local' shot_list=[69270] channel_number=2
 Version 6: Add flucstruc overplot and control for size of circles 
 Version 5: Works nicely in ipython, two pulldowns, one for history, one
 for shot selector, and selector wild card(non-blocking).  The history list only
@@ -105,16 +104,35 @@ def get_local_shot_numbers(partial_name):
 wild_card = ''
 
 dev_name= 'LHD' # 'H1Local'
+
+shot_number=None
+channel_number=None
+
+diag_name=""
+shot_list=[]
+cmap=None
+#xextent=None  # was here, really belongs in data.spectrogram
+NFFT=512
+Fsamp=2
+Fcentre=0
+marker_size=0
+detrend=pl.detrend_none
+_window = local_wider # none causes math errors in specgram sometimes 
+foverlap=0.75   # 0 is the cheapest, but 3/4 looks better
+_type='F'
+fmod=0
+# t_max=0.08
+
+execfile('process_cmd_line_args.py')
+
 device = pyfusion.getDevice(dev_name)
 
 chan_name=''
 
-channel_number=None
-
 if dev_name=='TestDevice':
     chan_name='testch1'
     shot_number=1000
-elif dev_name=='H1':
+elif (dev_name=='H1') or(dev_name=='H1Local'):
     chan_name='mirnov_1_8'
     shot_number=58123
 elif dev_name=='HeliotronJ': 
@@ -140,19 +158,6 @@ if pyfusion.VERBOSE>2:
           (dev_name, chan_name, shot_number))
 
 if channel_number==None: channel_number=0
-
-cmap=None
-#xextent=None  # was here, really belongs in data.spectrogram
-NFFT=512
-Fsamp=2
-Fcentre=0
-marker_size=0
-detrend=pl.detrend_none
-_window = local_wider # none causes math errors in specgram sometimes 
-foverlap=0.75   # 0 is the cheapest, but 3/4 looks better
-_type='F'
-fmod=0
-# t_max=0.08
 
 # tweak above parameters according to command line args
 execfile('process_cmd_line_args.py')
@@ -192,7 +197,8 @@ def call_spec():
         else: windowfn=_window(arange(NFFT))
         clim=(-60,20)   # eventually make this adjustable
 # colorbar commented out because it keeps adding itself
-        data.plot_spectrogram(NFFT=NFFT, windowfn=windowfn, noverlap=foverlap*NFFT),
+        data.plot_spectrogram(NFFT=NFFT, windowfn=windowfn, noverlap=foverlap*NFFT, 
+                              channel_number=channel_number)
 #                         colorbar=True, clim=clim)
 #        colorbar() # used to come up on a separate page, fixed, but a little clunky - leave for now
 

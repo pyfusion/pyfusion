@@ -1,10 +1,4 @@
 """Base classes for data."""
-<<<<<<< HEAD
-
-import operator
-=======
->>>>>>> boyd
-
 import operator
 import uuid
 from datetime import datetime

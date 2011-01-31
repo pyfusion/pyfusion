@@ -23,6 +23,13 @@ class Timebase(np.ndarray):
     def is_contiguous(self):
         return max(((self[1:]-self[:-1])-1.0/self.sample_freq)**2) < (0.1/self.sample_freq)**2
 
+    def normalise_freq(self, input_freq):
+        """Normalise input frequencies to [0,1] where 1 is pi*sample_freq"""
+        try:
+            return input_freq/(0.5*self.sample_freq)
+        except:
+            return [i/(0.5*self.sample_freq) for i in sample_freq]
+
     def __array_finalize__(self, obj):
         # ``self`` is a new object resulting from
         # ndarray.__new__(InfoArray, ...), therefore it only has

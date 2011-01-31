@@ -11,7 +11,7 @@ from pyfusion.data.utils import cps
 def get_n_channels(n_ch):
     return ChannelList(*(Channel('ch_%02d' %i, Coords('cylindrical',(1.0,i,0.0))) for i in 2*pi*arange(n_ch)/n_ch))
 
-# modes: [amplitude, freq, phase at angle0]
+# modes: [amplitude, freq, phase at angle0, phase offset]
 def get_multimode_test_data(n_channels = 10,
                             channels = get_n_channels(10),
                             timebase = Timebase(arange(0.0,0.01,1.e-5)),
@@ -1096,6 +1096,25 @@ class TestStoredMetaData(BasePyfusionTestCase):
             self.assertEqual(some_fs.meta, multichannel_data.meta)
 
 
-            
 
-TestStoredMetaData.dev = True
+
+
+class TestSciPyFilters(BasePyfusionTestCase):
+    def test_sp_filter_butterworth_bandpass(self):
+        import pyfusion
+        n_ch = 3
+        n_samples = 1024
+        sample_period = 1.e-6
+        # Let's generate a test signal with strong peaks at 20kHz and
+        # 60kHz and a weaker peak at 40kHz. 
+        
+        multichannel_data = get_multimode_test_data(n_channels = n_ch,
+                                                    channels=get_n_channels(n_ch),
+                                                    timebase = Timebase(arange(n_samples)*sample_period),
+                                                    modes = [[10.0, 3., 20.e3, 0.2], [2.0, 4., 40.e3, 0.3], [10.0, 5., 60.e3, 0.4]],
+                                                    noise = 0.1)
+
+        filtered_data = multichannel_data.sp_filter_butterworth_bandpass([35.e3, 45.e3], [25.e3, 55.e3], 1.0, 10.0)
+
+
+TestSciPyFilters.dev = True

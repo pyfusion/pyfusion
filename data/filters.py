@@ -3,9 +3,15 @@ Some un-pythonic code here (checking instance type inside
 function). Need to figure out a better way to do this.
 """
 from datetime import datetime
-
+import copy
 from numpy import searchsorted, arange, mean, resize, repeat, fft, conjugate, linalg, array, zeros_like, take, argmin, pi
 from numpy import correlate as numpy_correlate
+try:
+    from scipy import signal as sp_signal
+except:
+    # should send message to log...
+    pass
+
 import pyfusion
 
 
@@ -261,6 +267,23 @@ def subtract_mean(input_data):
         mean_value = resize(repeat(mean_vector, input_data.signal.shape[1]), input_data.signal.shape)
     input_data.signal -= mean_value
     return input_data
+
+###############################
+## Wrappers to SciPy filters ##
+###############################
+@register("TimeseriesData")
+def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_loss, min_stopband_attenuation):
+    # The SciPy signal processing module uses normalised frequencies, so we need to normalise the input values
+    norm_passband = input_data.timebase.normalise_freq(passband)
+    norm_stopband = input_data.timebase.normalise_freq(stopband)
+    ord,wn = sp_signal.filter_design.buttord(norm_passband, norm_stopband, max_passband_loss, min_stopband_attenuation)
+    b, a = sp_signal.filter_design.butter(ord, wn, btype = 'bandpass')
+    output_data = copy.deepcopy(input_data)
+
+    for i,s in enumerate(output_data.signal):
+        output_data.signal[i] = sp_signal.lfilter(b,a,s)
+
+    return output_data
 
 
 #########################################

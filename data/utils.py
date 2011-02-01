@@ -8,6 +8,23 @@ try:
 except: # python 2.4
     pass
 
+## for python <=2.5 compat, bin() is only python >= 2.6
+## code taken from http://stackoverflow.com/questions/1993834/how-change-int-to-binary-on-python-2-5
+def __bin(value):
+    binmap = {'0':'0000', '1':'0001', '2':'0010', '3':'0011',
+              '4':'0100', '5':'0101', '6':'0110', '7':'0111',
+              '8':'1000', '9':'1001', 'a':'1010', 'b':'1011',
+              'c':'1100', 'd':'1101', 'e':'1110', 'f':'1111'}
+    if value == 0:
+        return '0b0'
+    
+    return '0b'+''.join(binmap[x] for x in ('%x' % (value,))).lstrip('0') or '0'
+
+try:
+    _bin = bin
+except NameError: # python <= 2.5
+    _bin = __bin
+
 def unique_id():
     try:
         return str(uuid.uuid4())
@@ -52,7 +69,7 @@ def list2bin(input_list):
 
 def bin2list(input_value):
     output_list = []
-    bin_index_str = bin(input_value)[2:][::-1]
+    bin_index_str = _bin(input_value)[2:][::-1]
     for ind,i in enumerate(bin_index_str):
         if i == '1':
             output_list.append(ind)

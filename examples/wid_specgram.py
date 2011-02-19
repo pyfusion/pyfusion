@@ -19,6 +19,7 @@ Notes for pyfusion v1 version:
    flucstruc overplot commented out
    tricky options for shot selector list not implemented - just shot_list
    show signals button not yet implemented
+Needs process_cmd_line_args.py, in python path (e.g. ~/python dir)
 """
 
 """ Comments on code development:

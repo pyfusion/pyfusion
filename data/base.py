@@ -1,5 +1,4 @@
 """Base classes for data."""
-
 import operator
 import uuid
 from datetime import datetime
@@ -7,6 +6,7 @@ from datetime import datetime
 from pyfusion.conf.utils import import_from_str, get_config_as_dict
 from pyfusion.data.filters import filter_reg
 from pyfusion.data.plots import plot_reg
+from pyfusion.data.utils import unique_id
 import pyfusion
 
 if pyfusion.USE_ORM:
@@ -229,7 +229,7 @@ class BaseDataSet(object):
         self.created = datetime.now()
         self.history = "%s > New %s" %(self.created, self.__class__.__name__)
         if label == '':
-            label = str(uuid.uuid4())
+            label = unique_id()
         self.label = label
         if not pyfusion.USE_ORM:
             self.data = set()
@@ -318,7 +318,7 @@ class BaseOrderedDataSet(object):
         self.label = label
         self.history = "%s > New %s" %(self.created, self.__class__.__name__)
         if label == '':
-            label = str(uuid.uuid4())
+            label = unique_id()
         if not pyfusion.USE_ORM:
             self.data_items = []
         

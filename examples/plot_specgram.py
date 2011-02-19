@@ -19,7 +19,9 @@ diag_name = "H1DTacqAxial"
 time_range = None
 channel_number=0
 
-execfile('process_cmd_line_args.py')
+# ideally should be a direct call, passing the local dictionary
+exec(pf.utils.process_cmd_line_args())
+#execfile('process_cmd_line_args.py')
 
 d = device.acq.getdata(shot_number, diag_name)
 if time_range != None:

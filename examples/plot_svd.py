@@ -60,7 +60,8 @@ try:
 except:
     old_shot=0
 
-execfile('process_cmd_line_args.py')
+#execfile('process_cmd_line_args.py')
+exec(pf.utils.process_cmd_line_args())
 
 print(" %s using getch" % (['not', 'yes, '][use_getch]))
 if use_getch: print('plots most likely will be suppressed - sad!')

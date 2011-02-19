@@ -3,7 +3,19 @@
 
 from pyfusion.test.tests import BasePyfusionTestCase
 
-from pyfusion.acquisition.MDSPlus.fetch import MDSPlusBaseDataFetcher
+try:
+    from pyfusion.acquisition.MDSPlus.fetch import MDSPlusBaseDataFetcher
+except:
+    # importing MDSPlusBaseDataFetcher will fail if MDSPlus is not installed.
+    # in general, we avoid mds in nosttests by calling nosetests -a '!mds' pyfusion
+    # but in this case, the import occurs outside of a class definition, and can't
+    # be avoided with -a '!mds'
+    
+    # As a kludge, we'll put another class into the namespace so we don't get a
+    # syntax error when we subclass it. (We don't care that the subclass isn't
+    # what we want because we're not going to use it anyway if we don't have MDSPlus)
+    from pyfusion.data.base import BaseData as MDSPlusBaseDataFetcher
+
 from pyfusion.data.base import BaseData
 
 class DummyMDSData(BaseData):
@@ -35,6 +47,7 @@ class TestMDSPlusDataAcquisition(BasePyfusionTestCase):
         #self.assertEqual(Data.__dict__, test_acq._Data.__dict__)
 
 TestMDSPlusDataAcquisition.h1 = True
+TestMDSPlusDataAcquisition.mds = True
 TestMDSPlusDataAcquisition.net = True
 TestMDSPlusDataAcquisition.slow = True
 
@@ -67,6 +80,7 @@ class TestMDSPlusDataFetchers(BasePyfusionTestCase):
         self.assertEqual(Data.__dict__, test_data.meta['mds_Data'].__dict__)
         
 TestMDSPlusDataFetchers.h1 = True
+TestMDSPlusDataFetchers.mds = True
 TestMDSPlusDataFetchers.net = True
 TestMDSPlusDataFetchers.slow = True
 
@@ -88,6 +102,7 @@ class TestMDSPlusH1Connection(BasePyfusionTestCase):
         self.assertEqual(test_data.signal[0], -0.01953125)
 
 TestMDSPlusH1Connection.h1 = True
+TestMDSPlusH1Connection.mds = True
 TestMDSPlusH1Connection.net = True
 TestMDSPlusH1Connection.slow = True
 
@@ -112,6 +127,7 @@ class TestH1ConfigSection(TestCase):
         #data=d.acq.getdata(shot, diag)
         
 TestH1ConfigSection.h1 = True
+TestH1ConfigSection.mds = True
 TestH1ConfigSection.net = True
 TestH1ConfigSection.slow = True
 

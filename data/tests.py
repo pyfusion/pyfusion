@@ -980,6 +980,7 @@ class TestDataHistory(BasePyfusionTestCase):
         filtered_tsd = tsd.subtract_mean()
         self.assertEqual(len(filtered_tsd.history.split('\n')), 2)
         filtered_tsd.normalise(method='rms')
+        print filtered_tsd.history
         self.assertEqual(filtered_tsd.history.split('> ')[-1], "normalise(method='rms')")
 
 

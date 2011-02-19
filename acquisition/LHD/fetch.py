@@ -6,7 +6,7 @@ import sys
 import tempfile
 from os import path
 import array as Array
-from numpy import mean, array, double, arange, dtype
+from numpy import mean, array, double, arange, dtype, load
 import numpy as np
 
 from pyfusion.acquisition.base import BaseDataFetcher
@@ -53,7 +53,8 @@ class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
 
 
 
-zfile = np.load(path.join(this_dir,'a14_clock_div.npz'))
+zfile = load(path.join(this_dir,'a14_clock_div.npz'))
+
 a14_clock_div = zfile['a14_clock_div']
 
 def LHD_A14_clk(shot):

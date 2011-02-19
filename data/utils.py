@@ -1,4 +1,19 @@
+import os, string
+import random as _random
 from numpy import fft, conjugate, array, mean, arange, searchsorted, argsort, pi
+
+
+try:
+    import uuid
+except: # python 2.4
+    pass
+
+def unique_id():
+    try:
+        return str(uuid.uuid4())
+    except:
+        return ''.join(_random.choice(string.letters) for i in range(50))
+
 
 def cps(a,b):
     return fft.fft(a)*conjugate(fft.fft(b))
@@ -72,12 +87,12 @@ def split_names(names, pad=' '):
     while (first < maxlen and
            (nms_arr[:,first] == nms_arr[0,first]).all()):
         first += 1
-
     # and the last        
     last = maxlen-1
     while ((last >= 0) and
            (nms_arr[:,last] == nms_arr[0,last]).all()):
         last -= 1
+
 
     # check for no mismatch        
     if first==maxlen: return(['' for nm in names], ''.join(nms[0]),'')
@@ -85,4 +100,3 @@ def split_names(names, pad=' '):
     return(([''.join(s) for s in nms_arr[:,first:last+1]],
             ''.join(nms_arr[0,0:first]),
             ''.join(nms_arr[0,last+1:maxlen+1])))
-

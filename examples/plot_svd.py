@@ -21,6 +21,7 @@ def order_fs(fs_set, by='p'):
 import subprocess, sys, warnings
 from numpy import sqrt, argsort, average, mean, pi
 import pyfusion as pf
+import pyfusion.utils
 import pylab as pl
 import numpy as np
 

@@ -20,6 +20,7 @@ time_range = None
 channel_number=0
 
 # ideally should be a direct call, passing the local dictionary
+import pyfusion.utils
 exec(pf.utils.process_cmd_line_args())
 #execfile('process_cmd_line_args.py')
 

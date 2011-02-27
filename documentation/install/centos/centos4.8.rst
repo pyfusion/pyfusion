@@ -108,7 +108,7 @@ ipython
 
 Optional, but very useful::
 
-  pip -v install sqlalchemy
+  pip -v install ipython
 
 ---
 git

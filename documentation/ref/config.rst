@@ -29,9 +29,11 @@ see the configuration sections, type::
 Loading config files
 --------------------
 When pyfusion is imported, will load the default configuration file
-provided in the source code followed by your custom configuration file
+provided in the source code (that is in the pyfusion directory)
+followed by your custom configuration file, 
 in ``$HOME/.pyfusion/pyfusion.cfg``, if it exists. 
-
+and finally files pointed to by the environment variable PYFUSION_CONFIG_FILE
+if they exist. This allows temporarily overriding config variables.
 
 Additional config files can be loaded with ``pyfusion.read_config()``::
 
@@ -164,6 +166,26 @@ Database URLs are the same as for SQLAlchemy::
 
 	 driver://username:password@host:port/database
 
+Simplifying changes by substitution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The syntax %(sym)s will substitute the contents of sym.  e.g.
+fetchr =  pyfusion.acquisition.H1.fetch.H1LocalTimeseriesDataFetcherh1datafetcher
+data_fetcher = %(fetchr)s
+
+This way only one edit needs to be made to change all diagnostics, if
+the definition is fetchr is in the special [DEFAULT] section
+
+User Defined Sections
+~~~~~~~~~~~~~~~~~~~~~
+We will probably include a section Plots containing things like
+FT_Axis = [0, 0.08, 0, 300000]
+to provide defaults for the Frequency-Time axis etc
+Note that such settings are highly device dependent and although they
+will be recognised in the code, they usually should not be given
+values in code distributions.
+
+The User could put their own items in there or other sections to avoid 
 
 For more details, refer to http://www.sqlalchemy.org/docs/05/dbengine.html#create-engine-url-arguments 
 

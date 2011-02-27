@@ -1,5 +1,7 @@
 """LHD data fetchers.
-Large chunks of code copied from Boyd, not covered by unit tests.
+Large chunks of code copied from Boyd, not covered by unit tests,
+then copied back to this version to read .npz local data.  THis is different
+to reading the files obtained by retrieve
 """
 
 def newload(filename, verbose=1):

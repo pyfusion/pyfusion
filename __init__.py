@@ -48,7 +48,9 @@ if not os.path.exists(USER_PYFUSION_DIR):
 USER_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'pyfusion.cfg')
 USER_TEST_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'tests.cfg')
 
-read_config([DEFAULT_CONFIG_FILE, USER_CONFIG_FILE])
+USER_ENV_CONFIG_FILE = os.getenv('PYFUSION_CONFIG_FILE','')
+
+read_config([DEFAULT_CONFIG_FILE, USER_CONFIG_FILE, USER_ENV_CONFIG_FILE])
 
 from pyfusion.devices.base import getDevice
 from pyfusion.acquisition.utils import getAcquisition

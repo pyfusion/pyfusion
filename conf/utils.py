@@ -38,9 +38,14 @@ def read_config(config_files):
     Argument is either a single file object, or a list of filenames.
     """
     try:
-        pyfusion.config.readfp(config_files)
+        files_read = pyfusion.config.readfp(config_files)
     except:
-        pyfusion.config.read(config_files)
+        files_read = pyfusion.config.read(config_files)
+
+    if files_read != None: # readfp returns None
+        if len(files_read) == 0: 
+            raise LookupError, str('failed to read config files from [%s]' %
+                                   (config_files))
 
     tmp  = pyfusion.config.get('global', 'database')
     if tmp == 'None':

@@ -166,8 +166,9 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
                                  stderr=subprocess.PIPE)
     (resp,err) = retr_pipe.communicate()
     if (err != '') or (retr_pipe.returncode != 0):
-        print("Error %d accessing retrieve: cmd=%s\nstdout=%s, stderr=%s" % 
-              (retr_pipe.poll(), cmd, resp, err))
+
+        raise LookupError(str("Error %d accessing retrieve: cmd=%s\nstdout=%s, stderr=%s" % 
+                              (retr_pipe.poll(), cmd, resp, err)))
 
     for lin in resp.split('\n'):
         if lin.find('parameter file')>=0:

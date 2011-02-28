@@ -7,6 +7,8 @@ import pylab as pl
 import numpy as np
 
 from pyfusion.data.utils import peak_freq, split_names
+#can't from pyfusion.config import get
+import pyfusion
 
 plot_reg = {}
 
@@ -22,27 +24,64 @@ def register(*class_names):
     return reg_item
 
 @register("TimeseriesData")
-def plot_signals(input_data, filename=None):
+def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1):
     import pylab as pl
     n_rows = input_data.signal.n_channels()
-
+    n_rows = int(n_rows/n_columns)
+    print str(n_rows) + ' ' + str(n_columns)
     for row in range(n_rows):
-        pl.subplot(n_rows, 1, row+1)
-        pl.plot(input_data.timebase, input_data.signal.get_channel(row))
-    
+        for col in range(n_columns):
+            print (row)*n_columns+col+1
+            pl.subplot(n_rows, n_columns, row*n_columns+col+1)
+            if downsamplefactor==1:
+                pl.plot(input_data.timebase, input_data.signal.get_channel(row*n_columns+col))
+                pl.axis([-0.01,0.1,-5, 5])
+            else:
+                plotdata=input_data.signal.get_channel(row*n_columns+col)
+                timedata=input_data.timebase
+                pl.plot(timedata[0:len(timedata):downsamplefactor], plotdata[0:len(timedata):downsamplefactor])
+                pl.axis([-0.01,0.1,-5,5])
     if filename != None:
         pl.savefig(filename)
     else:
         pl.show()
 
 @register("TimeseriesData")
-def plot_spectrogram(input_data, windowfn=None, channel_number=0, filename=None, **kwargs):
+def plot_spectrogram(input_data, windowfn=None, channel_number=0, filename=None, coloraxis=None, noverlap=0,NFFT=None, **kwargs):
     import pylab as pl
     
     if windowfn == None: windowfn=pl.window_hanning
 
-    pl.specgram(input_data.signal.get_channel(channel_number), Fs=input_data.timebase.sample_freq, window=windowfn, **kwargs)
+    # look in the config file section Plots for NFFT = 1234
+    # Dave - how about a method to allow this in one line
+    # e.g. pyfusion.config.numgetdef('Plots','NFFT', 2048)
+    # usage:  
+    # if (NFFT==None): NFFT = pyfusion.config.numgetdef('Plots','NFFT', 2048)
+    # 
+    # also nice to have pyfusion.config.re-read()
+    if NFFT == None:
+        try:
+            NFFT=(eval(pyfusion.config.get('Plots','NFFT')))
+        except:
+            NFFT = 2048
+
+    pl.specgram(input_data.signal.get_channel(channel_number), NFFT=NFFT, noverlap=noverlap, Fs=input_data.timebase.sample_freq, window=windowfn, **kwargs)
     #accept multi or single channel data (I think?)
+        
+    if coloraxis != None: pl.clim(coloraxis)
+    else:
+        try:
+            pl.clim(eval(pyfusion.config.get('Plots','coloraxis')))
+        except:
+            pass
+
+    # look in the config file section Plots for a string like FT_Axis = [0,0.08,0,500]
+    # don't quote
+    try:
+        pl.axis(eval(pyfusion.config.get('Plots','FT_Axis')))
+    except:
+        pass
+
     try:
         pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[channel_number].name))
     except:
@@ -260,13 +299,15 @@ def svdplot(input_data, fmax=None, hold=0):
 # Use kwargs so that most formatting is common to all three labels.    
     kwargs={'fontsize':12,'transform':ax2.transAxes,
             'horizontalalignment':'right'}
+    
+    ax2.text(0.96,0.91,'tmid = %.1fms' %(1e3*np.average(input_data.chrono_labels)), color='r', **kwargs)
     ax2.text(0.96,0.83,'1/H = %.2f' %(1./entropy), color='r', **kwargs)
     ax2.text(0.96,0.75,'H = %.2f' %(entropy), color='b', **kwargs)
     energy = Energy(input_data.p,button_setting_list)
     # this is done in two places - potential for inconsistency - wish I knew better -dgp
     # These changes make it easier to adjust the subplot layout
     # was pl.figtext(0.75,0.78, (relative to figure), make it relative to axes
-    energy_label = ax2.text(0.96,0.67,'E = %.2f %%' %(100.*energy.value),
+    energy_label = ax2.text(0.96,0.67,'E = %.1f %%' %(100.*energy.value),
                             color='b', **kwargs)
     # grid('True')
     for sv_i in range(n_SV):

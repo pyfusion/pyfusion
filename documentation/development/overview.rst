@@ -39,6 +39,8 @@ Tests
 
    > nosetests -a '!sql' pyfusion
 
+* There should not be conditional tests for pyfusion.USE_ORM within the test code as there can be confusion as to which configuration settings are present in the testing environment. Instead, use a separate class for the SQL code and provide it with the 'sql' attribute.
+
 The available attributes are:
 
 ========  =========================================================================
@@ -50,3 +52,4 @@ The available attributes are:
 ``plot``  test requires matplotlib module 
 ``daq``   test connects to a data system (superset of ``lhd``, ``tjii`` and ``h1``)
 ========  =========================================================================
+

@@ -1,4 +1,4 @@
-"""Tests for the Data classes."""
+"""Tests for the Data and related classes."""
 
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 from numpy import arange, pi, zeros, resize, random, cos, array
@@ -6,7 +6,9 @@ from numpy import arange, pi, zeros, resize, random, cos, array
 from pyfusion.test.tests import BasePyfusionTestCase
 from pyfusion.data.base import BaseData, DataSet, Coords, ChannelList, Channel
 from pyfusion.data.timeseries import TimeseriesData, Timebase, Signal
-from pyfusion.data.utils import cps
+from pyfusion.data.utils import cps, remap_periodic, peak_freq
+from pyfusion.data.base import BaseCoordTransform
+
 
 DEFAULT_N_CHANNELS = 10
 DEFAULT_T0 = 0.00
@@ -21,9 +23,9 @@ mode_3 = {'amp': 0.5, 'freq': 27.0e3, 'mode_number':2, 'phase':0.1}
 mode_4 = {'amp': 0.7, 'freq': 24.0e3, 'mode_number':7, 'phase':3.2}
 mode_5 = {'amp': 1.0, 'freq': 37.0e3, 'mode_number':9, 'phase':1.3}
 
-########################################################################
-## Convenience functions                                              ##
-########################################################################
+###############################################################################
+## Convenience functions                                                     ##
+###############################################################################
 
 def get_n_channels(n_ch):
     """Return a list of n_ch channels."""
@@ -32,50 +34,118 @@ def get_n_channels(n_ch):
                    for i in poloidal_coords)
     return ChannelList(*channel_gen)
 
+
 def get_multimode_test_data(channels = get_n_channels(DEFAULT_N_CHANNELS),
                             timebase = DEFAULT_TIMEBASE,
                             modes = [mode_1, mode_2], noise = DEFAULT_NOISE):
     """Generate synthetic multi-channel data for testing."""
     n_channels = len(channels)
-    data_array = zeros((n_channels, len(timebase)))
-    timebase_matrix = resize(timebase, (n_channels, len(timebase)))
-    angle_matrix = resize(array([i.coords.cylindrical[1] for i in channels]), (len(timebase), n_channels)).T
+    data_size = (n_channels, timebase.size)
+    data_array = noise*2*(random.random(data_size)-0.5)
+    timebase_matrix = resize(timebase, data_size)
+    angle_matrix = resize(array([i.coords.cylindrical[1] for i in channels]),
+                          data_size[::-1]).T
     for m in modes:
-        data_array += m['amp']*cos(2*pi*m['freq']*timebase_matrix + m['mode_number']*angle_matrix + m['phase'])
-    data_array += noise*2*(random.random(data_array.shape)-0.5)
-    output = TimeseriesData(timebase=timebase,
-                            signal=Signal(data_array), channels=channels)
+        data_array += m['amp']*cos(2*pi*m['freq']*timebase_matrix +
+                                   m['mode_number']*angle_matrix + m['phase'])
+    output = TimeseriesData(timebase=timebase, signal=Signal(data_array),
+                            channels=channels)
     return output
 
-########################################################################
-## End of convenience functions                                       ##
-########################################################################
+###############################################################################
+## End of convenience functions                                              ##
+###############################################################################
+
+###############################################################################
+## Tests for pyfusion.data.utils.py                                          ##
+###############################################################################
+
+class TestUtils(BasePyfusionTestCase):
+    """Test the helper functions in pyfusion.data.utils.py"""
+    def test_remap_periodic(self):
+        data = array([-3,-2,-1,0,1,2,2.5, 3])
+        output = remap_periodic(data, min_val = 0, period=3)
+        expected = array([0, 1, 2, 0, 1, 2, 2.5, 0])
+        assert_array_almost_equal(output, expected)
+
+    def test_peak_freq(self):
+        timebase = Timebase(arange(0.0,0.01, 1.e-6))
+        single_mode_signal = get_multimode_test_data(channels=get_n_channels(1),
+                                                     timebase=timebase,
+                                                     modes = [mode_3])
+        p_f = peak_freq(single_mode_signal.signal[0],
+                        single_mode_signal.timebase)
+        # Check that we get mode_3 frequency of 27.0 kHz (to 1 decimal place).
+        self.assertAlmostEqual(1.e-3*p_f, 1.e-3*mode_3['freq'], 1)
+
+
+###############################################################################
+## End of tests for pyfusion.data.utils.py                                   ##
+###############################################################################
+
+###############################################################################
+## Tests for pyfusion.data.base.py                                           ##
+###############################################################################
+
+class DummyCoordTransform(BaseCoordTransform):
+    """Minimal coordinate transform class for testing.
+
+    Transforms cylindrical coordinates (a,b,c) to dummy coordinates (2a,3b,4c)
+
+    """
+    input_coords = 'cylindrical'
+    output_coords = 'dummy'
+
+    def transform(self, coords):
+        return (2*coords[0], 3*coords[1], 4*coords[2])
+
+
+class TestCoordinates(BasePyfusionTestCase):
+    """Check that we can add and transform coordinates."""    
+    def test_add_coords(self):
+        dummy_coords = Coords('cylindrical',(1.0,1.0,1.0))
+        self.assertEqual(dummy_coords.cylindrical, (1.0,1.0,1.0))
+        dummy_coords.add_coords(cartesian=(0.1,0.5,0.2))
+        self.assertEqual(dummy_coords.cartesian, (0.1,0.5,0.2))
+
+    def test_coord_transform(self):
+        cyl_coords_1 = (1.0,1.0,1.0)
+        dummy_coords_1 = Coords('cylindrical',cyl_coords_1)
+        dummy_coords_1.load_transform(DummyCoordTransform)
+        # The DummyCoordinateTransform should map (a,b,c) -> (2a,3b,4c)
+        self.assertEqual(dummy_coords_1.dummy(), (2*cyl_coords_1[0],
+                                                  3*cyl_coords_1[1],
+                                                  4*cyl_coords_1[2]))
+        # Check again with different ccoordinated.
+        cyl_coords_2 = (2.0,1.0,4.0)
+        dummy_coords_2 = Coords('cylindrical',cyl_coords_2)
+        dummy_coords_2.load_transform(DummyCoordTransform)
+        self.assertEqual(dummy_coords_2.dummy(), (2*cyl_coords_2[0],
+                                                  3*cyl_coords_2[1],
+                                                  4*cyl_coords_2[2]))
+
 
 class TestChannels(BasePyfusionTestCase):
+    """Make sure that arguments passed to Channel() appear as attributes."""
     def test_channel_class(self):
-        from pyfusion.data.base import Channel, Coords
-
         test_coords = Coords('cylindrical',(0.0,0.0,0.0))
-        
-        test_ch = Channel('test_1', test_coords)
-
-        self.assertEqual(test_ch.name, 'test_1')
+        test_ch = Channel('test_channel', test_coords)
+        self.assertEqual(test_ch.name, 'test_channel')
         self.assertEqual(test_ch.coords, test_coords)
 
-    def test_channels_ORM(self):
+
+class TestChannelsSQL(BasePyfusionTestCase):
+    def test_channels_SQL(self):
         import pyfusion
-        if pyfusion.USE_ORM:
-            from pyfusion.data.base import Channel, Coords
-            test_coords = Coords('cylindrical',(0.0,0.0,0.0))
-        
-            test_ch = Channel('test_1', test_coords)
-            test_ch.save()
+        test_coords = Coords('cylindrical',(0.0,0.0,0.0))
+        test_ch = Channel('test_1', test_coords)
+        test_ch.save()
+        session = pyfusion.Session()
+        our_channel = session.query(Channel).first()
+        self.assertEqual(our_channel.name, 'test_1')
 
-            session = pyfusion.Session()
-            our_channel = session.query(Channel).first()
-            self.assertEqual(our_channel.name, 'test_1')
+TestChannelsSQL.sql=True
 
-        
 
 class TestChannelList(BasePyfusionTestCase):
     def test_channel_list(self):
@@ -109,27 +179,151 @@ class TestChannelList(BasePyfusionTestCase):
             self.assertEqual(our_channellist[2].name, 'test_2')
 
 
-class TestUtils(BasePyfusionTestCase):
-    def test_remap_periodic(self):
-        from numpy import pi, array
-        from utils import remap_periodic
-        data = array([-3,-2,-1,0,1,2,2.5, 3])
-        output = remap_periodic(data, min_val = 0, period=3)
-        expected = array([0, 1, 2, 0, 1, 2, 2.5, 0])
-        assert_array_almost_equal(output, expected)
+class TestDataSet(BasePyfusionTestCase):
 
-    def test_peak_freq(self):
-        from utils import peak_freq
-        single_mode_signal = get_multimode_test_data(channels=get_n_channels(1),
-                                                     timebase=Timebase(arange(0.0,0.01, 1.e-6)),
-                                                     modes = [mode_3],
-                                                     noise=0.1
-                                                     )
-        p_f = peak_freq(single_mode_signal.signal[0], single_mode_signal.timebase)
-        # check that we get mode_3 frequency of 27.0 kHz (1 decimal place accuracy)
-        self.assertAlmostEqual(1.e-3*p_f, 1.e-3*mode_3['freq'], 1)
+    def test_dataset(self):
+        from pyfusion.data.base import DataSet
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from numpy import arange, searchsorted, resize
+        ch=get_n_channels(5)
+        new_times = [-0.25, 0.25]
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)),(5,len(tb)))),
+                               channels=ch)
+        tsd_2 = TimeseriesData(timebase=tb,
+                               signal=Signal(resize(arange(5*len(tb))+1, (5,len(tb)))),
+                               channels=ch)
+        test_dataset = DataSet('test_ds_1')
+        test_dataset.add(tsd_1)
+        test_dataset.add(tsd_2)
+        self.assertTrue(tsd_1 in test_dataset)
+        
+        """
+        # we don't support removing items from dataset yet...
+        test_dataset.remove(tsd_1)
+        self.assertFalse(tsd_1 in test_dataset)
+        self.assertTrue(tsd_2 in test_dataset)
+        """
 
-    
+    def test_dataset_filters_2(self):
+        from pyfusion.data.base import DataSet
+        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
+        from numpy import arange, searchsorted, resize
+        new_times = [-0.25, 0.25]
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        ch = get_n_channels(5)
+        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)),(5,len(tb)))),
+                               channels=ch)
+        tsd_2 = TimeseriesData(timebase=tb,
+                               signal=Signal(resize(arange(5*len(tb))+1,(5,len(tb)))),
+                               channels=ch)
+        test_dataset = DataSet('test_ds_2')
+        test_dataset.add(tsd_1)
+        test_dataset.add(tsd_2)
+        test_dataset.reduce_time(new_times)
+
+class TestOrderedDataSet(BasePyfusionTestCase):
+    """test the ordered dataset"""
+
+    ## need to fix for datasetitems..
+    """
+    def test_ordereddataset(self):
+        from pyfusion.data.base import BaseOrderedDataSet, BaseData
+        #pretend these are datapoints
+        class TestData(BaseData):
+            def __init__(self, a, b):
+                self.a = a
+                self.b = b
+                super(TestData, self).__init__()
+
+        d1=TestData(1,2)
+        d2=TestData(2,1)
+
+        ods = BaseOrderedDataSet('test_ods')
+        ods.append(d1)
+        ods.append(d2)
+
+        self.assertEqual(ods[0], d1)
+        self.assertEqual(ods[1], d2)
+
+    """ 
+
+    """
+    def test_submethod(self):
+        from pyfusion.data.base import OrderedDataSet, BaseData
+        class TestData(BaseData):
+            def __init__(self, a):
+                self.a = a
+                super(TestData, self).__init__()
+
+        d1 = TestData(TestData(1))
+        d2 = TestData(TestData(2))
+        d3 = TestData(TestData(3))
+
+        ds = OrderedDataSet(ordered_by='a.a')
+        for d in [d3, d1, d2]:
+            ds.add(d)
+        self.assertEqual(ds[0].a.a, 1)
+        self.assertEqual(ds[1].a.a, 2)
+        self.assertEqual(ds[2].a.a, 3)
+    """
+    def test_ordered_dataset_ORM(self):
+        from pyfusion.data.base import FloatDelta, BaseOrderedDataSet, Channel, Coords
+
+        channel_01 = Channel('channel_01', Coords('dummy', (0,0,0)))
+        channel_02 = Channel('channel_02', Coords('dummy', (0,0,0)))
+        channel_03 = Channel('channel_03', Coords('dummy', (0,0,0)))
+        channel_04 = Channel('channel_04', Coords('dummy', (0,0,0)))
+        
+
+        fd1 = FloatDelta(channel_01, channel_02, 0.45)
+        fd2 = FloatDelta(channel_02, channel_03, 0.25)
+        fd3 = FloatDelta(channel_03, channel_04, 0.49)
+
+        #ods = OrderedDataSet(ordered_by="channel_1.name")
+        ods = BaseOrderedDataSet('test_ods')
+        
+        for fd in [fd3, fd1, fd2]:
+            ods.append(fd)
+
+        ods.save()
+
+        # now read out of database
+        import pyfusion
+        if pyfusion.USE_ORM:
+            session = pyfusion.Session()
+            db_ods = session.query(BaseOrderedDataSet).first()
+            self.assertEqual(db_ods[0].channel_1.name, 'channel_03')
+            self.assertEqual(db_ods[1].channel_1.name, 'channel_01')
+            self.assertEqual(db_ods[2].channel_1.name, 'channel_02')
+
+
+class TestFloatDelta(BasePyfusionTestCase):
+    """delta phase data class."""
+
+    def test_d_phase(self):
+        from pyfusion.data.base import FloatDelta, Channel, Coords
+        channel_01 = Channel('channel_01', Coords('dummy', (0,0,0)))
+        channel_02 = Channel('channel_02', Coords('dummy', (0,0,0)))
+
+        fd = FloatDelta(channel_01, channel_02, 0.45)
+        
+    def test_ORM_floatdelta(self):
+        """ check that floatdelta can be saved to database"""
+        from pyfusion.data.base import FloatDelta, Channel, Coords
+        channel_01 = Channel('channel_01', Coords('dummy', (0,0,0)))
+        channel_02 = Channel('channel_02', Coords('dummy', (0,0,0)))
+        import pyfusion
+        if pyfusion.USE_ORM:
+            fd = FloatDelta(channel_01, channel_02, 0.45)
+            fd.save()
+            session = pyfusion.Session()
+            db_fd = session.query(FloatDelta).first()
+            self.assertEqual(db_fd.delta, 0.45)
+
+###############################################################################
+## End of tests for pyfusion.data.base.py                                    ##
+###############################################################################
 
 class TestTimeseriesData(BasePyfusionTestCase):
     """Test timeseries data"""
@@ -275,48 +469,6 @@ class TestFilters(BasePyfusionTestCase):
         test_dataset.add(tsd_2)
         test_dataset.reduce_time(new_times)
         
-class TestDataSet(BasePyfusionTestCase):
-
-    def test_dataset(self):
-        from pyfusion.data.base import DataSet
-        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
-        from numpy import arange, searchsorted, resize
-        ch=get_n_channels(5)
-        new_times = [-0.25, 0.25]
-        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)),(5,len(tb)))),
-                               channels=ch)
-        tsd_2 = TimeseriesData(timebase=tb,
-                               signal=Signal(resize(arange(5*len(tb))+1, (5,len(tb)))),
-                               channels=ch)
-        test_dataset = DataSet('test_ds_1')
-        test_dataset.add(tsd_1)
-        test_dataset.add(tsd_2)
-        self.assertTrue(tsd_1 in test_dataset)
-        
-        """
-        # we don't support removing items from dataset yet...
-        test_dataset.remove(tsd_1)
-        self.assertFalse(tsd_1 in test_dataset)
-        self.assertTrue(tsd_2 in test_dataset)
-        """
-
-    def test_dataset_filters_2(self):
-        from pyfusion.data.base import DataSet
-        from pyfusion.data.timeseries import TimeseriesData, generate_timebase, Signal
-        from numpy import arange, searchsorted, resize
-        new_times = [-0.25, 0.25]
-        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
-        ch = get_n_channels(5)
-        tsd_1 = TimeseriesData(timebase=tb, signal=Signal(resize(arange(5*len(tb)),(5,len(tb)))),
-                               channels=ch)
-        tsd_2 = TimeseriesData(timebase=tb,
-                               signal=Signal(resize(arange(5*len(tb))+1,(5,len(tb)))),
-                               channels=ch)
-        test_dataset = DataSet('test_ds_2')
-        test_dataset.add(tsd_1)
-        test_dataset.add(tsd_2)
-        test_dataset.reduce_time(new_times)
 
 class TestSegmentFilter(BasePyfusionTestCase):
     
@@ -358,34 +510,7 @@ class TestSegmentFilter(BasePyfusionTestCase):
         seg_dataset = input_dataset.segment(n_samples=10)
         self.assertTrue(len(seg_dataset)==20)
 
-from pyfusion.data.base import BaseCoordTransform
-class DummyCoordTransform(BaseCoordTransform):
-    input_coords = 'cylindrical'
-    output_coords = 'dummy'
 
-    def transform(self, coords):
-        return (2*coords[0], 3*coords[1], 4*coords[2])
-
-class TestCoordinates(BasePyfusionTestCase):
-
-    def test_load_coords(self):
-        from pyfusion.data.base import Coords
-        dummy_coords = Coords('cylindrical',(1.0,1.0,1.0))
-        self.assertEqual(dummy_coords.cylindrical, (1.0,1.0,1.0))
-        # testing adding of coords
-        dummy_coords.add_coords(cartesian=(0.1,0.5,0.2))
-        self.assertEqual(dummy_coords.cartesian, (0.1,0.5,0.2))
-
-    def test_coord_transform(self):
-        from pyfusion.data.base import Coords
-        cyl_coords = (1.0,1.0,1.0)
-        dummy_coords = Coords('cylindrical',cyl_coords)
-        dummy_coords.load_transform(DummyCoordTransform)
-        self.assertEqual(dummy_coords.dummy(), (2*cyl_coords[0], 3*cyl_coords[1], 4*cyl_coords[2]))
-        cyl_coords = (2.0,1.0,4.0)
-        dummy_coords_1 = Coords('cylindrical',cyl_coords)
-        dummy_coords_1.load_transform(DummyCoordTransform)
-        self.assertEqual(dummy_coords_1.dummy(), (2*cyl_coords[0], 3*cyl_coords[1], 4*cyl_coords[2]))
 
 """
 class TestFlucstrucs(BasePyfusionTestCase):
@@ -651,104 +776,8 @@ class TestFlucstrucs(BasePyfusionTestCase):
             assert False
             """
 
-class TestFloatDelta(BasePyfusionTestCase):
-    """delta phase data class."""
-
-    def test_d_phase(self):
-        from pyfusion.data.base import FloatDelta, Channel, Coords
-        channel_01 = Channel('channel_01', Coords('dummy', (0,0,0)))
-        channel_02 = Channel('channel_02', Coords('dummy', (0,0,0)))
-
-        fd = FloatDelta(channel_01, channel_02, 0.45)
-        
-    def test_ORM_floatdelta(self):
-        """ check that floatdelta can be saved to database"""
-        from pyfusion.data.base import FloatDelta, Channel, Coords
-        channel_01 = Channel('channel_01', Coords('dummy', (0,0,0)))
-        channel_02 = Channel('channel_02', Coords('dummy', (0,0,0)))
-        import pyfusion
-        if pyfusion.USE_ORM:
-            fd = FloatDelta(channel_01, channel_02, 0.45)
-            fd.save()
-            session = pyfusion.Session()
-            db_fd = session.query(FloatDelta).first()
-            self.assertEqual(db_fd.delta, 0.45)
 
 
-class TestOrderedDataSet(BasePyfusionTestCase):
-    """test the ordered dataset"""
-
-    ## need to fix for datasetitems..
-    """
-    def test_ordereddataset(self):
-        from pyfusion.data.base import BaseOrderedDataSet, BaseData
-        #pretend these are datapoints
-        class TestData(BaseData):
-            def __init__(self, a, b):
-                self.a = a
-                self.b = b
-                super(TestData, self).__init__()
-
-        d1=TestData(1,2)
-        d2=TestData(2,1)
-
-        ods = BaseOrderedDataSet('test_ods')
-        ods.append(d1)
-        ods.append(d2)
-
-        self.assertEqual(ods[0], d1)
-        self.assertEqual(ods[1], d2)
-
-    """ 
-
-    """
-    def test_submethod(self):
-        from pyfusion.data.base import OrderedDataSet, BaseData
-        class TestData(BaseData):
-            def __init__(self, a):
-                self.a = a
-                super(TestData, self).__init__()
-
-        d1 = TestData(TestData(1))
-        d2 = TestData(TestData(2))
-        d3 = TestData(TestData(3))
-
-        ds = OrderedDataSet(ordered_by='a.a')
-        for d in [d3, d1, d2]:
-            ds.add(d)
-        self.assertEqual(ds[0].a.a, 1)
-        self.assertEqual(ds[1].a.a, 2)
-        self.assertEqual(ds[2].a.a, 3)
-    """
-    def test_ordered_dataset_ORM(self):
-        from pyfusion.data.base import FloatDelta, BaseOrderedDataSet, Channel, Coords
-
-        channel_01 = Channel('channel_01', Coords('dummy', (0,0,0)))
-        channel_02 = Channel('channel_02', Coords('dummy', (0,0,0)))
-        channel_03 = Channel('channel_03', Coords('dummy', (0,0,0)))
-        channel_04 = Channel('channel_04', Coords('dummy', (0,0,0)))
-        
-
-        fd1 = FloatDelta(channel_01, channel_02, 0.45)
-        fd2 = FloatDelta(channel_02, channel_03, 0.25)
-        fd3 = FloatDelta(channel_03, channel_04, 0.49)
-
-        #ods = OrderedDataSet(ordered_by="channel_1.name")
-        ods = BaseOrderedDataSet('test_ods')
-        
-        for fd in [fd3, fd1, fd2]:
-            ods.append(fd)
-
-        ods.save()
-
-        # now read out of database
-        import pyfusion
-        if pyfusion.USE_ORM:
-            session = pyfusion.Session()
-            db_ods = session.query(BaseOrderedDataSet).first()
-            self.assertEqual(db_ods[0].channel_1.name, 'channel_03')
-            self.assertEqual(db_ods[1].channel_1.name, 'channel_01')
-            self.assertEqual(db_ods[2].channel_1.name, 'channel_02')
         
 class TestRemoveNonContiguousFilter(BasePyfusionTestCase):
 
@@ -1055,6 +1084,3 @@ class TestSciPyFilters(BasePyfusionTestCase):
                                                     noise = 0.1)
 
         filtered_data = multichannel_data.sp_filter_butterworth_bandpass([35.e3, 45.e3], [25.e3, 55.e3], 1.0, 10.0)
-
-
-TestSciPyFilters.dev = True

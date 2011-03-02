@@ -10,7 +10,7 @@ from pyfusion.conf.exceptions import DisallowedSectionType, \
 # adding to this list
 allowed_section_types = ['Device', 'Diagnostic', 'Acquisition', 'CoordTransform']
 ## sections which don't follow the [SectionType:Name] syntax
-special_section_names = ['variabletypes', 'global']
+special_section_names = ['variabletypes', 'global', 'Plots']
 
 
 class PyfusionConfigParser(ConfigParser):

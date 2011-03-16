@@ -1,10 +1,10 @@
 """
 """
 
-from pyfusion.test.tests import BasePyfusionTestCase
+from pyfusion.test.tests import PfTestBase
 from pyfusion.data.timeseries import TimeseriesData
 
-class TestH1MirnovCoords(BasePyfusionTestCase):
+class CheckH1MirnovCoords(PfTestBase):
 
     def test_single_mirnov_channel_kappah_as_argument(self):
         import pyfusion
@@ -47,13 +47,13 @@ class TestH1MirnovCoords(BasePyfusionTestCase):
     def test_multichannel_mirnov_bean_kappah_from_metadata(self):
         pass
 
-TestH1MirnovCoords.h1 = True
-TestH1MirnovCoords.mds = True
-TestH1MirnovCoords.net = True
-TestH1MirnovCoords.slow = True
-TestH1MirnovCoords.busted = True
+CheckH1MirnovCoords.h1 = True
+CheckH1MirnovCoords.mds = True
+CheckH1MirnovCoords.net = True
+CheckH1MirnovCoords.slow = True
+CheckH1MirnovCoords.busted = True
 
-class TestH1Device(BasePyfusionTestCase):
+class CheckH1Device(PfTestBase):
 
     def test_load_h1(self):
         from pyfusion.devices.base import Device
@@ -76,7 +76,7 @@ class TestH1Device(BasePyfusionTestCase):
         #self.assertAlmostEqual(data.meta['kh'], shot_kh[1])
 
 
-TestH1Device.slow = True
-TestH1Device.h1 = True
-TestH1Device.mds = True
-TestH1Device.net = True
+CheckH1Device.slow = True
+CheckH1Device.h1 = True
+CheckH1Device.mds = True
+CheckH1Device.net = True

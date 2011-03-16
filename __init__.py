@@ -9,8 +9,8 @@ config = PyfusionConfigParser()
 
 # set up logger
 import logging.config
-THIS_DIR = os.path.dirname(__file__)
-logging.config.fileConfig(os.path.join(THIS_DIR, "conf","logging.cfg"))
+PYFUSION_ROOT_DIR = os.path.dirname(__file__)
+logging.config.fileConfig(os.path.join(PYFUSION_ROOT_DIR, "conf","logging.cfg"))
 logger = logging.getLogger("pyfusion")
 
 
@@ -41,7 +41,7 @@ def get_version():
 
 
 # find config files
-DEFAULT_CONFIG_FILE = os.path.join(THIS_DIR, 'pyfusion.cfg')
+DEFAULT_CONFIG_FILE = os.path.join(PYFUSION_ROOT_DIR, 'pyfusion.cfg')
 USER_PYFUSION_DIR = os.path.join(os.path.expanduser('~'), '.pyfusion')
 if not os.path.exists(USER_PYFUSION_DIR):
     os.mkdir(USER_PYFUSION_DIR)

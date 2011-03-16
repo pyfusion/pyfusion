@@ -19,3 +19,8 @@ def setup_orm():
     pyfusion.metadata.bind = pyfusion.orm_engine
     pyfusion.metadata.create_all()
 
+
+def takedown_orm():
+    del pyfusion.metadata
+    del pyfusion.Session
+    del pyfusion.orm_engine

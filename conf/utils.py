@@ -50,6 +50,8 @@ def read_config(config_files):
     tmp  = pyfusion.config.get('global', 'database')
     if tmp == 'None':
         pyfusion.USE_ORM = False
+        from pyfusion.orm import takedown_orm
+        takedown_orm
     else:
         pyfusion.USE_ORM = True
         from pyfusion.orm import setup_orm

@@ -1,9 +1,9 @@
 """Test code for test code."""
 
-from pyfusion.test.tests import BasePyfusionTestCase
+from pyfusion.test.tests import PfTestBase
 
 
-class TestPing(BasePyfusionTestCase):
+class CheckPing(PfTestBase):
     """Test the ping utility"""
 
     def testPing(self):
@@ -16,7 +16,7 @@ class Dummy:
             self.__dict__[kwa] = kwargs[kwa]
 
 
-class TestEqualExceptFor(BasePyfusionTestCase):
+class CheckEqualExceptFor(PfTestBase):
     """Test custom object comparison, which allows specified
     attributed to be ignored"""
 

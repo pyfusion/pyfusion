@@ -3,11 +3,13 @@
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 from numpy import arange, pi, zeros, resize, random, cos, array
 
-from pyfusion.test.tests import BasePyfusionTestCase
+from pyfusion.test.tests import PfTestBase
 from pyfusion.data.base import BaseData, DataSet, Coords, ChannelList, Channel
 from pyfusion.data.timeseries import TimeseriesData, Timebase, Signal
 from pyfusion.data.utils import cps, remap_periodic, peak_freq
 from pyfusion.data.base import BaseCoordTransform
+
+from pyfusion.test.tests import PfTestBase
 
 
 DEFAULT_N_CHANNELS = 10
@@ -57,10 +59,10 @@ def get_multimode_test_data(channels = get_n_channels(DEFAULT_N_CHANNELS),
 ###############################################################################
 
 ###############################################################################
-## Tests for pyfusion.data.utils.py                                          ##
+## Tests for pyfusion/data/utils.py                                          ##
 ###############################################################################
 
-class TestUtils(BasePyfusionTestCase):
+class CheckUtils(PfTestBase):
     """Test the helper functions in pyfusion.data.utils.py"""
     def test_remap_periodic(self):
         data = array([-3,-2,-1,0,1,2,2.5, 3])
@@ -80,11 +82,11 @@ class TestUtils(BasePyfusionTestCase):
 
 
 ###############################################################################
-## End of tests for pyfusion.data.utils.py                                   ##
+## End of tests for pyfusion/data/utils.py                                   ##
 ###############################################################################
 
 ###############################################################################
-## Tests for pyfusion.data.base.py                                           ##
+## Tests for pyfusion/data/base.py                                           ##
 ###############################################################################
 
 class DummyCoordTransform(BaseCoordTransform):
@@ -100,7 +102,7 @@ class DummyCoordTransform(BaseCoordTransform):
         return (2*coords[0], 3*coords[1], 4*coords[2])
 
 
-class TestCoordinates(BasePyfusionTestCase):
+class CheckCoordinates(PfTestBase):
     """Check that we can add and transform coordinates."""    
     def test_add_coords(self):
         dummy_coords = Coords('cylindrical',(1.0,1.0,1.0))
@@ -125,7 +127,7 @@ class TestCoordinates(BasePyfusionTestCase):
                                                   4*cyl_coords_2[2]))
 
 
-class TestChannels(BasePyfusionTestCase):
+class CheckChannels(PfTestBase):
     """Make sure that arguments passed to Channel() appear as attributes."""
     def test_channel_class(self):
         test_coords = Coords('cylindrical',(0.0,0.0,0.0))
@@ -134,20 +136,18 @@ class TestChannels(BasePyfusionTestCase):
         self.assertEqual(test_ch.coords, test_coords)
 
 
-class TestChannelsSQL(BasePyfusionTestCase):
+class CheckChannelsSQL(PfTestBase):
     def test_channels_SQL(self):
-        import pyfusion
-        test_coords = Coords('cylindrical',(0.0,0.0,0.0))
-        test_ch = Channel('test_1', test_coords)
-        test_ch.save()
-        session = pyfusion.Session()
-        our_channel = session.query(Channel).first()
-        self.assertEqual(our_channel.name, 'test_1')
-
-TestChannelsSQL.sql=True
+        if self.pf.USE_ORM:
+            test_coords = Coords('cylindrical',(0.0,0.0,0.0))
+            test_ch = Channel('test_1', test_coords)
+            test_ch.save()
+            session = self.pf.Session()
+            our_channel = session.query(Channel).first()
+            self.assertEqual(our_channel.name, 'test_1')
 
 
-class TestChannelList(BasePyfusionTestCase):
+class CheckChannelList(PfTestBase):
     def test_channel_list(self):
         from pyfusion.data.base import ChannelList, Channel, Coords
 
@@ -179,7 +179,7 @@ class TestChannelList(BasePyfusionTestCase):
             self.assertEqual(our_channellist[2].name, 'test_2')
 
 
-class TestDataSet(BasePyfusionTestCase):
+class CheckDataSet(PfTestBase):
 
     def test_dataset(self):
         from pyfusion.data.base import DataSet
@@ -222,7 +222,7 @@ class TestDataSet(BasePyfusionTestCase):
         test_dataset.add(tsd_2)
         test_dataset.reduce_time(new_times)
 
-class TestOrderedDataSet(BasePyfusionTestCase):
+class CheckOrderedDataSet(PfTestBase):
     """test the ordered dataset"""
 
     ## need to fix for datasetitems..
@@ -230,7 +230,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
     def test_ordereddataset(self):
         from pyfusion.data.base import BaseOrderedDataSet, BaseData
         #pretend these are datapoints
-        class TestData(BaseData):
+        class CheckData(BaseData):
             def __init__(self, a, b):
                 self.a = a
                 self.b = b
@@ -251,7 +251,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
     """
     def test_submethod(self):
         from pyfusion.data.base import OrderedDataSet, BaseData
-        class TestData(BaseData):
+        class CheckData(BaseData):
             def __init__(self, a):
                 self.a = a
                 super(TestData, self).__init__()
@@ -298,7 +298,7 @@ class TestOrderedDataSet(BasePyfusionTestCase):
             self.assertEqual(db_ods[2].channel_1.name, 'channel_02')
 
 
-class TestFloatDelta(BasePyfusionTestCase):
+class CheckFloatDelta(PfTestBase):
     """delta phase data class."""
 
     def test_d_phase(self):
@@ -322,10 +322,25 @@ class TestFloatDelta(BasePyfusionTestCase):
             self.assertEqual(db_fd.delta, 0.45)
 
 ###############################################################################
-## End of tests for pyfusion.data.base.py                                    ##
+## End of tests for pyfusion/data/base.py                                    ##
 ###############################################################################
 
-class TestTimeseriesData(BasePyfusionTestCase):
+###############################################################################
+## Tests for pyfusion/data/timeseries.py                                     ##
+###############################################################################
+
+
+
+
+
+
+###############################################################################
+## End of tests for pyfusion/data/timeseries.py                              ##
+###############################################################################
+
+##### unsorted tests
+
+class CheckTimeseriesData(PfTestBase):
     """Test timeseries data"""
     def testBaseClasses(self):
         from pyfusion.data.timeseries import TimeseriesData
@@ -342,7 +357,7 @@ class TestTimeseriesData(BasePyfusionTestCase):
                                                     noise = 0.5)
 
 
-class TestTimebase(BasePyfusionTestCase):
+class CheckTimebase(PfTestBase):
     """Test Timebase class."""
 
 
@@ -372,7 +387,7 @@ class TestTimebase(BasePyfusionTestCase):
         self.assertTrue(hasattr(sliced_tb, 'sample_freq'))
 
 
-class TestSignal(BasePyfusionTestCase):
+class CheckSignal(PfTestBase):
     """Test Signal class."""
     
     def test_base_class(self):
@@ -400,7 +415,7 @@ class TestSignal(BasePyfusionTestCase):
         test_sig_2 = Signal(np.random.rand(2,10))
         self.assertEqual(test_sig_2.n_samples(), 10)
 
-class TestFilters(BasePyfusionTestCase):
+class CheckFilters(PfTestBase):
 
     def test_reduce_time_filter_single_channel(self):
         from pyfusion.data.filters import reduce_time
@@ -470,7 +485,7 @@ class TestFilters(BasePyfusionTestCase):
         test_dataset.reduce_time(new_times)
         
 
-class TestSegmentFilter(BasePyfusionTestCase):
+class CheckSegmentFilter(PfTestBase):
     
     def test_single_channel_timeseries(self):
         from pyfusion.data.base import DataSet
@@ -513,7 +528,7 @@ class TestSegmentFilter(BasePyfusionTestCase):
 
 
 """
-class TestFlucstrucs(BasePyfusionTestCase):
+class CheckFlucstrucs(PfTestBase):
 
     def test_fakedata_single_shot(self):
         import pyfusion
@@ -522,7 +537,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
         #fs_data = data.reduce_time([0.030,0.031])
 """     
 
-class TestNormalise(BasePyfusionTestCase):
+class CheckNormalise(PfTestBase):
 
     def test_single_channel_fakedata(self):
         from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
@@ -613,7 +628,7 @@ class TestNormalise(BasePyfusionTestCase):
 
 
 
-class TestFlucstrucs(BasePyfusionTestCase):
+class CheckFlucstrucs(PfTestBase):
 
     def test_svd_data(self):
         from pyfusion.data.timeseries import SVDData
@@ -779,7 +794,7 @@ class TestFlucstrucs(BasePyfusionTestCase):
 
 
         
-class TestRemoveNonContiguousFilter(BasePyfusionTestCase):
+class CheckRemoveNonContiguousFilter(PfTestBase):
 
     def test_remove_noncontiguous(self):
         from pyfusion.data.filters import reduce_time
@@ -819,7 +834,7 @@ class TestRemoveNonContiguousFilter(BasePyfusionTestCase):
 
 
         
-class TestSubtractMeanFilter(BasePyfusionTestCase):
+class CheckSubtractMeanFilter(PfTestBase):
     """Test mean subtraction filter for timeseries data."""
 
 
@@ -853,7 +868,7 @@ class TestSubtractMeanFilter(BasePyfusionTestCase):
 
     def test_remove_mean_dataset(self):
         from numpy import mean, zeros_like
-        from pyfusion.data.base import DataSet
+        #from pyfusion.data.base import DataSet
         multichannel_data_1 = get_multimode_test_data(channels=get_n_channels(10),
                                                       timebase = Timebase(arange(0.0,0.01,1.e-5)),
                                                       modes = [mode_1, mode_2],
@@ -870,7 +885,8 @@ class TestSubtractMeanFilter(BasePyfusionTestCase):
         multichannel_data_1.signal += random.rand(*multichannel_data_1.signal.shape)
         multichannel_data_2.signal += random.rand(*multichannel_data_2.signal.shape)
 
-        test_dataset = DataSet('test_dataset')
+        test_dataset = self.pf.data.base.DataSet('test_dataset')
+
         test_dataset.add(multichannel_data_1)
         test_dataset.add(multichannel_data_2)
 
@@ -881,31 +897,30 @@ class TestSubtractMeanFilter(BasePyfusionTestCase):
             assert_array_almost_equal(mean_filtered_data, zeros_like(mean_filtered_data))
 
 
-class TestFilterMetaClass(BasePyfusionTestCase):
+class CheckFilterMetaClass(PfTestBase):
 
     def test_new_filter(self):
-        from pyfusion.data import filters
-        from pyfusion.data.base import BaseData
+
         # add some filters
-        @filters.register("TestData")
+        @self.pf.data.filters.register("CheckData")
         def test_filter(self):
             return self
 
-        @filters.register("TestData", "TestData2")
+        @self.pf.data.filters.register("CheckData", "CheckData2")
         def other_test_filter(self):
             return self
 
         # now create TestData 
 
-        class TestData(BaseData):
+        class CheckData(self.pf.data.base.BaseData):
             pass
         
-        test_data = TestData()
+        test_data = CheckData()
         for attr_name in ["test_filter", "other_test_filter"]:
             self.assertTrue(hasattr(test_data, attr_name))
 
 
-class TestNumpyFilters(BasePyfusionTestCase):
+class CheckNumpyFilters(PfTestBase):
 
     def test_correlate(self):
         from numpy import correlate
@@ -918,7 +933,7 @@ class TestNumpyFilters(BasePyfusionTestCase):
         assert_array_almost_equal(numpy_corr, pyfusion_corr)
 
 
-class TestPlotMethods(BasePyfusionTestCase):
+class CheckPlotMethods(PfTestBase):
     def test_svd_plot(self):
         from pyfusion.data.timeseries import SVDData
         n_ch = 4
@@ -931,7 +946,7 @@ class TestPlotMethods(BasePyfusionTestCase):
         self.assertTrue(hasattr(test_svd, 'svdplot'))
         
 
-class TestDataHistory(BasePyfusionTestCase):
+class CheckDataHistory(PfTestBase):
     def testNewData(self):
         from pyfusion.data.base import BaseData
         test_data = BaseData()
@@ -954,7 +969,7 @@ class TestDataHistory(BasePyfusionTestCase):
         self.assertEqual(filtered_tsd.history.split('> ')[-1], "normalise(method='rms')")
 
 
-class TestDataSetLabels(BasePyfusionTestCase):
+class CheckDataSetLabels(PfTestBase):
     def test_dataset_label(self):
         import pyfusion
         from pyfusion.data.base import DataSet
@@ -977,18 +992,16 @@ class TestDataSetLabels(BasePyfusionTestCase):
             
         
         
-class TestGetCoords(BasePyfusionTestCase):
+class CheckGetCoords(PfTestBase):
     def test_get_coords_for_channel_config(self):
-        from pyfusion.data.base import get_coords_for_channel
-        channel_name = "H1_mirnov_array_1_coil_15"
-        coords = get_coords_for_channel(channel_name)
+        #from pyfusion.data.base import get_coords_for_channel
+        channel_name = "Test_H1_diag"
+        coords = self.pf.data.base.get_coords_for_channel(channel_name)
         self.assertTrue(isinstance(coords, Coords))
         self.assertEqual(coords.default_name, 'cylindrical')
-        #print coords.magnetic(kh=1.2)
 
 
-
-class TestStoredMetaDataForDataSets(BasePyfusionTestCase):
+class CheckStoredMetaDataForDataSets(PfTestBase):
     def test_stored_metadata_datasets(self):
         """Make sure metadata attached to dataset classes is saved to sql."""
         import pyfusion
@@ -1023,7 +1036,7 @@ class TestStoredMetaDataForDataSets(BasePyfusionTestCase):
             #print some_ds.meta
             #assert False
     
-class TestStoredMetaData(BasePyfusionTestCase):
+class CheckStoredMetaData(PfTestBase):
     def test_stored_metadata_data(self):
         """ metadata should be stored to data instances, rather than datasets - this might be slower, but more likely to guarantee data is kept track of."""
         import pyfusion
@@ -1065,7 +1078,7 @@ class TestStoredMetaData(BasePyfusionTestCase):
 
 
 
-class TestSciPyFilters(BasePyfusionTestCase):
+class CheckSciPyFilters(PfTestBase):
     def test_sp_filter_butterworth_bandpass(self):
         import pyfusion
         n_ch = 3

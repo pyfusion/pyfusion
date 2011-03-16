@@ -1,9 +1,9 @@
 """ Test code for delimiter-separated values (DSV) flat file acquisition."""
 
-from pyfusion.test.tests import BasePyfusionTestCase
+from pyfusion.test.tests import PfTestBase
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 
-class TestDSVAcquisition(BasePyfusionTestCase):
+class CheckDSVAcquisition(PfTestBase):
     """Test the fake data acquisition used for testing."""
 
     def testBaseClasses(self):

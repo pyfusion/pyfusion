@@ -1,6 +1,6 @@
 """Test code for data acquisition."""
 
-from pyfusion.test.tests import BasePyfusionTestCase
+from pyfusion.test.tests import PfTestBase
 
 # channel names in pyfusion test config file
 timeseries_test_channel_1 = "test_timeseries_channel_1"
@@ -8,7 +8,7 @@ timeseries_test_channel_2 = "test_timeseries_channel_2"
 
 multichannel_name = "test_multichannel_timeseries"
 
-class TestFakeDataAcquisition(BasePyfusionTestCase):
+class CheckFakeDataAcquisition(PfTestBase):
     """Test the fake data acquisition used for testing."""
 
     def testBaseClasses(self):
@@ -60,7 +60,7 @@ class TestFakeDataAcquisition(BasePyfusionTestCase):
         self.assertTrue(isinstance(test_data, TimeseriesData))
 
 
-class TestFakeDataFetchers(BasePyfusionTestCase):
+class CheckFakeDataFetchers(PfTestBase):
     """test DataFetcher subclasses for fake data acquisition."""
 
     def test_base_classes(self):
@@ -91,7 +91,7 @@ class TestFakeDataFetchers(BasePyfusionTestCase):
         test_signal = amplitude*sin(2*pi*frequency*test_timebase)
         assert_array_almost_equal(output_data.signal, test_signal)
 
-class TestMultiChannel(BasePyfusionTestCase):
+class CheckMultiChannel(PfTestBase):
     """Would prefer this to be in acquisition/tests.py...., but we are
     using fakedata"""
 

@@ -1,11 +1,13 @@
 """Test code for data acquisition."""
 
-from pyfusion.test.tests import BasePyfusionTestCase
+from pyfusion.test.tests import PfTestBase
 from pyfusion.data.base import BaseData
 # Add new acquisition modules here for basic module structure test
 acquisition_modules = ['FakeData']#, 'MDSPlus']
 
-class TestAcquisitionArgs(BasePyfusionTestCase):
+from pyfusion.test.tests import PfTestBase
+
+class CheckAcquisitionArgs(PfTestBase):
     """Make sure we get the same result if we use config or kwargs"""
 
     def testEqualityConfigOrArgs(self):
@@ -55,7 +57,7 @@ class TestAcquisitionArgs(BasePyfusionTestCase):
         self.assertEqual(test_acq.dummy_var_1, 5)
 
 
-class TestGetAcquisition(BasePyfusionTestCase):
+class CheckGetAcquisition(PfTestBase):
     """test getAcquisition function."""
 
     def test_get_acquistion(self):
@@ -67,7 +69,7 @@ class TestGetAcquisition(BasePyfusionTestCase):
         self.assertEqual(test_acq_1.__dict__, test_acq_2.__dict__)
 
 
-class TestAcquisitionModules(BasePyfusionTestCase):
+class CheckAcquisitionModules(PfTestBase):
     """Check for existence of acquisition modules."""
 
     def check_module(self, module_name):
@@ -102,7 +104,7 @@ class DummyFetcher(BaseDataFetcher):
     
     
 
-class TestDataFetchers(BasePyfusionTestCase):
+class CheckDataFetchers(PfTestBase):
     """test DataFetcher subclasses for fake data acquisition."""
 
     def test_base_classes(self):

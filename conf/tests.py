@@ -1,8 +1,8 @@
 """Tests for pyfusion configuration files and parser."""
 
-from pyfusion.test.tests import BasePyfusionTestCase
+from pyfusion.test.tests import PfTestBase
 
-class TestConfigFileSectionNames(BasePyfusionTestCase):
+class CheckConfigFileSectionNames(PfTestBase):
     """Check section name conformity in configuration files.
 
     Allowed config section names must correspond to those
@@ -27,7 +27,7 @@ class TestConfigFileSectionNames(BasePyfusionTestCase):
         self.assertRaises(
             ConfigSectionSyntaxError, config.check_section_syntax)
 
-class TestPyfusionConfigParser(BasePyfusionTestCase):
+class CheckPyfusionConfigParser(PfTestBase):
     """Test pyfusion customised config file parser."""
 
     def testBaseClass(self):
@@ -41,7 +41,7 @@ class TestPyfusionConfigParser(BasePyfusionTestCase):
         self.assertFalse(config.pf_has_section('Device', self.unlisted_device))
 
 
-class TestImportSetting(BasePyfusionTestCase):
+class CheckImportSetting(PfTestBase):
     """Test import_setting function."""
 
     def test_import_setting_with_fakedata_acquisition(self):
@@ -51,7 +51,7 @@ class TestImportSetting(BasePyfusionTestCase):
         from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
         self.assertEqual(acq_from_config, FakeDataAcquisition)
 
-class TestImportFromString(BasePyfusionTestCase):
+class CheckImportFromString(PfTestBase):
     """Test import_from_str fuction."""
 
     def test_import_from_str(self):
@@ -60,7 +60,7 @@ class TestImportFromString(BasePyfusionTestCase):
         from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
         self.assertEqual(import_from_str(string_value), FakeDataAcquisition)
 
-class TestKeywordArgConfigHandler(BasePyfusionTestCase):
+class CheckKeywordArgConfigHandler(PfTestBase):
     """Test the function which chooses from kwargs oor config vars."""
 
     def test_kwarg_config_handler(self):
@@ -86,7 +86,7 @@ class TestKeywordArgConfigHandler(BasePyfusionTestCase):
                                                'TestDevice', config_var))
 
 
-class TestVariableTypes(BasePyfusionTestCase):
+class CheckVariableTypes(PfTestBase):
     """Check that config parser returns correct types for settings."""
     def test_return_correct_type(self):
         from pyfusion import config
@@ -108,7 +108,7 @@ class TestVariableTypes(BasePyfusionTestCase):
                           'unknowntype')
         
 
-class TestConfigUtils(BasePyfusionTestCase):
+class CheckConfigUtils(PfTestBase):
     """Test utilities for handling config files"""
 
     def test_config_as_dict(self):

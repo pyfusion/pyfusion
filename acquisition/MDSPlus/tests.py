@@ -1,7 +1,7 @@
 """Test code for MDSPlus data acquisition."""
 
 
-from pyfusion.test.tests import BasePyfusionTestCase
+from pyfusion.test.tests import PfTestBase
 
 try:
     from pyfusion.acquisition.MDSPlus.fetch import MDSPlusBaseDataFetcher
@@ -32,7 +32,7 @@ class DummyMDSDataFetcher(MDSPlusBaseDataFetcher):
         return data
 
 
-class TestMDSPlusDataAcquisition(BasePyfusionTestCase):
+class CheckMDSPlusDataAcquisition(PfTestBase):
 
     def testBaseClasses(self):
         from pyfusion.acquisition.MDSPlus.acq import MDSPlusAcquisition
@@ -46,12 +46,12 @@ class TestMDSPlusDataAcquisition(BasePyfusionTestCase):
         #from MDSplus import Data
         #self.assertEqual(Data.__dict__, test_acq._Data.__dict__)
 
-TestMDSPlusDataAcquisition.h1 = True
-TestMDSPlusDataAcquisition.mds = True
-TestMDSPlusDataAcquisition.net = True
-TestMDSPlusDataAcquisition.slow = True
+CheckMDSPlusDataAcquisition.h1 = True
+CheckMDSPlusDataAcquisition.mds = True
+CheckMDSPlusDataAcquisition.net = True
+CheckMDSPlusDataAcquisition.slow = True
 
-class TestMDSPlusDataFetchers(BasePyfusionTestCase):
+class CheckMDSPlusDataFetchers(PfTestBase):
 
     def testDataFetcherBaseClass(self):
         from pyfusion.acquisition.base import BaseDataFetcher
@@ -79,14 +79,14 @@ class TestMDSPlusDataFetchers(BasePyfusionTestCase):
         from MDSplus import Data
         self.assertEqual(Data.__dict__, test_data.meta['mds_Data'].__dict__)
         
-TestMDSPlusDataFetchers.h1 = True
-TestMDSPlusDataFetchers.mds = True
-TestMDSPlusDataFetchers.net = True
-TestMDSPlusDataFetchers.slow = True
+CheckMDSPlusDataFetchers.h1 = True
+CheckMDSPlusDataFetchers.mds = True
+CheckMDSPlusDataFetchers.net = True
+CheckMDSPlusDataFetchers.slow = True
 
 
 
-class TestMDSPlusH1Connection(BasePyfusionTestCase):
+class CheckMDSPlusH1Connection(PfTestBase):
     """tests which require access to h1data.anu.edu.au"""
 
     def testH1TimeseriesData(self):
@@ -101,14 +101,14 @@ class TestMDSPlusH1Connection(BasePyfusionTestCase):
         self.assertTrue(isinstance(test_data, TimeseriesData))
         self.assertEqual(test_data.signal[0], -0.01953125)
 
-TestMDSPlusH1Connection.h1 = True
-TestMDSPlusH1Connection.mds = True
-TestMDSPlusH1Connection.net = True
-TestMDSPlusH1Connection.slow = True
+CheckMDSPlusH1Connection.h1 = True
+CheckMDSPlusH1Connection.mds = True
+CheckMDSPlusH1Connection.net = True
+CheckMDSPlusH1Connection.slow = True
 
 from unittest import TestCase
 
-class TestH1ConfigSection(TestCase):
+class CheckH1ConfigSection(TestCase):
     """make sure H1 section in pyfusion.cfg works"""
 
     def testH1Config(self):
@@ -126,9 +126,9 @@ class TestH1ConfigSection(TestCase):
         d=pyfusion.devices.base.Device("H1")
         #data=d.acq.getdata(shot, diag)
         
-TestH1ConfigSection.h1 = True
-TestH1ConfigSection.mds = True
-TestH1ConfigSection.net = True
-TestH1ConfigSection.slow = True
+CheckH1ConfigSection.h1 = True
+CheckH1ConfigSection.mds = True
+CheckH1ConfigSection.net = True
+CheckH1ConfigSection.slow = True
 
 

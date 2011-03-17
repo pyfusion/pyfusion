@@ -48,6 +48,8 @@ def read_config(config_files):
                                    (config_files))
 
     tmp  = pyfusion.config.get('global', 'database')
+    ##  TODO: if we have a database, set it up, if not, take it down
+    """
     if tmp == 'None':
         pyfusion.USE_ORM = False
         from pyfusion.orm import takedown_orm
@@ -56,7 +58,7 @@ def read_config(config_files):
         pyfusion.USE_ORM = True
         from pyfusion.orm import setup_orm
         setup_orm()
-    
+    """
 
 
 def clear_config():

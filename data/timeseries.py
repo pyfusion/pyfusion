@@ -7,6 +7,14 @@ from pyfusion.data.base import BaseData, BaseOrderedDataSet, FloatDelta
 from utils import cps, peak_freq, remap_periodic, list2bin, bin2list
 from base import MetaData
 import pyfusion
+from pyfusion.orm.utils import orm_register
+
+try:
+    from sqlalchemy import Table, Column, Integer, ForeignKey, Float
+    from sqlalchemy.orm import mapper, relation
+except ImportError:
+    # TODO: Use logger!
+    print "cannot load sqlalchemy"
         
 class Timebase(np.ndarray):
     """Timebase vector with parameterised internal representation.
@@ -133,13 +141,12 @@ class TimeseriesData(BaseData):
         super(TimeseriesData, self).__init__(**kwargs)
 
 
-if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, Integer, ForeignKey
-    from sqlalchemy.orm import mapper
-    tsd_table = Table('timeseriesdata', pyfusion.metadata,
-                            Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True))
-    pyfusion.metadata.create_all()
-    mapper(TimeseriesData, tsd_table, inherits=BaseData, polymorphic_identity='tsd')
+@orm_register()
+def orm_load_timeseries_data(man):
+    man.tsd_table = Table('timeseriesdata', man.metadata,
+                          Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True))
+    #man.metadata.create_all()
+    mapper(TimeseriesData, man.tsd_table, inherits=BaseData, polymorphic_identity='tsd')
 
 
 
@@ -168,13 +175,12 @@ class SVDData(BaseData):
             return self._self_cps
 
 
-if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, Integer, ForeignKey
-    from sqlalchemy.orm import mapper
-    svd_table = Table('svddata', pyfusion.metadata,
+@orm_register()
+def orm_load_svd_data(man):
+    man.svd_table = Table('svddata', man.metadata,
                       Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True))
-    pyfusion.metadata.create_all()
-    mapper(SVDData, svd_table, inherits=BaseData, polymorphic_identity='svddata')
+    #man.metadata.create_all()
+    mapper(SVDData, man.svd_table, inherits=BaseData, polymorphic_identity='svddata')
 
 
 class FlucStruc(BaseData):
@@ -236,10 +242,9 @@ class FlucStruc(BaseData):
         phase_val = np.arctan2(a,b)
         return phase_val
 
-if pyfusion.USE_ORM:
-    from sqlalchemy import Table, Column, Integer, ForeignKey, Float
-    from sqlalchemy.orm import mapper, relation
-    flucstruc_table = Table('flucstrucs', pyfusion.metadata,
+@orm_register()
+def orm_load_flucstrucs(man):
+    man.flucstruc_table = Table('flucstrucs', man.metadata,
                             Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True),
                             Column('_binary_svs', Integer),
                             Column('freq', Float),
@@ -248,6 +253,6 @@ if pyfusion.USE_ORM:
                             Column('p', Float),    
                             Column('H', Float),    
                             Column('dphase_id', Integer, ForeignKey('baseordereddataset.id'), nullable=False))    
-    pyfusion.metadata.create_all()
-    mapper(FlucStruc, flucstruc_table, inherits=BaseData,
+    #man.metadata.create_all()
+    mapper(FlucStruc, man.flucstruc_table, inherits=BaseData,
            polymorphic_identity='flucstruc', properties={'dphase': relation(BaseOrderedDataSet)})

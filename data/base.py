@@ -8,12 +8,19 @@ from pyfusion.data.filters import filter_reg
 from pyfusion.data.plots import plot_reg
 from pyfusion.data.utils import unique_id
 import pyfusion
+from pyfusion.orm.utils import orm_register
 
-if pyfusion.USE_ORM:
+
+try:
     from sqlalchemy import Table, Column, String, Integer, Float, ForeignKey, \
          DateTime, PickleType
     from sqlalchemy.orm import reconstructor, mapper, relation, dynamic_loader
     from sqlalchemy.orm.collections import column_mapped_collection
+except ImportError:
+    # TODO: use logger!
+    print "could not import sqlalchemy"
+
+    
 
 
 def history_reg_method(method):
@@ -87,15 +94,16 @@ class Coords(object):
             session.close()
         
 
-if pyfusion.USE_ORM:
-    coords_table = Table('coords', pyfusion.metadata,
+@orm_register()
+def setup_coords(man):
+    man.coords_table = Table('coords', man.metadata,
                             Column('id', Integer, primary_key=True),
                             Column('default_name', String(30), nullable=False),
                             Column('default_value_1', Float),
                             Column('default_value_2', Float),
                             Column('default_value_3', Float))
-    pyfusion.metadata.create_all()
-    mapper(Coords, coords_table)
+    #pyfusion.metadata.create_all()
+    mapper(Coords, man.coords_table)
 
 
 
@@ -134,18 +142,20 @@ class Channel(object):
             session.commit()
             session.close()
 
-if pyfusion.USE_ORM:
-    channel_table = Table('channel', pyfusion.metadata,
+@orm_register()
+def orm_load_channel(man):
+    man.channel_table = Table('channel', man.metadata,
                             Column('id', Integer, primary_key=True),
                             Column('name', String(200), nullable=False),
                             Column('coords_id', Integer, ForeignKey('coords.id'), nullable=False))
-    pyfusion.metadata.create_all()
-    mapper(Channel, channel_table, properties={'coords': relation(Coords)})
+    #man.metadata.create_all()
+    mapper(Channel, man.channel_table, properties={'coords': relation(Coords)})
 
 
     
-if pyfusion.USE_ORM:
-    channel_association_table = Table('channel_association', pyfusion.metadata,
+@orm_register()
+def orm_load_channel_map(man):
+    man.channel_association_table = Table('channel_association', man.metadata,
                                       Column('channellist_id', Integer, ForeignKey('channellist.id'), primary_key=True),
                                       Column('channel_id', Integer, ForeignKey('channel.id'), primary_key=True),
                                       )
@@ -162,19 +172,20 @@ class ChannelList(list):
             session.commit()
             session.close()
 
-    if pyfusion.USE_ORM:
-        @reconstructor
-        def repopulate(self):
-            for i in self._channels:
-                if not i in self: self.append(i)
+            
+    @reconstructor
+    def repopulate(self):
+        for i in self._channels:
+            if not i in self: self.append(i)
     
-if pyfusion.USE_ORM:
-    channellist_table = Table('channellist', pyfusion.metadata,
-                              Column('id', Integer, primary_key=True))
+@orm_register()
+def orm_load_channellist(man):
+    man.channellist_table = Table('channellist', man.metadata,
+                                  Column('id', Integer, primary_key=True))
                               
-    pyfusion.metadata.create_all()
-    mapper(ChannelList, channellist_table,
-           properties={'_channels': relation(Channel, secondary=channel_association_table)})
+    #man.metadata.create_all()
+    mapper(ChannelList, man.channellist_table,
+           properties={'_channels': relation(Channel, secondary=man.channel_association_table)})
     
 
 
@@ -210,14 +221,15 @@ class BaseData(object):
             session.commit()
             session.close()
 
-if pyfusion.USE_ORM:
-    basedata_table = Table('basedata', pyfusion.metadata,
-                            Column('basedata_id', Integer, primary_key=True),
-                            Column('type', String(30), nullable=False),
-                            Column('meta', PickleType(comparator=operator.eq))
-                           )
-    pyfusion.metadata.create_all()
-    mapper(BaseData, basedata_table, polymorphic_on=basedata_table.c.type, polymorphic_identity='basedata')
+@orm_register()
+def orm_load_basedata(man):
+    man.basedata_table = Table('basedata', man.metadata,
+                               Column('basedata_id', Integer, primary_key=True),
+                               Column('type', String(30), nullable=False),
+                               Column('meta', PickleType(comparator=operator.eq))
+                               )
+    #man.metadata.create_all()
+    mapper(BaseData, man.basedata_table, polymorphic_on=man.basedata_table.c.type, polymorphic_identity='basedata')
 
 
 
@@ -262,34 +274,37 @@ class BaseDataSet(object):
     def pop(self):
         return self.data.pop()
 
-if pyfusion.USE_ORM:
-    basedataset_table = Table('basedataset', pyfusion.metadata,
-                              Column('id', Integer, primary_key=True),
-                              Column('created', DateTime),
-                              Column('label', String(100), nullable=False, unique=True),
-                              Column('type', String(30), nullable=False),
-                              Column('meta', PickleType(comparator=operator.eq)))
+@orm_register()
+def orm_load_basedataset(man):
+    man.basedataset_table = Table('basedataset', man.metadata,
+                                  Column('id', Integer, primary_key=True),
+                                  Column('created', DateTime),
+                                  Column('label', String(100), nullable=False, unique=True),
+                                  Column('type', String(30), nullable=False),
+                                  Column('meta', PickleType(comparator=operator.eq)))
 
     # many to many mapping of data to datasets
-    data_basedataset_table = Table('data_basedataset', pyfusion.metadata,
-                                   Column('basedataset_id', Integer, ForeignKey('basedataset.id')),
-                                   Column('data_id', Integer, ForeignKey('basedata.basedata_id'))
-                                   )
-    pyfusion.metadata.create_all()
+    man.data_basedataset_table = Table('data_basedataset', man.metadata,
+                                       Column('basedataset_id', Integer, ForeignKey('basedataset.id')),
+                                       Column('data_id', Integer, ForeignKey('basedata.basedata_id'))
+                                       )
+    #man.metadata.create_all()
 
-    mapper(BaseDataSet, basedataset_table,
-           polymorphic_on=basedataset_table.c.type, polymorphic_identity='base_dataset')
-#           properties={'data': relation(BaseData, secondary=data_basedataset_table, backref='basedatasets', cascade='all', collection_class=set)})
+    mapper(BaseDataSet, man.basedataset_table,
+           polymorphic_on=man.basedataset_table.c.type, polymorphic_identity='base_dataset')
+    #           properties={'data': relation(BaseData, secondary=man.data_basedataset_table, backref='basedatasets', cascade='all', collection_class=set)})
 
 
 class DynamicDataSet(BaseDataSet):
     pass
-if pyfusion.USE_ORM:
-    dynamicdataset_table = Table('dynamic_dataset', pyfusion.metadata,
-                            Column('basedataset_id', Integer, ForeignKey('basedataset.id'), primary_key=True))
-    pyfusion.metadata.create_all()
-    mapper(DynamicDataSet, dynamicdataset_table, inherits=BaseDataSet, polymorphic_identity='dynamic_dataset',
-           properties={'data': dynamic_loader(BaseData, secondary=data_basedataset_table, backref='dynamicdatasets', cascade='all')})
+
+@orm_register()
+def orm_load_dynamic_dataset(man):
+    man.dynamicdataset_table = Table('dynamic_dataset', man.metadata,
+                                     Column('basedataset_id', Integer, ForeignKey('basedataset.id'), primary_key=True))
+    #man.metadata.create_all()
+    mapper(DynamicDataSet, man.dynamicdataset_table, inherits=BaseDataSet, polymorphic_identity='dynamic_dataset',
+           properties={'data': dynamic_loader(BaseData, secondary=man.data_basedataset_table, backref='dynamicdatasets', cascade='all')})
     
 
 
@@ -297,12 +312,13 @@ class DataSet(BaseDataSet):
     pass
         
         
-if pyfusion.USE_ORM:
-    dataset_table = Table('dataset', pyfusion.metadata,
+@orm_register()
+def orm_load_dataset(man):
+    man.dataset_table = Table('dataset', man.metadata,
                             Column('basedataset_id', Integer, ForeignKey('basedataset.id'), primary_key=True))
-    pyfusion.metadata.create_all()
-    mapper(DataSet, dataset_table, inherits=BaseDataSet, polymorphic_identity='dataset',
-           properties={'data': relation(BaseData, secondary=data_basedataset_table, backref='datasets', cascade='all', collection_class=set)})
+    #man.metadata.create_all()
+    mapper(DataSet, man.dataset_table, inherits=BaseDataSet, polymorphic_identity='dataset',
+           properties={'data': relation(BaseData, secondary=man.data_basedataset_table, backref='datasets', cascade='all', collection_class=set)})
 
 
 class OrderedDataSetItem(object):
@@ -346,14 +362,15 @@ class BaseOrderedDataSet(object):
         else:
             return self.data_items.__getitem__(key)
 
-if pyfusion.USE_ORM:
-    baseordereddataset_table = Table('baseordereddataset', pyfusion.metadata,
-                                     Column('id', Integer, primary_key=True),
-                                     Column('created', DateTime),
-                                     Column('label', String(50), nullable=False, unique=True),
-                                     Column('type', String(30), nullable=False))
+@orm_register()
+def orm_load_baseordereddataset(man):
+    man.baseordereddataset_table = Table('baseordereddataset', man.metadata,
+                                         Column('id', Integer, primary_key=True),
+                                         Column('created', DateTime),
+                                         Column('label', String(50), nullable=False, unique=True),
+                                         Column('type', String(30), nullable=False))
 
-    ordereditems_table = Table('ordereddata_items', pyfusion.metadata,
+    man.ordereditems_table = Table('ordereddata_items', man.metadata,
                          Column('dataset_id', Integer, ForeignKey('baseordereddataset.id'),
                                 primary_key=True),
                          Column('item_id', Integer, ForeignKey('basedata.basedata_id'),
@@ -361,17 +378,17 @@ if pyfusion.USE_ORM:
                          Column('index', Integer, nullable=False)
                          )
     
-    pyfusion.metadata.create_all()
+    #man.metadata.create_all()
 
-    mapper(BaseOrderedDataSet, baseordereddataset_table,
-           polymorphic_on=baseordereddataset_table.c.type, polymorphic_identity='base_ordered_dataset',
+    mapper(BaseOrderedDataSet, man.baseordereddataset_table,
+           polymorphic_on=man.baseordereddataset_table.c.type, polymorphic_identity='base_ordered_dataset',
            properties={'data_items': relation(OrderedDataSetItem,
                                                   backref='ordered_datasets_items',
                                                   cascade='all, delete-orphan',
-                                                  collection_class=column_mapped_collection(ordereditems_table.c.index))
+                                                  collection_class=column_mapped_collection(man.ordereditems_table.c.index))
                        }
            )
-    mapper(OrderedDataSetItem, ordereditems_table, properties={
+    mapper(OrderedDataSetItem, man.ordereditems_table, properties={
         'item': relation(BaseData, lazy='joined', backref='dataitem')
         })
 
@@ -405,15 +422,16 @@ class FloatDelta(BaseData):
         self.delta = delta
         super(FloatDelta, self).__init__(**kwargs)
 
-if pyfusion.USE_ORM:
-    floatdelta_table = Table('floatdelta', pyfusion.metadata,
+@orm_register()
+def orm_load_floatdelta(man):
+    man.floatdelta_table = Table('floatdelta', man.metadata,
                             Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True),
                             Column('channel_1_id', Integer, ForeignKey('channel.id')),
                             Column('channel_2_id', Integer, ForeignKey('channel.id')),
                             Column('delta', Float))    
-    pyfusion.metadata.create_all()
-    mapper(FloatDelta, floatdelta_table, inherits=BaseData, polymorphic_identity='floatdelta',
-           properties={'channel_1': relation(Channel, primaryjoin=floatdelta_table.c.channel_1_id==channel_table.c.id),
-                       'channel_2': relation(Channel, primaryjoin=floatdelta_table.c.channel_2_id==channel_table.c.id)})
+    #man.metadata.create_all()
+    mapper(FloatDelta, man.floatdelta_table, inherits=BaseData, polymorphic_identity='floatdelta',
+           properties={'channel_1': relation(Channel, primaryjoin=man.floatdelta_table.c.channel_1_id==man.channel_table.c.id),
+                       'channel_2': relation(Channel, primaryjoin=man.floatdelta_table.c.channel_2_id==man.channel_table.c.id)})
 
 

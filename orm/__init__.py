@@ -1,7 +1,7 @@
 """Object relational mapping for Pyfusion"""
 
 import pyfusion
-
+"""
 if pyfusion.USE_ORM:
     import sqlalchemy
 
@@ -26,7 +26,7 @@ def takedown_orm():
     del pyfusion.orm_engine
 
 
-
+"""
 class ORMManager(object):
     def __init__(self):
         self.func_list = []

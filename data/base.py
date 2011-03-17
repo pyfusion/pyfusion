@@ -189,7 +189,7 @@ def orm_load_channellist(man):
     
 
 
-class MetaData(dict):
+class PfMetaData(dict):
     pass
 
 
@@ -207,7 +207,7 @@ class BaseData(object):
     __metaclass__ = MetaMethods
 
     def __init__(self):
-        self.meta = MetaData()
+        self.meta = PfMetaData()
         self.history = "%s > New %s" %(datetime.now(), self.__class__.__name__)
         if not hasattr(self, 'channels'):
             self.channels = ChannelList()
@@ -237,7 +237,7 @@ class BaseDataSet(object):
     __metaclass__ = MetaMethods
 
     def __init__(self, label=''):
-        self.meta = MetaData()
+        self.meta = PfMetaData()
         self.created = datetime.now()
         self.history = "%s > New %s" %(self.created, self.__class__.__name__)
         if label == '':

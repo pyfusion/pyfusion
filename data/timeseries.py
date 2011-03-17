@@ -4,8 +4,8 @@ from datetime import datetime
 import numpy as np
 
 from pyfusion.data.base import BaseData, BaseOrderedDataSet, FloatDelta
-from utils import cps, peak_freq, remap_periodic, list2bin, bin2list
-from base import MetaData
+from pyfusion.data.utils import cps, peak_freq, remap_periodic, list2bin, bin2list
+from pyfusion.data.base import PfMetaData
 import pyfusion
 from pyfusion.orm.utils import orm_register
 
@@ -25,7 +25,7 @@ class Timebase(np.ndarray):
         # should this follow the example in doc/subclassing.py?... (it doesn't)
         obj = np.asarray(input_array).view(cls).copy()
         obj.sample_freq = 1.0/(obj[1]-obj[0])
-        obj.meta = MetaData()
+        obj.meta = PfMetaData()
         return obj
 
     def is_contiguous(self):
@@ -89,7 +89,7 @@ class Signal(np.ndarray):
     """
     def __new__(cls, input_array):
         obj = np.asarray(input_array).view(cls).copy()
-        obj.meta = MetaData()
+        obj.meta = PfMetaData()
         return obj
 
     def __array_finalize__(self,obj):

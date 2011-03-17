@@ -9,7 +9,7 @@ from pyfusion.data.timeseries import TimeseriesData, Timebase, Signal, FlucStruc
 from pyfusion.data.utils import cps, remap_periodic, peak_freq
 from pyfusion.data.base import BaseCoordTransform
 from pyfusion.data.filters import reduce_time
-
+from pyfusion.orm.utils import orm_register
 from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
 
 from pyfusion.test.tests import PfTestBase
@@ -195,7 +195,6 @@ class CheckDataSet(PfTestBase):
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
         self.assertTrue(tsd_1 in test_dataset)
-        
         """
         # we don't support removing items from dataset yet...
         test_dataset.remove(tsd_1)
@@ -216,6 +215,7 @@ class CheckDataSet(PfTestBase):
         test_dataset.add(tsd_1)
         test_dataset.add(tsd_2)
         test_dataset.reduce_time(new_times)
+
 
 class CheckOrderedDataSet(PfTestBase):
     """test the ordered dataset"""
@@ -839,11 +839,26 @@ class CheckFilterMetaClass(PfTestBase):
 
         class CheckData(pyfusion.data.base.BaseData):
             pass
-        
+
+        if pyfusion.orm_manager.IS_ACTIVE:
+
+            @orm_register()
+            def orm_load_floatdelta(man):
+                from sqlalchemy import Table, Column, Integer, ForeignKey
+                from sqlalchemy.orm import mapper
+                man.checkdata_table = Table('checkdata', man.metadata,
+                                            Column('basedata_id', Integer, ForeignKey('basedata.basedata_id'), primary_key=True))
+                # man.metadata.create_all()
+                mapper(CheckData, man.checkdata_table, inherits=BaseData, polymorphic_identity='checkdata')
+            
+            pyfusion.orm_manager.Session.close_all()
+            pyfusion.orm_manager.clear_mappers()
+            pyfusion.orm_manager.load_orm()
         test_data = CheckData()
         for attr_name in ["test_filter", "other_test_filter"]:
             self.assertTrue(hasattr(test_data, attr_name))
 
+CheckFilterMetaClass.dev = True
 
 class CheckNumpyFilters(PfTestBase):
 

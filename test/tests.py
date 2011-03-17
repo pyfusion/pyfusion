@@ -37,8 +37,8 @@ class _BasePyfusionTestCase(unittest.TestCase):
         self.unlisted_device = NONCONFIG_TEST_DEVICE_NAME
         self.shot_number = TEST_SHOT_NUMBER
         self.unlisted_config_section_type = UNLISTED_CONFIG_SECTION_TYPE
-        import pyfusion
-        self.pf = pyfusion
+        #import pyfusion
+        #self.pf = pyfusion
         unittest.TestCase.__init__(self, *args)
 
 
@@ -53,37 +53,40 @@ class PfTestBase(object):
 class SQLTestCase(_BasePyfusionTestCase):
 
     def setUp(self):
-        self.pf.conf.utils.clear_config()
-        self.pf.conf.utils.read_config(TEST_CONFIG_FILE)
+        pyfusion.conf.utils.clear_config()
+        if pyfusion.orm_manager.IS_ACTIVE:
+            pyfusion.orm_manager.Session.close_all()
+            pyfusion.orm_manager.clear_mappers()
+        pyfusion.conf.utils.read_config(TEST_CONFIG_FILE)
         
 
 class NoSQLTestCase(_BasePyfusionTestCase):
 
     def setUp(self):
-        self.pf.conf.utils.clear_config()
-        #try:
-        #    self.pf.config.read(self.test_config_file)
-        #except AttributeError:
-        self.pf.conf.utils.read_config(TEST_NOSQL_CONFIG_FILE)
+        pyfusion.conf.utils.clear_config()
+        if pyfusion.orm_manager.IS_ACTIVE:
+            pyfusion.orm_manager.Session.close_all()
+            pyfusion.orm_manager.clear_mappers()
+        pyfusion.conf.utils.read_config(TEST_NOSQL_CONFIG_FILE)
 
 class ConfigCheck(PfTestBase):
     """Check test config file is as we expect"""
 
     def testListedDevices(self):
-        self.assertTrue(self.pf.config.pf_has_section('Device', self.listed_device))
-        self.assertTrue(self.pf.config.pf_has_section('Device',
+        self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
+        self.assertTrue(pyfusion.config.pf_has_section('Device',
                                               self.listed_empty_device))
 
     def testListedDeviceDatabase(self):
-        self.assertTrue(self.pf.config.pf_has_option('Device',
+        self.assertTrue(pyfusion.config.pf_has_option('Device',
                                              self.listed_device, 'database'))
 
     def testEmptyDevice(self):
-        self.assertEqual(len(self.pf.config.pf_options('Device',
+        self.assertEqual(len(pyfusion.config.pf_options('Device',
                                                self.listed_empty_device)), 0)
 
     def testUnlistedDevice(self):
-        self.assertFalse(self.pf.config.pf_has_section('Device', self.unlisted_device))
+        self.assertFalse(pyfusion.config.pf_has_section('Device', self.unlisted_device))
 
 
 class InitImports(PfTestBase):
@@ -102,25 +105,25 @@ class ConfigLoaders(PfTestBase):
         """Check that new config is added but old retained"""
         import pyfusion
         # check that unlisted device is not in config
-        self.assertFalse(self.pf.config.pf_has_section('Device', self.unlisted_device))
-        self.assertTrue(self.pf.config.pf_has_section('Device', self.listed_device))
+        self.assertFalse(pyfusion.config.pf_has_section('Device', self.unlisted_device))
+        self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
         # create a simple file in memory
         import StringIO
         tmp_config = StringIO.StringIO("[Device:%s]\n"
                                        %(self.unlisted_device))
-        self.pf.read_config(tmp_config)
-        self.assertTrue(self.pf.config.pf_has_section('Device', self.unlisted_device))
-        self.assertTrue(self.pf.config.pf_has_section('Device', self.listed_device))
+        pyfusion.read_config(tmp_config)
+        self.assertTrue(pyfusion.config.pf_has_section('Device', self.unlisted_device))
+        self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
         
 
     def testClearConfig(self):
         """Check that pyfusion.clear_config works."""
         import pyfusion
-        self.assertTrue(self.pf.config.pf_has_section('Device', self.listed_device))
+        self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
         
-        self.pf.conf.utils.clear_config()
-        self.assertFalse(self.pf.config.pf_has_section('Device', self.listed_device))
-        self.assertEqual(self.pf.config.sections(), [])
+        pyfusion.conf.utils.clear_config()
+        self.assertFalse(pyfusion.config.pf_has_section('Device', self.listed_device))
+        self.assertEqual(pyfusion.config.sections(), [])
         
 
 
@@ -130,19 +133,16 @@ class SQLConfigCheck(PfTestBase):
     """Test module-wide SQLAlchemy config."""
 
     def testSQLConfig(self):
-        database = self.pf.config.get('global', 'database')
+        database = pyfusion.config.get('global', 'database')
         if database == 'None':
-            self.assertEqual(self.pf.USE_ORM, False)
-            self.assertFalse(hasattr(self.pf, 'Session'))
-            self.assertFalse(hasattr(self.pf, 'metadata'))
-            self.assertFalse(hasattr(self.pf, 'orm_engine'))
+            self.assertFalse(hasattr(pyfusion.orm_manager, 'Session'))
+            self.assertFalse(hasattr(pyfusion.orm_manager, 'metadata'))
+            self.assertFalse(hasattr(pyfusion.orm_manager, 'engine'))
         else:
-            self.assertEqual(self.pf.USE_ORM, True)
-            self.assertTrue(hasattr(self.pf, 'Session'))
-            self.assertTrue(hasattr(self.pf, 'metadata'))
-            self.assertTrue(hasattr(self.pf, 'orm_engine'))
-        if self.pf.USE_ORM:
-            self.assertEqual(self.pf.orm_engine.url.__str__(), database)
+            self.assertTrue(hasattr(pyfusion.orm_manager, 'Session'))
+            self.assertTrue(hasattr(pyfusion.orm_manager, 'metadata'))
+            self.assertTrue(hasattr(pyfusion.orm_manager, 'engine'))
+            self.assertEqual(pyfusion.orm_manager.engine.url.__str__(), database)
 
         
 

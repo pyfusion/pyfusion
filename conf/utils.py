@@ -1,5 +1,6 @@
 """ Useful functions for manipulating config files."""
 
+from ConfigParser import NoSectionError
 import pyfusion
 
 def CannotImportFromConfigError(Exception):
@@ -38,6 +39,11 @@ def read_config(config_files):
     Argument is either a single file object, or a list of filenames.
     """
     try:
+        existing_database = pyfusion.config.get('global', 'database')
+    except NoSectionError:
+        existing_database = 'None'
+
+    try:
         files_read = pyfusion.config.readfp(config_files)
     except:
         files_read = pyfusion.config.read(config_files)
@@ -47,8 +53,14 @@ def read_config(config_files):
             raise LookupError, str('failed to read config files from [%s]' %
                                    (config_files))
 
-    tmp  = pyfusion.config.get('global', 'database')
+    config_database  = pyfusion.config.get('global', 'database')
     ##  TODO: if we have a database, set it up, if not, take it down
+
+    if config_database.lower() != existing_database.lower():
+        
+        pyfusion.orm_manager.shutdown_orm() # try inside shutdown?
+        pyfusion.orm_manager.load_orm()
+
     """
     if tmp == 'None':
         pyfusion.USE_ORM = False

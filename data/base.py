@@ -86,9 +86,9 @@ class Coords(object):
         self.__dict__.update({transform_class.output_coords:_new_transform_method})
 
     def save(self):
-        if pyfusion.USE_ORM:
+        if pyfusion.orm_manager.IS_ACTIVE:
             # this may be inefficient: get it working, then get it fast
-            session = pyfusion.Session()
+            session = pyfusion.orm_manager.Session()
             session.add(self)
             session.commit()
             session.close()
@@ -134,10 +134,10 @@ class Channel(object):
         self.coords = coords
 
     def save(self):
-        if pyfusion.USE_ORM:
+        if pyfusion.orm_manager.IS_ACTIVE:
             # this may be inefficient: get it working, then get it fast
             self.coords.save()
-            session = pyfusion.Session()
+            session = pyfusion.orm_manager.Session()
             session.add(self)
             session.commit()
             session.close()
@@ -165,9 +165,9 @@ class ChannelList(list):
         self.extend(args)
 
     def save(self):
-        if pyfusion.USE_ORM:
+        if pyfusion.orm_manager.IS_ACTIVE:
             self._channels.extend(self)
-            session = pyfusion.Session()
+            session = pyfusion.orm_manager.Session()
             session.add(self)
             session.commit()
             session.close()
@@ -213,10 +213,10 @@ class BaseData(object):
             self.channels = ChannelList()
         
     def save(self):
-        if pyfusion.USE_ORM:
+        if pyfusion.orm_manager.IS_ACTIVE:
             # this may be inefficient: get it working, then get it fast
             self.channels.save()
-            session = pyfusion.Session()
+            session = pyfusion.orm_manager.Session()
             session.add(self)
             session.commit()
             session.close()
@@ -243,12 +243,13 @@ class BaseDataSet(object):
         if label == '':
             label = unique_id()
         self.label = label
-        if not pyfusion.USE_ORM:
+        if not pyfusion.orm_manager.IS_ACTIVE:
             self.data = set()
         
     def save(self):
-        if pyfusion.USE_ORM:
-            session = pyfusion.Session()
+        ## TODO: if orm_manager IS_ACTIVE=False, send message to logger...
+        if pyfusion.orm_manager.IS_ACTIVE:
+            session = pyfusion.orm_manager.Session()
             session.add(self)
             session.commit()
             session.close()
@@ -335,29 +336,29 @@ class BaseOrderedDataSet(object):
         self.history = "%s > New %s" %(self.created, self.__class__.__name__)
         if label == '':
             label = unique_id()
-        if not pyfusion.USE_ORM:
+        if not pyfusion.orm_manager.IS_ACTIVE:
             self.data_items = []
         
     def save(self):
-        if pyfusion.USE_ORM:
-            session = pyfusion.Session()
+        if pyfusion.orm_manager.IS_ACTIVE:
+            session = pyfusion.orm_manager.Session()
             session.add(self)
             session.commit()
             session.close()
 
     def append(self, item):
-        if pyfusion.USE_ORM:
+        if pyfusion.orm_manager.IS_ACTIVE:
             self.data_items[len(self)] = OrderedDataSetItem(item, len(self))
         else:
             self.data_items.append(OrderedDataSetItem(item, len(self)))
     def __len__(self):
-        #if pyfusion.USE_ORM:
+        #if pyfusion.orm_manager.IS_ACTIVE:
         #    return self.data_items.count()
         #else:
         return self.data_items.__len__()
 
     def __getitem__(self, key):
-        if pyfusion.USE_ORM:
+        if pyfusion.orm_manager.IS_ACTIVE:
             return self.data_items[key].item
         else:
             return self.data_items.__getitem__(key)

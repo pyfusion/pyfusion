@@ -8,6 +8,7 @@ Test code which doesn't have any other obvious home
 
 import unittest, random, string, ConfigParser, os
 import inspect, pkgutil, sys
+import StringIO
 
 #from pyfusion.devices.base import Device
 #from pyfusion.conf import config
@@ -37,14 +38,7 @@ class _BasePyfusionTestCase(unittest.TestCase):
         self.unlisted_device = NONCONFIG_TEST_DEVICE_NAME
         self.shot_number = TEST_SHOT_NUMBER
         self.unlisted_config_section_type = UNLISTED_CONFIG_SECTION_TYPE
-        #import pyfusion
-        #self.pf = pyfusion
         unittest.TestCase.__init__(self, *args)
-
-
-    #def setUp(self):
-    #    self.pf.config.read(TEST_CONFIG_FILE)
-
 
 class PfTestBase(object):
     """Base class for generated sql and non-sql test cases."""
@@ -103,12 +97,10 @@ class ConfigLoaders(PfTestBase):
 
     def testReadConfig(self):
         """Check that new config is added but old retained"""
-        import pyfusion
         # check that unlisted device is not in config
         self.assertFalse(pyfusion.config.pf_has_section('Device', self.unlisted_device))
         self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
         # create a simple file in memory
-        import StringIO
         tmp_config = StringIO.StringIO("[Device:%s]\n"
                                        %(self.unlisted_device))
         pyfusion.read_config(tmp_config)
@@ -118,7 +110,6 @@ class ConfigLoaders(PfTestBase):
 
     def testClearConfig(self):
         """Check that pyfusion.clear_config works."""
-        import pyfusion
         self.assertTrue(pyfusion.config.pf_has_section('Device', self.listed_device))
         
         pyfusion.conf.utils.clear_config()

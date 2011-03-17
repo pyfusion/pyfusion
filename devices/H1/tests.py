@@ -3,11 +3,11 @@
 
 from pyfusion.test.tests import PfTestBase
 from pyfusion.data.timeseries import TimeseriesData
+import pyfusion
 
 class CheckH1MirnovCoords(PfTestBase):
 
     def test_single_mirnov_channel_kappah_as_argument(self):
-        import pyfusion
         d=pyfusion.getDevice('H1')
         data = d.acq.getdata(58073, 'H1_mirnov_array_1_coil_1')
         self.assertTrue(isinstance(data, TimeseriesData))
@@ -28,7 +28,6 @@ class CheckH1MirnovCoords(PfTestBase):
         """
 
     def test_single_mirnov_channel_kappah_from_metadata(self):
-        import pyfusion
         h1test = pyfusion.getDevice('H1')
         shot_kh = (58073, 0.74)
         data = h1test.acq.getdata(shot_kh[0],
@@ -39,7 +38,6 @@ class CheckH1MirnovCoords(PfTestBase):
         pass
     
     def test_multichannel_mirnov_bean_kappah_as_argument(self):
-        import pyfusion
         d=pyfusion.getDevice('H1')
         data = d.acq.getdata(58073, 'H1_mirnov_array_1')
         #self.assertEqual(data.signal.n_channels(), len(data.coordinates))
@@ -62,14 +60,12 @@ class CheckH1Device(PfTestBase):
         self.assertTrue(issubclass(H1, Device))
         
     def test_getdevice(self):
-        import pyfusion
         h1test = pyfusion.getDevice('H1')
         from pyfusion.devices.H1.device import H1
 
         self.assertTrue(isinstance(h1test, H1))
 
     def test_kh(self):
-        import pyfusion
         h1test = pyfusion.getDevice('H1')
         shot_kh = (58073, 0.74)
         data = h1test.acq.getdata(shot_kh[0], 'H1_mirnov_array_1_coil_1')        

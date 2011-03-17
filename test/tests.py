@@ -5,12 +5,15 @@ Test code which doesn't have any other obvious home
 
 """
 
+
 import unittest, random, string, ConfigParser, os
 import inspect, pkgutil, sys
 
 #from pyfusion.devices.base import Device
 #from pyfusion.conf import config
 import pyfusion
+
+TEST_FLAGS = ['dev']
 
 # Find location of test configuration file
 TEST_DATA_PATH = os.path.abspath(os.path.dirname(__file__))

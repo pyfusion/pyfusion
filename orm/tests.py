@@ -1,8 +1,41 @@
 from pyfusion.test.tests import PfTestBase
+import pyfusion
 
-class TestORM(PfTestBase):
+class CheckORM(PfTestBase):
     def test_orm(self):
         from pyfusion import orm
 
-TestORM.sql = True
+class CheckORMManager(PfTestBase):
+    def test_orm_manager(self):
+        from sqlalchemy import create_engine, MetaData
+        from sqlalchemy.orm import scoped_session, sessionmaker
+        from sqlalchemy.engine.base import Engine
+        from sqlalchemy.orm.scoping import ScopedSession
+        from pyfusion.orm import ORMManager
 
+        self.assertIsInstance(pyfusion.orm_manager, ORMManager)
+
+        # check metadata, engine binding, etc
+        pyfusion.orm_manager.setup_session()
+        self.assertIsInstance(pyfusion.orm_manager.engine, Engine)
+        self.assertIsInstance(pyfusion.orm_manager.Session, ScopedSession)
+        self.assertIsInstance(pyfusion.orm_manager.metadata, MetaData)
+        
+    def test_manager_reg(self):
+        from pyfusion.orm.utils import orm_register
+        from sqlalchemy import MetaData
+
+        @orm_register()
+        def test_orm_load(man):
+            man.a = 1
+            man.b = 2
+
+        self.assertTrue(test_orm_load in pyfusion.orm_manager.func_list)
+        
+        pyfusion.orm_manager.load_orm()
+        self.assertEqual(pyfusion.orm_manager.a, 1)
+        self.assertEqual(pyfusion.orm_manager.b, 2)
+        # make sure the session, metadata, etc is started when we load_orm
+        self.assertIsInstance(pyfusion.orm_manager.metadata, MetaData)
+
+CheckORMManager.dev = True

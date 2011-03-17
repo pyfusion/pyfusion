@@ -55,3 +55,5 @@ read_config([DEFAULT_CONFIG_FILE, USER_CONFIG_FILE, USER_ENV_CONFIG_FILE])
 from pyfusion.devices.base import getDevice
 from pyfusion.acquisition.utils import getAcquisition
 
+from pyfusion.orm import ORMManager
+orm_manager = ORMManager()

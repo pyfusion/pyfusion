@@ -1,7 +1,10 @@
 """Test code for MDSPlus data acquisition."""
 
+from pyfusion.test.tests import PfTestBase, BasePyfusionTestCase
+import pyfusion
+import os
 
-from pyfusion.test.tests import PfTestBase
+
 
 try:
     from pyfusion.acquisition.MDSPlus.fetch import MDSPlusBaseDataFetcher
@@ -17,6 +20,10 @@ except:
     from pyfusion.data.base import BaseData as MDSPlusBaseDataFetcher
 
 from pyfusion.data.base import BaseData
+
+TEST_DATA_PATH = os.path.abspath(os.path.dirname(__file__))
+TEST_CONFIG_FILE = os.path.join(TEST_DATA_PATH, "test.cfg")
+
 
 class DummyMDSData(BaseData):
     pass
@@ -106,10 +113,19 @@ CheckMDSPlusH1Connection.mds = True
 CheckMDSPlusH1Connection.net = True
 CheckMDSPlusH1Connection.slow = True
 
-from unittest import TestCase
 
-class CheckH1ConfigSection(TestCase):
-    """make sure H1 section in pyfusion.cfg works"""
+class MDSAcqTestCase(BasePyfusionTestCase):
+
+    def setUp(self):
+        pyfusion.conf.utils.clear_config()
+        if pyfusion.orm_manager.IS_ACTIVE:
+            pyfusion.orm_manager.Session.close_all()
+            pyfusion.orm_manager.clear_mappers()
+        pyfusion.conf.utils.read_config(TEST_CONFIG_FILE)
+
+
+class CheckH1ConfigSection(MDSAcqTestCase):
+    """make sure H1 section in config file works"""
 
     def testH1Config(self):
         import pyfusion

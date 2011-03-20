@@ -30,7 +30,7 @@ CONFIG_EMPTY_TEST_DEVICE_NAME = "TestEmptyDevice"
 TEST_SHOT_NUMBER = 12345
 UNLISTED_CONFIG_SECTION_TYPE = "UnlistedType"
 
-class _BasePyfusionTestCase(unittest.TestCase):
+class BasePyfusionTestCase(unittest.TestCase):
     """Simple customisation of TestCase."""
     def __init__(self, *args):
         self.listed_device = CONFIG_TEST_DEVICE_NAME
@@ -44,7 +44,7 @@ class PfTestBase(object):
     """Base class for generated sql and non-sql test cases."""
     pass
 
-class SQLTestCase(_BasePyfusionTestCase):
+class SQLTestCase(BasePyfusionTestCase):
 
     def setUp(self):
         pyfusion.conf.utils.clear_config()
@@ -54,7 +54,7 @@ class SQLTestCase(_BasePyfusionTestCase):
         pyfusion.conf.utils.read_config(TEST_CONFIG_FILE)
         
 
-class NoSQLTestCase(_BasePyfusionTestCase):
+class NoSQLTestCase(BasePyfusionTestCase):
 
     def setUp(self):
         pyfusion.conf.utils.clear_config()

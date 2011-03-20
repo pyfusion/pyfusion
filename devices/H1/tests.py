@@ -1,18 +1,31 @@
 """
 """
-
-from pyfusion.test.tests import PfTestBase
+import os
+from pyfusion.test.tests import PfTestBase, BasePyfusionTestCase
 from pyfusion.data.timeseries import TimeseriesData
 import pyfusion
 
-class CheckH1MirnovCoords(PfTestBase):
+TEST_DATA_PATH = os.path.abspath(os.path.dirname(__file__))
+TEST_CONFIG_FILE = os.path.join(TEST_DATA_PATH, "test.cfg")
+
+class H1DevTestCase(BasePyfusionTestCase):
+
+    def setUp(self):
+        pyfusion.conf.utils.clear_config()
+        if pyfusion.orm_manager.IS_ACTIVE:
+            pyfusion.orm_manager.Session.close_all()
+            pyfusion.orm_manager.clear_mappers()
+        pyfusion.conf.utils.read_config(TEST_CONFIG_FILE)
+
+
+class CheckH1MirnovCoords(H1DevTestCase):
 
     def test_single_mirnov_channel_kappah_as_argument(self):
         d=pyfusion.getDevice('H1')
         data = d.acq.getdata(58073, 'H1_mirnov_array_1_coil_1')
         self.assertTrue(isinstance(data, TimeseriesData))
-        from pyfusion.data.base import MetaData
-        self.assertTrue(isinstance(data.meta, MetaData))
+        from pyfusion.data.base import PfMetaData
+        self.assertTrue(isinstance(data.meta, PfMetaData))
         """
         self.assertTrue(hasattr(data, 'coordinates'))
         from pyfusion.data.base import Coords
@@ -51,7 +64,7 @@ CheckH1MirnovCoords.net = True
 CheckH1MirnovCoords.slow = True
 CheckH1MirnovCoords.busted = True
 
-class CheckH1Device(PfTestBase):
+class CheckH1Device(H1DevTestCase):
 
     def test_load_h1(self):
         from pyfusion.devices.base import Device

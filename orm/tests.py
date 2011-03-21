@@ -50,4 +50,3 @@ class CheckORMManager(PfTestBase):
             # make sure the session, metadata, etc is started when we load_orm
             self.assertIsInstance(pyfusion.orm_manager.metadata, MetaData)
 
-CheckORMManager.dev = True

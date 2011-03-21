@@ -350,7 +350,7 @@ class BaseOrderedDataSet(object):
         if pyfusion.orm_manager.IS_ACTIVE:
             self.data_items[len(self)] = OrderedDataSetItem(item, len(self))
         else:
-            self.data_items.append(OrderedDataSetItem(item, len(self)))
+            self.data_items.append(item)
     def __len__(self):
         #if pyfusion.orm_manager.IS_ACTIVE:
         #    return self.data_items.count()

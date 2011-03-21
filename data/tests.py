@@ -858,8 +858,6 @@ class CheckFilterMetaClass(PfTestBase):
         for attr_name in ["test_filter", "other_test_filter"]:
             self.assertTrue(hasattr(test_data, attr_name))
 
-CheckFilterMetaClass.dev = True
-
 class CheckNumpyFilters(PfTestBase):
 
     def test_correlate(self):
@@ -1017,3 +1015,30 @@ class CheckSciPyFilters(PfTestBase):
                                                     noise = 0.1)
 
         filtered_data = multichannel_data.sp_filter_butterworth_bandpass([35.e3, 45.e3], [25.e3, 55.e3], 1.0, 10.0)
+
+
+class CheckFlucstrucPhases(PfTestBase):
+    """Test code to replicate bug found by Shaun
+
+    Pyfusion uses different syntax depending if sql is enabled.
+    """
+
+    def test_flucstruc_phases(PfTestCase):
+        
+        n_ch = 10
+        n_samples = 5000
+        timebase = Timebase(np.arange(n_samples)*1.e-6)
+        channels = ChannelList(*(Channel('ch_%d' %i, Coords('cylindrical',(1.0,i,0.0))) for i in 2*np.pi*np.arange(n_ch)/n_ch))
+        multichannel_data = get_multimode_test_data(channels = channels,
+                                                    timebase = timebase,
+                                                    noise = 0.5)
+
+        data_reduced_time=multichannel_data.reduce_time([0,0.002]).subtract_mean().normalise(method='v',separate=True)
+
+        fs_set=data_reduced_time.flucstruc()
+        phases = []
+        for fs in fs_set:
+            for j in range(0,len(fs.dphase)):
+                phases.append(fs.dphase[j].delta)
+
+CheckFlucstrucPhases.dev=True

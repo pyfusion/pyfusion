@@ -1041,4 +1041,11 @@ class CheckFlucstrucPhases(PfTestBase):
             for j in range(0,len(fs.dphase)):
                 phases.append(fs.dphase[j].delta)
 
-CheckFlucstrucPhases.dev=True
+
+
+class CheckFilterCopy(PfTestBase):
+    """Check that by default, data filters alter a copy of the input data object not the object itself."""
+
+    def test_filter_copy(self):
+        # get the list of all filters.
+        

@@ -2,6 +2,7 @@
 import operator
 import uuid
 from datetime import datetime
+import copy
 
 from pyfusion.conf.utils import import_from_str, get_config_as_dict
 from pyfusion.data.filters import filter_reg
@@ -26,6 +27,13 @@ except ImportError:
 def history_reg_method(method):
     """Wrapper for filter and plot methods which updates the data history."""
     def updated_method(input_data, *args, **kwargs):
+        do_copy = kwargs.pop('copy', True)
+        if do_copy:
+            original_hist = input_data.history
+            input_data = copy.copy(input_data)
+            copy_history_string = "\n%s > (copy)" %(datetime.now())
+            input_data.history = original_hist + copy_history_string
+        
         args_string = ', '.join(map(str,args))
         if args_string is not '':
             args_string += ', '

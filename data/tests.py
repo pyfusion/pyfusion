@@ -887,7 +887,7 @@ class CheckDataHistory(PfTestBase):
         test_data = BaseData()
         self.assertEqual(test_data.history.split('> ')[1], 'New BaseData')
 
-    def testFilteredDataHistory(self):
+    def testFilteredDataHistory_nocopy(self):
 
         tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
         # nonzero signal mean
@@ -896,10 +896,24 @@ class CheckDataHistory(PfTestBase):
                              signal=Signal(np.arange(len(tb))), channels=ch)
 
         filtered_tsd = tsd.subtract_mean()
-        self.assertEqual(len(filtered_tsd.history.split('\n')), 2)
-        filtered_tsd.normalise(method='rms')
-        print filtered_tsd.history
+        self.assertEqual(len(filtered_tsd.history.split('\n')), 3)
+        output_data = filtered_tsd.normalise(method='rms', copy=False)
         self.assertEqual(filtered_tsd.history.split('> ')[-1], "normalise(method='rms')")
+        self.assertEqual(output_data.history.split('> ')[-1], "normalise(method='rms')")
+
+    def testFilteredDataHistory_copy(self):
+
+        tb = generate_timebase(t0=-0.5, n_samples=1.e2, sample_freq=1.e2)
+        # nonzero signal mean
+        ch = get_n_channels(1)
+        tsd = TimeseriesData(timebase=tb,
+                             signal=Signal(np.arange(len(tb))), channels=ch)
+
+        filtered_tsd = tsd.subtract_mean()
+        self.assertEqual(len(filtered_tsd.history.split('\n')), 3)
+        output_data = filtered_tsd.normalise(method='rms', copy=True)
+        self.assertEqual(output_data.history.split('> ')[-1], "normalise(method='rms')")
+        self.assertEqual(filtered_tsd.history.split('> ')[-1], "subtract_mean()")
 
 
 class CheckDataSetLabels(PfTestBase):
@@ -1046,6 +1060,53 @@ class CheckFlucstrucPhases(PfTestBase):
 class CheckFilterCopy(PfTestBase):
     """Check that by default, data filters alter a copy of the input data object not the object itself."""
 
-    def test_filter_copy(self):
-        # get the list of all filters.
+    def test_timeseries_filter_copy(self):
+        # Use reduce_time filter for testing...
+        n_ch = 10
+        n_samples = 5000
+        timebase = Timebase(np.arange(n_samples)*1.e-6)
+        channels = ChannelList(*(Channel('ch_%d' %i, Coords('cylindrical',(1.0,i,0.0))) for i in 2*np.pi*np.arange(n_ch)/n_ch))
+        multichannel_data = get_multimode_test_data(channels = channels,
+                                                    timebase = timebase,
+                                                    noise = 0.5)
+        new_data = multichannel_data.reduce_time([0,1.e-3])
+        self.assertFalse(new_data is multichannel_data)
+
+    def test_timeseries_filter_nocopy(self):
+        # Use reduce_time filter for testing...
+        n_ch = 10
+        n_samples = 5000
+        timebase = Timebase(np.arange(n_samples)*1.e-6)
+        channels = ChannelList(*(Channel('ch_%d' %i, Coords('cylindrical',(1.0,i,0.0))) for i in 2*np.pi*np.arange(n_ch)/n_ch))
+        multichannel_data = get_multimode_test_data(channels = channels,
+                                                    timebase = timebase,
+                                                    noise = 0.5)
+        new_data = multichannel_data.reduce_time([0,1.e-3], copy=False)
+        self.assertTrue(new_data is multichannel_data)
+
+
+    def test_dataset_filter_copy(self):
         
+        n_ch = 10
+        n_samples = 640
+        timebase = Timebase(np.arange(n_samples)*1.e-6)
+        channels = ChannelList(*(Channel('ch_%d' %i, Coords('cylindrical',(1.0,i,0.0))) for i in 2*np.pi*np.arange(n_ch)/n_ch))
+        multichannel_data = get_multimode_test_data(channels = channels,
+                                                    timebase = timebase,
+                                                    noise = 0.5)
+        dataset = multichannel_data.segment(64)
+        new_dataset = dataset.segment(16)
+
+    def test_dataset_filter_nocopy(self):
+        n_ch = 10
+        n_samples = 640
+        timebase = Timebase(np.arange(n_samples)*1.e-6)
+        channels = ChannelList(*(Channel('ch_%d' %i, Coords('cylindrical',(1.0,i,0.0))) for i in 2*np.pi*np.arange(n_ch)/n_ch))
+        multichannel_data = get_multimode_test_data(channels = channels,
+                                                    timebase = timebase,
+                                                    noise = 0.5)
+        dataset = multichannel_data.segment(64, copy=False)
+        new_dataset = dataset.segment(16, copy=False)
+
+
+CheckFilterCopy.dev = True

@@ -278,7 +278,8 @@ def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_
     norm_stopband = input_data.timebase.normalise_freq(stopband)
     ord,wn = sp_signal.filter_design.buttord(norm_passband, norm_stopband, max_passband_loss, min_stopband_attenuation)
     b, a = sp_signal.filter_design.butter(ord, wn, btype = 'bandpass')
-    output_data = copy.deepcopy(input_data)
+    
+    output_data = input_data
 
     for i,s in enumerate(output_data.signal):
         output_data.signal[i] = sp_signal.lfilter(b,a,s)

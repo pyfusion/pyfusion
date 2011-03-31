@@ -10,3 +10,6 @@
 pyfusion_database.txt
 documentation/.build
 NOTES
+
+# benchmark profile stats
+test/benchmarks/stats

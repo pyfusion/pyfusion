@@ -54,24 +54,11 @@ def read_config(config_files):
                                    (config_files))
 
     config_database  = pyfusion.config.get('global', 'database')
-    ##  TODO: if we have a database, set it up, if not, take it down
 
     if config_database.lower() != existing_database.lower():
-        
-        pyfusion.orm_manager.shutdown_orm() # try inside shutdown?
-        pyfusion.orm_manager.load_orm()
-
-    """
-    if tmp == 'None':
-        pyfusion.USE_ORM = False
-        from pyfusion.orm import takedown_orm
-        takedown_orm
-    else:
-        pyfusion.USE_ORM = True
-        from pyfusion.orm import setup_orm
-        setup_orm()
-    """
-
+        pyfusion.orm_manager.shutdown_orm() 
+        if config_database.lower() != 'none':
+            pyfusion.orm_manager.load_orm()
 
 def clear_config():
     """Clear pyfusion.config."""

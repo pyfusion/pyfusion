@@ -1109,4 +1109,4 @@ class CheckFilterCopy(PfTestBase):
         new_dataset = dataset.segment(16, copy=False)
 
 
-CheckFilterCopy.dev = True
+CheckFilterCopy.dev = False

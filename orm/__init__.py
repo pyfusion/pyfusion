@@ -33,7 +33,8 @@ class ORMManager(object):
         self.IS_ACTIVE = False
     def add_reg_func(self, orm_func):
         self.func_list.append(orm_func)
-
+        if self.IS_ACTIVE:
+            orm_func(self)
     def setup_session(self):
         db_string = pyfusion.config.get('global', 'database')
 
@@ -64,6 +65,15 @@ class ORMManager(object):
         self.metadata.create_all()
 
     def shutdown_orm(self):
-        #TODO:...
-        pass
+        # TODO: should we be using clear_mappers here?
+        # probably not, although this doesn't get called often
+        # Also, this might not be the best way to shut down sqlalchemy.
+        if self.IS_ACTIVE:
+            self.clear_mappers()
+            self.Session.close_all()
+            del self.Session
+            del self.metadata
+            del self.engine
+
+        self.IS_ACTIVE = False
     

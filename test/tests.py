@@ -47,20 +47,16 @@ class PfTestBase(object):
 class SQLTestCase(BasePyfusionTestCase):
 
     def setUp(self):
+        pyfusion.orm_manager.shutdown_orm()
         pyfusion.conf.utils.clear_config()
-        if pyfusion.orm_manager.IS_ACTIVE:
-            pyfusion.orm_manager.Session.close_all()
-            pyfusion.orm_manager.clear_mappers()
         pyfusion.conf.utils.read_config(TEST_CONFIG_FILE)
         
 
 class NoSQLTestCase(BasePyfusionTestCase):
 
     def setUp(self):
+        pyfusion.orm_manager.shutdown_orm()
         pyfusion.conf.utils.clear_config()
-        if pyfusion.orm_manager.IS_ACTIVE:
-            pyfusion.orm_manager.Session.close_all()
-            pyfusion.orm_manager.clear_mappers()
         pyfusion.conf.utils.read_config(TEST_NOSQL_CONFIG_FILE)
 
 class ConfigCheck(PfTestBase):
@@ -126,17 +122,28 @@ class SQLConfigCheck(PfTestBase):
     def testSQLConfig(self):
         database = pyfusion.config.get('global', 'database')
         if database == 'None':
+            self.assertFalse(pyfusion.orm_manager.IS_ACTIVE)
             self.assertFalse(hasattr(pyfusion.orm_manager, 'Session'))
             self.assertFalse(hasattr(pyfusion.orm_manager, 'metadata'))
             self.assertFalse(hasattr(pyfusion.orm_manager, 'engine'))
         else:
+            self.assertTrue(pyfusion.orm_manager.IS_ACTIVE)
             self.assertTrue(hasattr(pyfusion.orm_manager, 'Session'))
             self.assertTrue(hasattr(pyfusion.orm_manager, 'metadata'))
             self.assertTrue(hasattr(pyfusion.orm_manager, 'engine'))
             self.assertEqual(pyfusion.orm_manager.engine.url.__str__(), database)
 
-        
+    def test_reload_config(self):
+        pyfusion.conf.utils.read_config(TEST_CONFIG_FILE)
+        self.assertTrue(pyfusion.orm_manager.IS_ACTIVE)
+        pyfusion.conf.utils.read_config(TEST_NOSQL_CONFIG_FILE)
+        self.assertFalse(pyfusion.orm_manager.IS_ACTIVE)
+        pyfusion.conf.utils.read_config(TEST_CONFIG_FILE)
+        self.assertTrue(pyfusion.orm_manager.IS_ACTIVE)
+        pyfusion.conf.utils.read_config(TEST_NOSQL_CONFIG_FILE)
+        self.assertFalse(pyfusion.orm_manager.IS_ACTIVE)
 
+SQLConfigCheck.dev=False
 
 ###############################################################################
 ## Get all subclasses of PfTestBase and generate classes to test             ##

@@ -54,7 +54,7 @@ def peak_freq(signal,timebase,minfreq=0,maxfreq=1.e18):
     fft_freqs = fft_freqs[minfreq_elmt:maxfreq_elmt]
     
     peak_elmt = (argsort(abs(sig_fft)))[-1]
-    return fft_freqs[peak_elmt]
+    return [fft_freqs[peak_elmt], peak_elmt]
 
 def remap_periodic(input_array, min_val, period = 2*pi):
     while len(input_array[input_array<min_val]) > 0:

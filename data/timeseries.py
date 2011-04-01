@@ -196,8 +196,9 @@ class FlucStruc(BaseData):
             self.a12 = svd_data.svs[sv_list[1]]/svd_data.svs[sv_list[0]]
         self._binary_svs = list2bin(sv_list)
         # peak frequency for fluctuation structure
-        self.freq = peak_freq(svd_data.chronos[sv_list[0]], timebase)
         self.timebase = timebase
+        self.freq, self.freq_elmt = peak_freq(svd_data.chronos[sv_list[0]], self.timebase)
+
         self.t0 = timebase[0]
         # singular value filtered signals
         self.signal = np.dot(np.transpose(svd_data.topos[sv_list,:]),
@@ -231,15 +232,11 @@ class FlucStruc(BaseData):
         #d_phase_dataset.sort()
         return d_phase_dataset
 
+
     def _get_single_channel_phase(self, ch_id):
         data_fft = np.fft.fft(self.signal[ch_id])
-        # fft goes up to sample freq (mirror-like about Nyquist)
-        sample_freq = 1./(self.timebase[1]-self.timebase[0])
-        freq_array = sample_freq*np.arange(len(data_fft))/(len(data_fft)-1)
-        freq_elmt = np.searchsorted(freq_array,self.freq)
-        a = data_fft[freq_elmt].real
-        b = data_fft[freq_elmt].imag
-        phase_val = np.arctan2(a,b)
+        d_val = data_fft[self.freq_elmt]
+        phase_val = np.arctan2(d_val.real,d_val.imag)
         return phase_val
 
 @orm_register()

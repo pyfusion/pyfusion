@@ -4,7 +4,7 @@ function). Need to figure out a better way to do this.
 """
 from datetime import datetime
 import copy
-from numpy import searchsorted, arange, mean, resize, repeat, fft, conjugate, linalg, array, zeros_like, take, argmin, pi
+from numpy import searchsorted, arange, mean, resize, repeat, fft, conjugate, linalg, array, zeros_like, take, argmin, pi, cumsum
 from numpy import correlate as numpy_correlate
 try:
     from scipy import signal as sp_signal
@@ -156,7 +156,7 @@ def svd(input_data):
 
 
 #@register("TimeseriesData", "SVDData")
-def fs_group_geometric(input_data):
+def fs_group_geometric(input_data, max_energy = 1.0):
     """
     no filtering implemented yet
     we don't register this as a filter, because it doesn't return a Data or DataSet subclass
@@ -166,17 +166,14 @@ def fs_group_geometric(input_data):
 
     if not isinstance(input_data, SVDData):
         input_data = input_data.subtract_mean().normalise(method="var").svd()
-    
-    #energy_threshold = 0.9999
-    
-    #svd_data = linalg.svd(norm_data.signal,0)
+
     output_fs_list = []#OrderedDataSet()
 
-    #svs_norm_energy = array([i**2 for i in svd_data[1]])/input_data.E
-
-    #max_element = searchsorted(cumsum(svs_norm_energy), energy_threshold)
-    #remaining_ids = range(max_element)
-    remaining_ids = range(len(input_data.svs))
+    if max_energy < 1.0:
+        max_element = searchsorted(cumsum(input_data.p), max_energy)
+        remaining_ids = range(max_element)
+    else:
+        remaining_ids = range(len(input_data.svs))
     
     self_cps = input_data.self_cps()
 

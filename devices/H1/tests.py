@@ -89,3 +89,11 @@ CheckH1Device.slow = True
 CheckH1Device.h1 = True
 CheckH1Device.mds = True
 CheckH1Device.net = True
+
+class CheckGetH1Device(PfTestBase):
+    """test getDevice."""
+
+    def test_getDevice_from_pf(self):
+        device = pyfusion.getDevice("H1")
+
+CheckGetH1Device.dev = True

@@ -250,6 +250,6 @@ def orm_load_flucstrucs(man):
                             Column('p', Float),    
                             Column('H', Float),    
                             Column('dphase_id', Integer, ForeignKey('baseordereddataset.id'), nullable=False))    
-    #man.metadata.create_all()
+    man.metadata.create_all()
     mapper(FlucStruc, man.flucstruc_table, inherits=BaseData,
            polymorphic_identity='flucstruc', properties={'dphase': relation(BaseOrderedDataSet)})

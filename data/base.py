@@ -110,7 +110,7 @@ def setup_coords(man):
                             Column('default_value_1', Float),
                             Column('default_value_2', Float),
                             Column('default_value_3', Float))
-    #pyfusion.metadata.create_all()
+    man.metadata.create_all()
     mapper(Coords, man.coords_table)
 
 
@@ -301,7 +301,7 @@ def orm_load_basedataset(man):
 
     mapper(BaseDataSet, man.basedataset_table,
            polymorphic_on=man.basedataset_table.c.type, polymorphic_identity='base_dataset')
-    #           properties={'data': relation(BaseData, secondary=man.data_basedataset_table, backref='basedatasets', cascade='all', collection_class=set)})
+
 
 
 class DynamicDataSet(BaseDataSet):
@@ -387,7 +387,7 @@ def orm_load_baseordereddataset(man):
                          Column('index', Integer, nullable=False)
                          )
     
-    #man.metadata.create_all()
+    man.metadata.create_all()
 
     mapper(BaseOrderedDataSet, man.baseordereddataset_table,
            polymorphic_on=man.baseordereddataset_table.c.type, polymorphic_identity='base_ordered_dataset',

@@ -73,3 +73,6 @@ class CheckGetDevice(PfTestBase):
         test_device_2 = pyfusion.devices.base.Device(self.listed_device)
         self.assertEqual(test_device_1.__class__, test_device_2.__class__)
 
+
+    def test_getDevice_from_pf(self):
+        device = pyfusion.getDevice(self.listed_device)

@@ -47,10 +47,12 @@ def orm_load_devices(man):
     from sqlalchemy.orm import mapper
     man.device_table = Table('devices', man.metadata,
                          Column('id', Integer, primary_key=True),
-                         Column('name', String(32), unique=True))
+                         Column('name', String(32), unique=True),
+                         Column('class_name', String(32), unique=True))
 
-    #pyfusion.metadata.create_all()
-    mapper(Device, man.device_table)
+    #mapper(Device, man.device_table)
+    mapper(Device, man.device_table,
+           polymorphic_on=man.device_table.c.class_name, polymorphic_identity='Device')
 
 def getDevice(device_name):
     """Find and instantiate Device (sub)class from config."""

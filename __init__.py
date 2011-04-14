@@ -46,7 +46,7 @@ USER_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'pyfusion.cfg')
 # a PYFUSION_CONFIG_FILE environment variable
 USER_ENV_CONFIG_FILE = os.getenv('PYFUSION_CONFIG_FILE','')
 
-# Now we actually loat the configuration files. Settings in
+# Now we actually load the configuration files. Settings in
 # DEFAULT_CONFIG_FILE will be superseded by those in USER_CONFIG_FILE,
 # and USER_ENV_CONFIG_FILE will supersede both. As well as storing the
 # settings, read_config() will set up the ORM backend if required.

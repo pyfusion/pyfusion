@@ -3,8 +3,59 @@
 Pyfusion configuration files
 """"""""""""""""""""""""""""
 
-Any custom configuration should be in a file "pyfusion.cfg" in a
-directory ".pyfusion" in your home directory.
+Overview
+--------
+
+Pyfusion uses simple text files to store information such as data acquisition settings, diagnostic coordinates, SQL database configurations, etc. A pyfusion configuration file looks something like this::
+
+ [global]
+ database = sqlite:///:memory:
+
+ [Device:H1]
+ dev_class = pyfusion.devices.H1.device.H1
+ acq_name = MDS_h1
+ 
+ [Acquisition:MDS_h1]
+ acq_class = pyfusion.acquisition.MDSPlus.acq.MDSPlusAcquisition
+ server = h1data.anu.edu.au
+ 
+ [CoordTransform:H1_mirnov]
+ magnetic = pyfusion.devices.H1.coords.MirnovKhMagneticCoordTransform
+ 
+ [Diagnostic:H1_mirnov_array_1_coil_1]
+ data_fetcher = pyfusion.acquisition.H1.fetch.H1TimeseriesDataFetcher
+ mds_tree = H1DATA
+ mds_path = .operations.mirnov:a14_14:input_1
+ coords_cylindrical = 1.114, 0.7732, 0.355
+ coord_transform = H1_mirnov
+ 
+ [Diagnostic:H1_mirnov_array_1_coil_2]
+ data_fetcher = pyfusion.acquisition.H1.fetch.H1TimeseriesDataFetcher
+ mds_tree = H1DATA
+ mds_path = .operations.mirnov:a14_14:input_2
+ coords_cylindrical = 1.185, 0.7732, 0.289
+ coord_transform = H1_mirnov
+ 
+ [Diagnostic:H1_mirnov_array_1_coil_3]
+ data_fetcher = pyfusion.acquisition.H1.fetch.H1TimeseriesDataFetcher
+ mds_tree = H1DATA
+ mds_path = .operations.mirnov:a14_14:input_3
+ coords_cylindrical = 1.216, 0.7732, 0.227
+ coord_transform = H1_mirnov
+ 
+ [Diagnostic:H1_mirnov_array_1]
+ data_fetcher = pyfusion.acquisition.base.MultiChannelFetcher
+ channel_1 = H1_mirnov_array_1_coil_1
+ channel_2 = H1_mirnov_array_1_coil_2
+ channel_3 = H1_mirnov_array_1_coil_3
+
+
+
+
+There are two types of sections in this file: there is one `special` section ([global]) and several `component` sections (the others).
+  .. ********** EDIT LINE ***********
+
+
 
 The sections in the configuration (except for [variabletypes]) file have the syntax
 [Component:name], where Component is one of: Acquisition, Device,
@@ -17,7 +68,7 @@ the ``[Device:my_device]`` configuration section, and
 database configuration setting with ``sqlite://`` (a temporary in-memory database).  
 
 
-The pyfusion configuration parser is a simple subclass of the `standard
+The pyfusion configuration parser :class:`pyfusion.conf.PyfusionConfigParser` is a simple subclass of the `standard
 python configparser
 <http://docs.python.org/library/configparser.html>`_, for example, to
 see the configuration sections, type::

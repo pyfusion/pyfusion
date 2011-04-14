@@ -5,6 +5,9 @@
 Pyfusion documentation
 ======================
 
+:Release: |version|
+:Date: |today|
+
 Introduction
 ============
 

@@ -9,6 +9,7 @@ version 0.5
 version 0.6
 -----------
 
+* signal amplitudes able to be extracted from flucstrucs
 * metadata API
 * clustering interface
 * capability for efficient I/O (text file?) while doing (multi-process) pre-processing, and put back into sql asynchronously.

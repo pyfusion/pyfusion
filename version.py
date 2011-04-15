@@ -1,5 +1,5 @@
 """
-Current Fabric version constant plus version pretty-print method.
+Current pyfusion version constant plus version pretty-print method.
 
 Code copied from Fabric:
    https://github.com/bitprophet/fabric/raw/master/fabric/version.py

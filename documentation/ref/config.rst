@@ -1,7 +1,7 @@
 .. _config-files:
 
-Pyfusion configuration files
-""""""""""""""""""""""""""""
+Configuration files
+"""""""""""""""""""
 
 Overview
 --------
@@ -52,8 +52,9 @@ Pyfusion uses simple text files to store information such as data acquisition se
 
 
 
-There are two types of sections in this file: there is one `special` section ([global]) and several `component` sections (the others).
-  .. ********** EDIT LINE ***********
+There are two types of sections in this file: there is one `special` section (global) and several `component` sections (e.g. Device:H1, Acquisition:MDS_h1, CoordTransform:H1_mirnov, etc.)
+
+  .. ********** EDIT LINE.  ***********
 
 
 

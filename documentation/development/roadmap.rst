@@ -13,6 +13,7 @@ version 0.6
 * metadata API
 * clustering interface
 * capability for efficient I/O (text file?) while doing (multi-process) pre-processing, and put back into sql asynchronously.
+* allow separate configuration files for different devices, etc.
 
 version 0.7
 -----------

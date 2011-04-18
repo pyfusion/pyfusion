@@ -25,6 +25,7 @@ Reference
    :maxdepth: 2
 
    ref/index
+   modules/modules
 
 Development
 -----------
@@ -41,4 +42,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

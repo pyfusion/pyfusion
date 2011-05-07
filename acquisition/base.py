@@ -12,7 +12,7 @@ from pyfusion.data.base import ChannelList
 class BaseAcquisition(object):
     """Base class for datasystem specific Acquisition classes.
 
-    :param   config_name:  name   of  acquisition   as   specified  in
+    :param   config_name:  name   of  acquisition   as  specified in\
     configuration file.
 
     On  instantiation, the  pyfusion configuration  is searched  for a

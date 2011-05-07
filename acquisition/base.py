@@ -12,7 +12,8 @@ from pyfusion.data.base import ChannelList
 class BaseAcquisition(object):
     """Base class for datasystem specific Acquisition classes.
 
-    :param config_name: name of acquisition as specified in configuration file.    
+    :param   config_name:  name   of  acquisition   as   specified  in
+    configuration file.
 
     On  instantiation, the  pyfusion configuration  is searched  for a
     ``[Acquisition:config_name]``   section.   The  contents   of  the
@@ -30,7 +31,8 @@ class BaseAcquisition(object):
      >>> print(my_acq.server)
      my.dataserver.com
 
-    The configuration entries can be overridden with keyword arguments::
+    The   configuration  entries  can   be  overridden   with  keyword
+    arguments::
 
      >>> my_other_acq = BaseAcquisition('my_custom_acq', server='your.data.net')
      >>> print(my_other_acq)
@@ -139,16 +141,45 @@ class BaseDataFetcher(object):
         return data
 
 class MultiChannelFetcher(BaseDataFetcher):
-    """... for timeseries..."""
+    """Fetch data from a diagnostic with multiple timeseries channels.
+
+    This fetcher requres a multichannel configuration section such as::
+
+     [Diagnostic:H1_mirnov_array_1]
+     data_fetcher = pyfusion.acquisition.base.MultiChannelFetcher
+     channel_1 = H1_mirnov_array_1_coil_1
+     channel_2 = H1_mirnov_array_1_coil_2
+     channel_3 = H1_mirnov_array_1_coil_3
+     channel_4 = H1_mirnov_array_1_coil_4
+
+    The channel names must be  `channel\_` followed by an integer, and
+    the channel values must correspond to other configuration sections
+    (for       example      ``[Diagnostic:H1_mirnov_array_1_coil_1]``,
+    ``[Diagnostic:H1_mirnov_array_1_coil_1]``, etc)  which each return
+    a           single          channel           instance          of
+    :py:class:`~pyfusion.data.timeseries.TimeseriesData`.
+    """
     def ordered_channel_names(self):
+        """Get an ordered list of the channel names in the diagnostic
+
+        :rtype: list
+        """
         channel_list = []
         for k in self.__dict__.keys():
             if k.startswith('channel_'):
-                channel_list.append([int(k.split('channel_')[1]), self.__dict__[k]])
+                channel_list.append(
+                    [int(k.split('channel_')[1]), self.__dict__[k]]
+                    )
         channel_list.sort()
         return [i[1] for i in channel_list]
     
     def fetch(self):
+        """Fetch each channel and combine into a multichannel instance
+        of :py:class:`~pyfusion.data.timeseries.TimeseriesData`.
+
+        :rtype: :py:class:`~pyfusion.data.timeseries.TimeseriesData`
+        """
+ 
         ## initially, assume only single channel signals
         ordered_channel_names = self.ordered_channel_names()
         data_list = []

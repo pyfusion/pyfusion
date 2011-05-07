@@ -7,7 +7,7 @@ from pyfusion.conf.utils import get_config_as_dict, import_from_str
 from pyfusion.utils.debug import equal_except_for
 from pyfusion.acquisition.utils import getAcquisition
 from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
-from pyfusion.acquisition.base import BaseDataFetcher, DataFetcher
+from pyfusion.acquisition.base import BaseDataFetcher
 
 # Add new acquisition modules here for basic module structure test
 acquisition_modules = ['FakeData']#, 'MDSPlus']
@@ -101,9 +101,6 @@ class DummyFetcher(BaseDataFetcher):
 
 class CheckDataFetchers(PfTestBase):
     """test DataFetcher subclasses for fake data acquisition."""
-
-    def test_base_classes(self):
-        self.assertTrue(BaseDataFetcher in DataFetcher.__bases__)
 
     def test_setup_pulldown(self):
         dummy_shot_number = 12345

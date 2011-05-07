@@ -1,18 +1,41 @@
-"""Base classes for pyfusion data acquisition."""
+"""Base classes for pyfusion data acquisition. It is expected that the
+base classes in this module  will not be called explicitly, but rather
+inherited by subclasses in the acquisition sub-packages.
+
+"""
 from numpy.testing import assert_array_almost_equal
-from pyfusion.conf.utils import import_setting, kwarg_config_handler, get_config_as_dict, import_from_str
+from pyfusion.conf.utils import import_setting, kwarg_config_handler, \
+     get_config_as_dict, import_from_str
 from pyfusion.data.timeseries import Signal, Timebase, TimeseriesData
 from pyfusion.data.base import ChannelList
 
 class BaseAcquisition(object):
-    """Base class for data acquisition.
+    """Base class for datasystem specific Acquisition classes.
 
-    Usage: BaseAcquisition(acq_name, **kwargs)
-    
-    Arguments:
-    acq_name -- name of acquisition as specified in configuration file.
+    :param config_name: name of acquisition as specified in configuration file.    
 
-    Keyword arguments can be used to override configuration settings.
+    On  instantiation, the  pyfusion configuration  is searched  for a
+    ``[Acquisition:config_name]``   section.   The  contents   of  the
+    configuration section  are loaded into the  object namespace.  For
+    example, a configuration section::
+
+      [Acquisition:my_custom_acq]
+      acq_class = pyfusion.acquisition.base.BaseAcquisition
+      server = my.dataserver.com
+ 
+    will result in the following behaviour::
+
+     >>> from pyfusion.acquisition.base import BaseAcquisition
+     >>> my_acq = BaseAcquisition('my_custom_acq')
+     >>> print(my_acq.server)
+     my.dataserver.com
+
+    The configuration entries can be overridden with keyword arguments::
+
+     >>> my_other_acq = BaseAcquisition('my_custom_acq', server='your.data.net')
+     >>> print(my_other_acq)
+     your.data.net
+
     """
     def __init__(self, config_name=None, **kwargs):
         if config_name != None:
@@ -22,13 +45,31 @@ class BaseAcquisition(object):
     def getdata(self, shot, config_name=None, **kwargs):
         """Get the data and return prescribed subclass of BaseData.
         
-        usage: getdata(shot, config_name=None, **kwargs)
-        shot is required (first argument)
-        optional second argument config_name to read in from config
-        file
+        :param shot: shot number
+        :param config_name: name of a fetcher class in the configuration file
+        :returns: an instance of a subclass of \
+        :py:class:`~pyfusion.data.base.BaseData` or \
+        :py:class:`~pyfusion.data.base.BaseDataSet`
 
-        'fetcher_class' must be either in referenced config file or in
-        keyword args
+        This method needs to know  which data fetcher class to use, if
+        a    config_name    argument     is    supplied    then    the
+        ``[Diagnostic:config_name]``   section  must   exist   in  the
+        configuration  file  and   contain  a  ``data_fetcher``  class
+        specification, for example::
+
+         [Diagnostic:H1_mirnov_array_1_coil_1]
+         data_fetcher = pyfusion.acquisition.H1.fetch.H1TimeseriesDataFetcher
+         mds_tree = H1DATA
+         mds_path = .operations.mirnov:a14_14:input_1
+         coords_cylindrical = 1.114, 0.7732, 0.355
+         coord_transform = H1_mirnov
+
+        If  a  ``data_fetcher``   keyword  argument  is  supplied,  it
+        overrides the configuration file specification.
+
+        The  fetcher  class is  instantiated,  including any  supplied
+        keyword arguments,  and the result of the  ``fetch`` method of
+        the fetcher class is returned.
         """
         from pyfusion import config
         # if there is a data_fetcher arg, use that, otherwise get from config
@@ -39,50 +80,63 @@ class BaseAcquisition(object):
                                                config_name,
                                                'data_fetcher')
         fetcher_class = import_from_str(fetcher_class_name)
-        return fetcher_class(self, shot, config_name=config_name, **kwargs).fetch()
-        """
-        fetcher_args = {}
-        if config_name != None:
-            fetcher_args.update(get_config_as_dict('Diagnostic', config_name))
-        fetcher_args.update(kwargs)
-        
-        try:
-            fetcher_class_str = fetcher_args.pop('data_fetcher')
-            fetcher_class = import_from_str(fetcher_class_str)
-        except KeyError:
-            print "getdata requires 'fetcher_class' defined in either config or keyword arguments"
-            raise
-        return fetcher_class(shot, **fetcher_args).fetch()
-        """
+        return fetcher_class(self, shot,
+                             config_name=config_name, **kwargs).fetch()
         
 class BaseDataFetcher(object):
-    """Takes diagnostic/channel data and returns data object."""
-    def __init__(self, acq, shot, config_name=None,**kwargs):
+    """Base  class  providing  interface  for fetching  data  from  an
+    experimental database.
+    
+    :param acq: in instance of a subclass of :py:class:`BaseAcquisition`
+    :param shot: shot number
+    :param config_name: name of a Diagnostic configuration section.
+    
+    It is  expected that subclasses of BaseDataFetcher  will be called
+    via  the :py:meth:`~BaseAcquisition.getdata`  method,  which calls
+    the data fetcher's :py:meth:`fetch` method. 
+    """
+    def __init__(self, acq, shot, config_name=None, **kwargs):
         self.shot = shot
         self.acq = acq
         if config_name != None:
             self.__dict__.update(get_config_as_dict('Diagnostic', config_name))
         self.__dict__.update(kwargs)
     def setup(self):
+        """Called by :py:meth:`fetch` before retrieving the data."""
         pass
     def do_fetch(self):
+        """Actually fetches the data, using the environment set up by :py:meth:`setup`
+
+        :returns: an instance of a subclass of \
+        :py:class:`~pyfusion.data.base.BaseData` or \
+        :py:class:`~pyfusion.data.base.BaseDataSet`
+
+        Although  :py:meth:`BaseDataFetcher.do_fetch` does  not return
+        any  data object itself,  it is  expected that  a `do_fetch()`
+        method on a subclass of :py:class:`BaseDataFetcher` will.
+        """
         pass
     def pulldown(self):
+        """Called by :py:meth:`fetch` after retrieving the data."""
         pass
     def fetch(self):
+        """Always use this to fetch the data, so that :py:meth:`setup`
+        and :py:meth:`pulldown`  are used to  setup and pull  down the
+        environmet used by :py:meth:`do_fetch`.
+        
+        :returns: the instance of a subclass of \
+        :py:class:`~pyfusion.data.base.BaseData` or \
+        :py:class:`~pyfusion.data.base.BaseDataSet` returned by \
+        :py:meth:`do_fetch`
+        """        
         self.setup()
         data = self.do_fetch()
         data.meta.update({'shot':self.shot})
-        ## Coords shouldn't be fetched for BaseData (they are required
-        ## for TimeSeries)
+        # Coords shouldn't be fetched for BaseData (they are required
+        # for TimeSeries)
         #data.coords.load_from_config(**self.__dict__)
         self.pulldown()
         return data
-
-class DataFetcher(BaseDataFetcher):
-    """No difference yet between this an BaseDataFetcher"""
-    def fetch(self):
-        pass
 
 class MultiChannelFetcher(BaseDataFetcher):
     """... for timeseries..."""

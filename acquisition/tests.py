@@ -10,7 +10,7 @@ from pyfusion.acquisition.FakeData.acq import FakeDataAcquisition
 from pyfusion.acquisition.base import BaseDataFetcher
 
 # Add new acquisition modules here for basic module structure test
-acquisition_modules = ['FakeData']#, 'MDSPlus']
+acquisition_modules = ['FakeData']
 
 from pyfusion.test.tests import PfTestBase
 

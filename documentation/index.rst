@@ -25,7 +25,7 @@ Reference
    :maxdepth: 2
 
    ref/index
-   modules/modules
+
 
 Development
 -----------

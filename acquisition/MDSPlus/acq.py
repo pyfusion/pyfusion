@@ -15,14 +15,6 @@ class MDSPlusAcquisition(BaseAcquisition):
 
     def __del__(self):
         self._Data.execute("mdsdisconnect()")
-    """
-    # shouldn't need this, as BaseAcquisition now passes itself to
-    #    data fetcher
-    def getdata(self, shot, *args, **kwargs):
-        kwargs.update({'_Data':self._Data})
-        return super(MDSPlusAcquisition, self).getdata(shot,*args, **kwargs)
-    """
-
 
 class MDSPlusLocalAcquisition(BaseAcquisition):
     pass

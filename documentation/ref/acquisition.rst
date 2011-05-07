@@ -1,68 +1,61 @@
-Data Acquisition
-================
-
-Data acquisition in pyfusion is handled by two classes, an Acquisition
-class which allows persistent connection to a data acquisition system
-(e.g. MDSPlus), and a DataFetcher which is used by the Acquisition
-class to fetch data from the data acquisition system and return a Data
-instance. 
+:mod:`acquisition` -- data acquisition 
+======================================
 
 
-The acquisition class should be a device-specific subclass of
-pyfusion.acquisition.base.BaseAcquisition. In general, the acquisition
-class will be accessed through a configured device class::
+.. automodule:: pyfusion.acquisition
 
-  my_device = Device('my_configured_device')
-  my_data = my_device.acquisition.getdata(12345, 'my_diagnostic')
+Base classes
+------------
 
-Here, my_device is an instance of Device, my_device.acquisition is an
-instance of an Acquisition class, and getdata is a method of the
-Acquisition class which returns a Data instance. 
+.. autoclass:: pyfusion.acquisition.base.BaseAcquisition
+   :members:
+.. autoclass:: pyfusion.acquisition.base.BaseDataFetcher
+   :members:
+.. autoclass:: pyfusion.acquisition.base.MultiChannelFetcher
+   :members:
 
-In this example, when Device is instantiated pyfusion will look in the
-configuration file section [Device:my_configured_device] and read the
-acquisition setting (acq_name), for example::
+Sub-packages for specific data sources
+--------------------------------------
 
-  [Device:my_configured_device]
-  acq_name = my_test_acq
+Custom       subclasses       :class:`~base.BaseAcquisition`       and
+:class:`~base.BaseDataFetcher`  classes  are  contained  in  dedicated
+sub-packages. Each sub-package has the structure::
 
+ subpkg/
+       __init__.py
+       acq.py
+       fetch.py
 
-  [Acquisition:my_test_acq]
-  acq_class = pyfusion.acquisition.fakedata.FakeDataAcquistion
-  example_param_1 = example_setting_1  
-  example_param_2 = example_setting_2  
+with       :mod:`acq.py`      containing      a       subclass      of
+:class:`~base.BaseAcquisition`   and   :mod:`fetch.py`  containing   a
+subclass of :class:`~base.BaseDataFetcher`.
 
+:mod:`MDSPlus`
+^^^^^^^^^^^^^^
 
-In this case, FakeDataAcquistion is instantiated with parameters
-example_param_1, example_param_2, and is attached to the my_device at
-my_device.acquisition. Note that for any class, such as Device here, which
-is instantiated with configuration settings, keyword arguments can be
-used to override the configuration file settings. For example, using
-``Device('my_configured_device', acquisition='some_other_acq')`` would instead
-attach an acquisition object defined in the
-``[Acquisition:some_other_acq]`` section of the configuration file.
+.. automodule:: pyfusion.acquisition.MDSPlus
 
+:mod:`H1`
+^^^^^^^^^
 
+.. automodule:: pyfusion.acquisition.H1
 
-The acquisition class allows for a persistent connection to a data
-acquisition system. To access data, we call the ``getdata`` method with 2
-arguments [#getdataargs]_, the shot number and the name of a
-configured diagnostic. An example diagnostic configuration here might
-be::
+:mod:`LHD`
+^^^^^^^^^^
 
-  [Diagnostic:my_diagnostic]
-  data_fetcher = pyfusion.acquisition.fakedata.SingleChannelSineDF
-  sample_freq = 1.e6
-  n_samples = 1000
-  t0 = 0.0
+.. automodule:: pyfusion.acquisition.LHD
 
-When getdata(12345, 'my_diagnostic') is called, the acquisition class
-will look to the config file for the ``[Diagnostic:my_diagnostic]``
-section, and use the specified data fetcher class to return a data instance. 
+:mod:`DSV`
+^^^^^^^^^^
 
+.. automodule:: pyfusion.acquisition.DSV
 
-.. rubric:: Footnotes
+:mod:`FakeData`
+^^^^^^^^^^^^^^^
+
+.. automodule:: pyfusion.acquisition.FakeData
 
 
-.. [#getdataargs] Two non-keyword arguments - additional keyword arguments which override configuration settings are allowed.
+
+
 

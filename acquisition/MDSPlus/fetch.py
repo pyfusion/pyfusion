@@ -35,6 +35,7 @@ class MDSPlusTimeseriesDataFetcher(MDSPlusBaseDataFetcher):
                                      #coords=[coords])
         output_data.meta.update({'shot':self.shot})
         return output_data
+
 class MDSPlusDataFetcher(MDSPlusBaseDataFetcher):
     pass
 

@@ -1,4 +1,4 @@
-""" delimiter-separated values (DSV) acquisition (e.g. CSV)."""
+"""Acquisition class for delimiter-separated values (DSV) (e.g. CSV)."""
 
 from pyfusion.acquisition.base import BaseAcquisition
 

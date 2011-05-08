@@ -43,6 +43,7 @@ class CheckH1MirnovCoords(H1DevTestCase):
     def test_single_mirnov_channel_kappah_from_metadata(self):
         h1test = pyfusion.getDevice('H1')
         shot_kh = (58073, 0.74)
+        # TODO: why doesn't this work with thick client??
         data = h1test.acq.getdata(shot_kh[0],
                                   'H1_mirnov_array_1_coil_1')
         #self.assertAlmostEqual(data.coordinates[0].magnetic(), data.coordinates[0].magnetic(kh=shot_kh[1]))        
@@ -69,7 +70,7 @@ class CheckH1Device(H1DevTestCase):
     def test_load_h1(self):
         from pyfusion.devices.base import Device
         from pyfusion.devices.H1.device import H1
-
+    
         self.assertTrue(issubclass(H1, Device))
         
     def test_getdevice(self):
@@ -96,4 +97,4 @@ class CheckGetH1Device(PfTestBase):
     def test_getDevice_from_pf(self):
         device = pyfusion.getDevice("H1")
 
-CheckGetH1Device.dev = True
+CheckGetH1Device.dev = False

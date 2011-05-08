@@ -1,39 +1,37 @@
 """MDSPlus data fetchers. """
 
-from pyfusion.acquisition.MDSPlus.fetch import MDSPlusBaseDataFetcher, MDSPlusLocalBaseDataFetcher
+#from pyfusion.acquisition.MDSPlus.fetch import MDSPlusBaseDataFetcher, MDSPlusLocalBaseDataFetcher
+from pyfusion.acquisition.MDSPlus.fetch import MDSPlusDataFetcher
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
 from pyfusion.data.base import Coords, Channel, ChannelList, get_coords_for_channel
-def get_kh(mds_data):
-    try:
-        imain2 = mds_data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':'.operations.magnetsupply.lcu.setup_main.i2'})
-        isec2 = mds_data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':'.operations.magnetsupply.lcu.setup_sec.i2'})
-        return float(isec2/imain2)
-    except:
-        return None
 
-class H1TimeseriesDataFetcher(MDSPlusBaseDataFetcher):
+class H1DataFetcher(MDSPlusDataFetcher):
     """ subclass of mds fetcher which grabs kh config data"""
 
     def do_fetch(self):
-        data = self.acq._Data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':self.mds_path})
-        timebase = self.acq._Data.execute("mdsvalue('dim_of(%(mds_path)s)')" %{'mds_path':self.mds_path})
+        output_data = super(H1DataFetcher, self).do_fetch()
         coords = get_coords_for_channel(**self.__dict__)
         ch = Channel(self.mds_path, coords)
-        output_data = TimeseriesData(timebase=Timebase(timebase.value),
-                                     signal=Signal(data.value), channels=ch)
-        output_data.meta.update({'shot':self.shot, 'kh':get_kh(self.acq._Data)})
+        output_data.channels = ch
+        output_data.meta.update({'shot':self.shot, 'kh':self.get_kh()})
         return output_data
 
-class H1LocalTimeseriesDataFetcher(MDSPlusLocalBaseDataFetcher):
-    """ subclass of mds fetcher which grabs kh config data"""
-
-    def do_fetch(self):
-        data = self.tree.getNode(self.mds_path)
-        timebase = data.dim_of().data()
-        coords = get_coords_for_channel(**self.__dict__)
-        ch = Channel(self.mds_path, coords)
-        output_data = TimeseriesData(timebase=Timebase(timebase),
-                                     signal=Signal(data.data()), channels=ch)
-        output_data.meta.update({'shot':self.shot})
-        return output_data
+    def get_kh(self):
+        imain2_path = '.operations.magnetsupply.lcu.setup_main.i2'
+        isec2_path = '.operations.magnetsupply.lcu.setup_sec.i2'
+        if self.is_thin_client:
+            try:
+                imain2 = self.acq.connection.get(imain2_path)
+                isec2 = self.acq.connection.get(isec2_path)
+                return float(isec2/imain2)
+            except:
+                return None
+        else:
+            try:
+                imain2 = self.tree.getNode(imain2_path)
+                isec2 = self.tree.getNode(isec2_path)
+                return float(isec2/imain2)
+            except:
+                return None
+        
 

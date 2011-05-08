@@ -35,10 +35,21 @@ subclass of :class:`~base.BaseDataFetcher`.
 
 .. automodule:: pyfusion.acquisition.MDSPlus
 
+Classes
+"""""""
+.. autoclass:: pyfusion.acquisition.MDSPlus.acq.MDSPlusAcquisition
+
+.. autoclass:: pyfusion.acquisition.MDSPlus.fetch.MDSPlusDataFetcher
+
 :mod:`H1`
 ^^^^^^^^^
 
 .. automodule:: pyfusion.acquisition.H1
+
+Classes
+"""""""
+.. autoclass:: pyfusion.acquisition.H1.fetch.H1DataFetcher
+
 
 :mod:`LHD`
 ^^^^^^^^^^

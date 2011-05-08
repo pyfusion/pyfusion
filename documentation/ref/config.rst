@@ -23,23 +23,20 @@ Pyfusion uses simple text files to store information such as data acquisition se
  magnetic = pyfusion.devices.H1.coords.MirnovKhMagneticCoordTransform
  
  [Diagnostic:H1_mirnov_array_1_coil_1]
- data_fetcher = pyfusion.acquisition.H1.fetch.H1TimeseriesDataFetcher
- mds_tree = H1DATA
- mds_path = .operations.mirnov:a14_14:input_1
+ data_fetcher = pyfusion.acquisition.H1.fetch.H1DataFetcher
+ mds_path = \h1data::top.operations.mirnov:a14_14:input_1
  coords_cylindrical = 1.114, 0.7732, 0.355
  coord_transform = H1_mirnov
  
  [Diagnostic:H1_mirnov_array_1_coil_2]
- data_fetcher = pyfusion.acquisition.H1.fetch.H1TimeseriesDataFetcher
- mds_tree = H1DATA
- mds_path = .operations.mirnov:a14_14:input_2
+ data_fetcher = pyfusion.acquisition.H1.fetch.H1DataFetcher
+ mds_path = \h1data::top.operations.mirnov:a14_14:input_2
  coords_cylindrical = 1.185, 0.7732, 0.289
  coord_transform = H1_mirnov
  
  [Diagnostic:H1_mirnov_array_1_coil_3]
- data_fetcher = pyfusion.acquisition.H1.fetch.H1TimeseriesDataFetcher
- mds_tree = H1DATA
- mds_path = .operations.mirnov:a14_14:input_3
+ data_fetcher = pyfusion.acquisition.H1.fetch.H1DataFetcher
+ mds_path = \h1data::top.operations.mirnov:a14_14:input_3
  coords_cylindrical = 1.216, 0.7732, 0.227
  coord_transform = H1_mirnov
  

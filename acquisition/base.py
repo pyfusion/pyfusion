@@ -1,5 +1,5 @@
-"""Base classes for pyfusion data acquisition. It is expected that the
-base classes in this module  will not be called explicitly, but rather
+"""Base classes for  pyfusion data acquisition. It is  expected that the
+base classes  in this module will  not be called  explicitly, but rather
 inherited by subclasses in the acquisition sub-packages.
 
 """
@@ -15,9 +15,9 @@ class BaseAcquisition(object):
     :param   config_name:  name   of  acquisition   as  specified in\
     configuration file.
 
-    On  instantiation, the  pyfusion configuration  is searched  for a
-    ``[Acquisition:config_name]``   section.   The  contents   of  the
-    configuration section  are loaded into the  object namespace.  For
+    On  instantiation,  the pyfusion  configuration  is  searched for  a
+    ``[Acquisition:config_name]``   section.    The   contents  of   the
+    configuration  section are  loaded into  the object  namespace.  For
     example, a configuration section::
 
       [Acquisition:my_custom_acq]
@@ -31,8 +31,7 @@ class BaseAcquisition(object):
      >>> print(my_acq.server)
      my.dataserver.com
 
-    The   configuration  entries  can   be  overridden   with  keyword
-    arguments::
+    The configuration entries can be overridden with keyword arguments::
 
      >>> my_other_acq = BaseAcquisition('my_custom_acq', server='your.data.net')
      >>> print(my_other_acq)
@@ -53,25 +52,24 @@ class BaseAcquisition(object):
         :py:class:`~pyfusion.data.base.BaseData` or \
         :py:class:`~pyfusion.data.base.BaseDataSet`
 
-        This method needs to know  which data fetcher class to use, if
-        a    config_name    argument     is    supplied    then    the
-        ``[Diagnostic:config_name]``   section  must   exist   in  the
-        configuration  file  and   contain  a  ``data_fetcher``  class
+        This method needs to know which  data fetcher class to use, if a
+        config_name      argument     is      supplied      then     the
+        ``[Diagnostic:config_name]``   section   must   exist   in   the
+        configuration   file  and   contain  a   ``data_fetcher``  class
         specification, for example::
 
          [Diagnostic:H1_mirnov_array_1_coil_1]
-         data_fetcher = pyfusion.acquisition.H1.fetch.H1TimeseriesDataFetcher
-         mds_tree = H1DATA
-         mds_path = .operations.mirnov:a14_14:input_1
+         data_fetcher = pyfusion.acquisition.H1.fetch.H1DataFetcher
+         mds_path = \h1data::top.operations.mirnov:a14_14:input_1
          coords_cylindrical = 1.114, 0.7732, 0.355
          coord_transform = H1_mirnov
 
-        If  a  ``data_fetcher``   keyword  argument  is  supplied,  it
-        overrides the configuration file specification.
+        If a ``data_fetcher`` keyword argument is supplied, it overrides
+        the configuration file specification.
 
-        The  fetcher  class is  instantiated,  including any  supplied
-        keyword arguments,  and the result of the  ``fetch`` method of
-        the fetcher class is returned.
+        The  fetcher  class  is  instantiated,  including  any  supplied
+        keyword arguments, and the result of the ``fetch`` method of the
+        fetcher class is returned.
         """
         from pyfusion import config
         # if there is a data_fetcher arg, use that, otherwise get from config
@@ -86,16 +84,16 @@ class BaseAcquisition(object):
                              config_name=config_name, **kwargs).fetch()
         
 class BaseDataFetcher(object):
-    """Base  class  providing  interface  for fetching  data  from  an
+    """Base  class  providing  interface   for  fetching  data  from  an
     experimental database.
     
     :param acq: in instance of a subclass of :py:class:`BaseAcquisition`
     :param shot: shot number
     :param config_name: name of a Diagnostic configuration section.
     
-    It is  expected that subclasses of BaseDataFetcher  will be called
-    via  the :py:meth:`~BaseAcquisition.getdata`  method,  which calls
-    the data fetcher's :py:meth:`fetch` method. 
+    It is expected that subclasses of BaseDataFetcher will be called via
+    the :py:meth:`~BaseAcquisition.getdata` method, which calls the data
+    fetcher's :py:meth:`fetch` method.
     """
     def __init__(self, acq, shot, config_name=None, **kwargs):
         self.shot = shot
@@ -107,23 +105,24 @@ class BaseDataFetcher(object):
         """Called by :py:meth:`fetch` before retrieving the data."""
         pass
     def do_fetch(self):
-        """Actually fetches the data, using the environment set up by :py:meth:`setup`
+        """Actually fetches  the data, using  the environment set  up by
+        :py:meth:`setup`
 
         :returns: an instance of a subclass of \
         :py:class:`~pyfusion.data.base.BaseData` or \
         :py:class:`~pyfusion.data.base.BaseDataSet`
 
-        Although  :py:meth:`BaseDataFetcher.do_fetch` does  not return
-        any  data object itself,  it is  expected that  a `do_fetch()`
-        method on a subclass of :py:class:`BaseDataFetcher` will.
+        Although :py:meth:`BaseDataFetcher.do_fetch` does not return any
+        data object itself, it is expected that a `do_fetch()` method on
+        a subclass of :py:class:`BaseDataFetcher` will.
         """
         pass
     def pulldown(self):
         """Called by :py:meth:`fetch` after retrieving the data."""
         pass
     def fetch(self):
-        """Always use this to fetch the data, so that :py:meth:`setup`
-        and :py:meth:`pulldown`  are used to  setup and pull  down the
+        """Always use  this to fetch the data,  so that :py:meth:`setup`
+        and  :py:meth:`pulldown` are  used to  setup and  pull  down the
         environmet used by :py:meth:`do_fetch`.
         
         :returns: the instance of a subclass of \
@@ -152,11 +151,11 @@ class MultiChannelFetcher(BaseDataFetcher):
      channel_3 = H1_mirnov_array_1_coil_3
      channel_4 = H1_mirnov_array_1_coil_4
 
-    The channel names must be  `channel\_` followed by an integer, and
-    the channel values must correspond to other configuration sections
-    (for       example      ``[Diagnostic:H1_mirnov_array_1_coil_1]``,
-    ``[Diagnostic:H1_mirnov_array_1_coil_1]``, etc)  which each return
-    a           single          channel           instance          of
+    The channel  names must be  `channel\_` followed by an  integer, and
+    the channel  values must correspond to  other configuration sections
+    (for        example       ``[Diagnostic:H1_mirnov_array_1_coil_1]``,
+    ``[Diagnostic:H1_mirnov_array_1_coil_1]``, etc)  which each return a
+    single               channel               instance               of
     :py:class:`~pyfusion.data.timeseries.TimeseriesData`.
     """
     def ordered_channel_names(self):
@@ -174,7 +173,7 @@ class MultiChannelFetcher(BaseDataFetcher):
         return [i[1] for i in channel_list]
     
     def fetch(self):
-        """Fetch each channel and combine into a multichannel instance
+        """Fetch each  channel and combine into  a multichannel instance
         of :py:class:`~pyfusion.data.timeseries.TimeseriesData`.
 
         :rtype: :py:class:`~pyfusion.data.timeseries.TimeseriesData`
@@ -188,7 +187,8 @@ class MultiChannelFetcher(BaseDataFetcher):
         meta_dict={}
         for chan in ordered_channel_names:
             fetcher_class = import_setting('Diagnostic', chan, 'data_fetcher')
-            tmp_data = fetcher_class(self.acq, self.shot, config_name=chan).fetch()
+            tmp_data = fetcher_class(self.acq, self.shot,
+                                     config_name=chan).fetch()
             channels.append(tmp_data.channels)
             meta_dict.update(tmp_data.meta)
             if timebase == None:

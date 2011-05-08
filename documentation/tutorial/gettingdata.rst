@@ -70,9 +70,8 @@ In our original example::
 the ``getdata()`` method is essentially a wrapper around the DataFetcher class which uses the configuration setting to determine which subclass of DataFetcher should be used for the specified diagnostic. Here, ``h1.acq.getdata(58133, 'H1_mirnov_array_1_coil_1')`` looks up the configuration section ``[Diagnostic:H1_mirnov_array_1_coil_1]``::
 
  [Diagnostic:H1_mirnov_array_1_coil_1]
- data_fetcher = pyfusion.acquisition.H1.fetch.H1TimeseriesDataFetcher
- mds_tree = H1DATA
- mds_path = .operations.mirnov:a14_14:input_1
+ data_fetcher = pyfusion.acquisition.H1.fetch.H1DataFetcher
+ mds_path = \h1data::top.operations.mirnov:a14_14:input_1
  coords_cylindrical = 1.114, 0.7732, 0.355
  coord_transform = H1_mirnov
 

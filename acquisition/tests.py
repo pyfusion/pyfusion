@@ -18,18 +18,20 @@ class CheckAcquisitionArgs(PfTestBase):
     """Make sure we get the same result if we use config or kwargs"""
 
     def testEqualityConfigOrArgs(self):
-        """Check that config and kwarg instantiated Acquisition classes are same."""
+        """Check that config  and kwarg instantiated Acquisition classes
+        are same."""
         acq_from_config = BaseAcquisition('test_baseacq')
         # create a BaseAcquisition instance with keyword args
         config_dict = get_config_as_dict('Acquisition', 'test_baseacq')
         acq_from_kwargs = BaseAcquisition(**config_dict)
-        # Acquistion instantiated only from keywords won't have config_name set
-        # but should otherwise be equal
-        self.assertTrue(equal_except_for(acq_from_config, acq_from_kwargs, 'config_name'))
-
+        # Acquistion   instantiated  only   from  keywords   won't  have
+        # config_name set but should otherwise be equal
+        self.assertTrue(equal_except_for(acq_from_config,
+                                         acq_from_kwargs, 'config_name'))
 
     def testAcqAttrsConfig(self):
-        """Check that config, kwarg attributes are correctly attached to object.
+        """Check that config, kwarg attributes are correctly attached to
+        object.
         
         If config is supplied, load config before kwargs.
         """
@@ -39,7 +41,8 @@ class CheckAcquisitionArgs(PfTestBase):
             self.assertTrue(hasattr(test_acq, config_arg))
         
     def testAcqAttrsConfigKwargs(self):
-        """Check that config, kwarg attributes are correctly attached to object.
+        """Check that config, kwarg attributes are correctly attached to
+        object.
         
         If config is supplied, load config before kwargs.
         """
@@ -48,7 +51,8 @@ class CheckAcquisitionArgs(PfTestBase):
         self.assertEqual(test_acq.dummy_var_1, 5)
 
     def testAcqAttrsKwargs(self):
-        """Check that config, kwarg attributes are correctly attached to object.
+        """Check that config, kwarg attributes are correctly attached to
+        object.
         
         If config is supplied, load config before kwargs.
         """
@@ -70,9 +74,10 @@ class CheckAcquisitionModules(PfTestBase):
     """Check for existence of acquisition modules."""
 
     def check_module(self, module_name):
-        import_from_str('.'.join(['pyfusion.acquisition', module_name]))
-        import_from_str('.'.join(['pyfusion.acquisition', module_name, 'acq']))
-        import_from_str('.'.join(['pyfusion.acquisition', module_name, 'fetch']))
+        path = 'pyfusion.acquisition'
+        import_from_str('.'.join([path, module_name]))
+        import_from_str('.'.join([path, module_name, 'acq']))
+        import_from_str('.'.join([path, module_name, 'fetch']))
 
     def testModules(self):
         for module_name in acquisition_modules:
@@ -95,9 +100,6 @@ class DummyFetcher(BaseDataFetcher):
             d=BaseData()
             d.meta["connected"]=False
             return d
-
-    
-    
 
 class CheckDataFetchers(PfTestBase):
     """test DataFetcher subclasses for fake data acquisition."""

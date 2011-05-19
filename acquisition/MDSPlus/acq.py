@@ -7,7 +7,13 @@ except:
     print "MDSplus python package not found"
 
 class MDSPlusAcquisition(BaseAcquisition):
-    """..."""
+    """Acquisition class for MDSplus data systems.
+
+    If a 'server' configuration  parameter is provided, a connection for
+    thin  client  access  will  be  provided.  Also,  any  configuration
+    parameters  which   end  with  '_path'  will  be   loaded  into  the
+    environment.
+    """
     def __init__(self, *args, **kwargs):
         super(MDSPlusAcquisition, self).__init__(*args, **kwargs)
 

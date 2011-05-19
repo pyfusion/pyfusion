@@ -20,7 +20,8 @@ def get_mds_signal_from_node(fetcher, node):
     signal = Signal(node.data())    
     dim = node.dim_of().data()
     # TODO: stupid hack,  the test signal has dim  of [[...]], real data
-    # has [...]. Figure out why.
+    # has [...].  Figure out  why. (...probably because  original signal
+    # uses a build_signal function)
     if len(dim) == 1:
         dim = dim[0]
     timebase = Timebase(dim)
@@ -29,6 +30,8 @@ def get_mds_signal_from_node(fetcher, node):
     return output_data
 
 class MDSPlusDataFetcher(BaseDataFetcher):
+     """Determine which access mode should be used, and fetch the MDSplus data."""
+
      def setup(self):
           self.tree_from_fullpath, self.node_from_fullpath = get_tree_path(self.mds_path)
           if hasattr(self.acq, '%s_path' %self.tree_from_fullpath):
@@ -62,32 +65,3 @@ class MDSPlusDataFetcher(BaseDataFetcher):
      def pulldown(self):
           if self.is_thin_client:
                self.acq.connection.closeTree(self.tree_from_fullpath, self.shot)
-        
-"""
-class MDSPlusLocalBaseDataFetcher(BaseDataFetcher):    
-    def setup(self):
-        #self.mds_status=self.acq._Data.execute("mdsopen('%(mds_tree)s',%(shot)d)" %{'mds_tree':self.mds_tree, 'shot':self.shot})
-        #os.environ['%s_path' %(self.mds_tree.lower())] = self.acq.__getattribute__('%s_path' %(self.mds_tree.lower()))
-        self.tree = MDSplus.Tree(self.mds_tree, self.shot)
-    def pulldown(self):
-        pass
-        #self.mds_status=self.acq._Data.execute("mdsclose()")
-
-        
-class MDSPlusTimeseriesDataFetcher(MDSPlusBaseDataFetcher):
-    def do_fetch(self):
-        data = self.acq._Data.execute("mdsvalue('%(mds_path)s')" %{'mds_path':self.mds_path})
-        timebase = self.acq._Data.execute("mdsvalue('dim_of(%(mds_path)s)')" %{'mds_path':self.mds_path})
-        #coords = Coords()
-        #coords.load_from_config(**self.__dict__)
-        ch = Channel(self.mds_path, Coords('dummy', (0,0,0)))
-
-        output_data = TimeseriesData(timebase=Timebase(timebase.value),
-                                     signal=Signal(data.value), channels=ch)#,
-                                     #coords=[coords])
-        output_data.meta.update({'shot':self.shot})
-        return output_data
-
-class MDSPlusDataFetcher(MDSPlusBaseDataFetcher):
-    pass
-"""

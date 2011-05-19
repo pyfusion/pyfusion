@@ -10,7 +10,7 @@ from pyfusion.data.timeseries import Signal, Timebase, TimeseriesData
 from pyfusion.data.base import ChannelList
 
 class BaseAcquisition(object):
-    """Base class for datasystem specific Acquisition classes.
+    """Base class for datasystem specific acquisition classes.
 
     :param   config_name:  name   of  acquisition   as  specified in\
     configuration file.
@@ -34,7 +34,7 @@ class BaseAcquisition(object):
     The configuration entries can be overridden with keyword arguments::
 
      >>> my_other_acq = BaseAcquisition('my_custom_acq', server='your.data.net')
-     >>> print(my_other_acq)
+     >>> print(my_other_acq.server)
      your.data.net
 
     """

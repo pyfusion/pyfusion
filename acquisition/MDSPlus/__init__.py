@@ -3,11 +3,12 @@
 This  package depends  on  the MDSplus  python  package, available  from
 http://www.mdsplus.org/binaries/python/
 
-Pyfusion supports three modes for accessing MDSplus data:
+Pyfusion supports four modes for accessing MDSplus data:
 
  #. local
  #. thick client
  #. thin client
+ #. HTTP via a H1DS MDSplus web service
 
 The  data access  mode used  is determined  by the  mds path  and server
 variables  in the  configuration file  (or supplied  to  the acquisition
@@ -68,19 +69,40 @@ or, if a port other than the default (8000) is used::
  server = my.mdsdataserver.net:port_number
 
 
+HTTP web service access
+-----------------------
+
+The  HTTP web  service  mode uses  standard  HTTP queries  via the  H1DS
+RESTful API  to access the MDSplus  data. The server  is responsible for
+evaluating the  data and  transmits quantisation-compressed data  to the
+client over port  80.  This is especially useful if  the MDSplus data is
+behind a  firewall. The  :attr:`server` attribute will  be used  for web
+service access if it begins with `http://`, for example::
+
+ server = http://h1svr.anu.edu.au/mdsplus/
+
+The :attr:`server` attribute must be the URL component up to the MDSplus
+tree    name.   In    this    example,   the    URL    for   mds    path
+:attr:`\\\\h1data::top.operations.mirnov:a14_14:input_1`  and shot 58063
+corresponds                                                            to
+http://h1svr.anu.edu.au/mdsplus/h1data/58063/top/operations/mirnov/a14_14/input_1/
+
+
 How Pyfusion chooses the access mode
 ------------------------------------
 
-If an acquisition configuration section contains a :attr:`server` entry,
-then :class:`~acq.MDSPlusAcquisition`  will set  up a connection  to the
+If an acquisition configuration  section contains a :attr:`server` entry
+(which      does      not       start      with      http://),      then
+:class:`~acq.MDSPlusAcquisition` will  set up a connection  to the mdsip
 server when it is  instantiated. Additionally, any tree path definitions
 (local and thick client) are loaded into the runtime environment at this
 time. When a call to the data fetcher is made (via :meth:`getdata`), the
 data  fetcher uses the  full node  path (including  tree name)  from the
-configuration file.  If a matching (tree  name) :attr:`_path` variable is
+configuration file.  If a matching (tree name) :attr:`_path` variable is
 defined  for the  acquisition module,  then the  corresponding  local or
 thick client mode will be used. If  no tree path is defined then, if the
-:attr:`server`  variable is defined,  pyfusion will  attempt to  use the
-thin client mode.
+:attr:`server` variable is defined,  pyfusion will attempt to use either
+the web  services mode  (if :attr:`server` begins  with http://)  or the
+thin client mode (if :attr:`server` does not begin with http://).
 
 """

@@ -17,9 +17,15 @@ class MDSPlusAcquisition(BaseAcquisition):
     def __init__(self, *args, **kwargs):
         super(MDSPlusAcquisition, self).__init__(*args, **kwargs)
 
+        self.server_mode = None
+
         if hasattr(self, 'server'):
-            self.connection = MDSplus.Connection(self.server)
-        
+            if self.server.startswith('http'):
+                self.server_mode = 'http'
+            else:
+                self.connection = MDSplus.Connection(self.server)
+                self.server_mode = 'mds'
+                
         for attr_name, attr_value in self.__dict__.items():
             if attr_name.endswith('_path'):
                 os.environ['%s' %(attr_name)] = attr_value

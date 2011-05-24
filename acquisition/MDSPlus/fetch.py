@@ -6,17 +6,21 @@ import MDSplus
 from pyfusion.acquisition.base import BaseDataFetcher
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
 from pyfusion.data.base import Coords, ChannelList, Channel
+import pyfusion.acquisition.MDSPlus.h1ds as mdsweb
 
 mds_path_regex = re.compile(
     r'^\\(?P<tree>\w+?)::(?P<tagname>\w+?)[.|:](?P<nodepath>[\w.:]+)')
 
 def get_tree_path(path_string):
      components = mds_path_regex.search(path_string)
-     return components.group('tree'), components.group('nodepath')
+     ret_dict = {'tree':components.group('tree'),
+                 'tagname':components.group('tagname'),
+                 'nodepath':components.group('nodepath')}
+     return ret_dict
 
 def get_mds_signal_from_node(fetcher, node):
     # TODO: load actual coordinates
-    ch = Channel(fetcher.node_from_fullpath, Coords('dummy', (0,0,0)))
+    ch = Channel(fetcher.mds_path_components['nodepath'], Coords('dummy', (0,0,0)))
     signal = Signal(node.data())    
     dim = node.dim_of().data()
     # TODO: stupid hack,  the test signal has dim  of [[...]], real data
@@ -33,21 +37,25 @@ class MDSPlusDataFetcher(BaseDataFetcher):
      """Determine which access mode should be used, and fetch the MDSplus data."""
 
      def setup(self):
-          self.tree_from_fullpath, self.node_from_fullpath = get_tree_path(self.mds_path)
-          if hasattr(self.acq, '%s_path' %self.tree_from_fullpath):
-               self.tree = MDSplus.Tree(self.tree_from_fullpath, self.shot)
-               self.is_thin_client = False
+          self.mds_path_components = get_tree_path(self.mds_path)
+          if hasattr(self.acq, '%s_path' %self.mds_path_components['tree']):
+               self.tree = MDSplus.Tree(self.mds_path_components['tree'], self.shot)
+               self.fetch_mode = 'path'
+          elif self.acq.server_mode == 'mds':
+               print self.mds_path_components['tree']
+               self.acq.connection.openTree(self.mds_path_components['tree'], self.shot)
+               self.fetch_mode = 'thin client'
+          elif self.acq.server_mode == 'http':
+               self.fetch_mode = 'http'
           else:
-               self.acq.connection.openTree(self.tree_from_fullpath, self.shot)
-               self.is_thin_client = True
-
+               raise Exception('Cannot determine MDSPlus fetch mode')
 
      def do_fetch(self):
           # TODO support non-signal datatypes
-          if self.is_thin_client:
-               ch = Channel(self.tree_from_fullpath, Coords('dummy', (0,0,0)))
-               data = self.acq.connection.get(self.node_from_fullpath)
-               dim = self.acq.connection.get('dim_of(%s)' %self.node_from_fullpath)
+          if self.fetch_mode == 'thin client':
+               ch = Channel(self.mds_path_components['nodepath'], Coords('dummy', (0,0,0)))
+               data = self.acq.connection.get(self.mds_path_components['nodepath'])
+               dim = self.acq.connection.get('dim_of(%s)' %self.mds_path_components['nodepath'])
                # TODO: fix this hack (same hack as when getting signal from node)
                if len(data.shape) > 1:
                     data = np.array(data)[0,]
@@ -56,12 +64,26 @@ class MDSPlusDataFetcher(BaseDataFetcher):
                output_data = TimeseriesData(timebase=Timebase(dim), signal=Signal(data), channels=ch)
                output_data.meta.update({'shot':self.shot})
                return output_data
+
+          elif self.fetch_mode == 'http':
+               data_url = self.acq.server + '/'.join([self.mds_path_components['tree'],
+                                                      str(self.shot),
+                                                      self.mds_path_components['tagname'],
+                                                      self.mds_path_components['nodepath']])
                
+               data = mdsweb.data_from_url(data_url)
+               ch = Channel(self.mds_path_components['nodepath'], Coords('dummy', (0,0,0)))
+               t = Timebase(data.data.dim)
+               s = Signal(data.data.signal)
+               output_data = TimeseriesData(timebase=t, signal=s, channels=ch)
+               output_data.meta.update({'shot':self.shot})
+               return output_data
+
           else:
                node = self.tree.getNode(self.mds_path)
                if int(node.dtype) == 195:
                     return get_mds_signal_from_node(self, node)
 
      def pulldown(self):
-          if self.is_thin_client:
-               self.acq.connection.closeTree(self.tree_from_fullpath, self.shot)
+          if self.fetch_mode == 'thin client':
+               self.acq.connection.closeTree(self.mds_path_components['tree'], self.shot)

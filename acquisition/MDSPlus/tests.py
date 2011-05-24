@@ -198,3 +198,25 @@ class TestRefactoredMDSThick(MDSAcqTestCase):
 
 TestRefactoredMDSThick.net = True
 
+
+###
+### Tests for web interface
+### 
+
+WEBTEST_CONFIG_FILE = os.path.join(TEST_DATA_PATH, "webtest.cfg")
+
+class WebTestCase(BasePyfusionTestCase):
+    def setUp(self):
+        pyfusion.conf.utils.clear_config()
+        if pyfusion.orm_manager.IS_ACTIVE:
+            pyfusion.orm_manager.Session.close_all()
+            pyfusion.orm_manager.clear_mappers()
+        pyfusion.conf.utils.read_config(WEBTEST_CONFIG_FILE)
+
+class TestWebDataAcq(WebTestCase):
+    def test_acq(self):
+        test_device = pyfusion.getDevice("TestWebDevice")
+        test_data = test_device.acq.getdata(58063, "TestMirnovOne")
+
+TestWebDataAcq.net = True
+TestWebDataAcq.dev = True

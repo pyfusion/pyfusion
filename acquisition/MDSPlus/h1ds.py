@@ -1,9 +1,17 @@
-"""Fetch code for H1 web access"""
+"""Python module for the H1 data system.
 
-from pyfusion.acquisition.base import BaseDataFetcher
-from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
-from pyfusion.data.base import Coords, Channel
+This code works with python2 and python3.
 
+It is assumed most users will be using python2, so the general
+design pattern is
+try:
+   python2 code
+except (ImportError, etc):
+   python3 code
+
+Dependencies: numpy
+Optional: matplotlib (for plotting)
+"""
 
 try: # python2
     from urlparse import urlsplit, urlunsplit
@@ -40,13 +48,20 @@ class H1MDSData:
         self.path = path
         self.data = data
 
-class H1Signal:
+class Signal:
     def __init__(self, signal, dim, signal_units, dim_units):
         self.signal = signal
         self.signal_units = signal_units
         self.dim = dim
         self.dim_units = dim_units
 
+    def plot(self):
+        import pylab as pl
+        pl.plot(self.dim, self.signal)
+        pl.xlabel(self.dim_units)
+        pl.ylabel(self.signal_units)
+        pl.grid(True)
+        pl.show()
 
 def add_query_to_url(url, query):
     url_parts = urlsplit(url)
@@ -81,7 +96,7 @@ def signal_from_binary_url(url):
         
     s_arr = float(h['signal_min']) + float(h['signal_delta'])*np.array(d)
     dim_arr = float(h['dim_t0']) + float(h['dim_delta'])*np.arange(int(h['dim_length']), dtype=np.float32)
-    signal = H1Signal(s_arr, dim_arr, h['signal_units'], h['dim_units'])
+    signal = Signal(s_arr, dim_arr, h['signal_units'], h['dim_units'])
     return signal
 
 simple_xml_value = lambda doc, tag: doc.getElementsByTagName(tag)[0].firstChild.nodeValue
@@ -114,16 +129,32 @@ def data_from_url(url):
     data_obj = H1MDSData(shot_number, shot_time, mds_tree, mds_path, data)
     return data_obj
 
+def data_from_mds(mds_tree, mds_path, shot_number):
+    query = '?shot=%(shot)d&mds-tree=%(mds_tree)s&mds-path=%(mds_path)s' %{'shot':int(shot_number),
+                                                                          'mds_tree':mds_tree,
+                                                                          'mds_path':mds_path}
+    url = 'http://h1svr.anu.edu.au/mdsplus/request_url'+query
+    xml_doc = minidom.parse(urlopen(url))
+    mds_url_path = simple_xml_value(xml_doc, 'mds_url')
+    mds_url = 'http://h1svr.anu.edu.au'+mds_url_path
+    return data_from_url(mds_url)
 
+#############
+# Test code #
+#############
 
-class H1WebTimeSeriesDataFetcher(BaseDataFetcher):
-    def do_fetch(self):
-        data_url = '/'.join([self.acq.server, "mdsplus", self.tree, str(self.shot), self.path])
-        data = data_from_url(data_url)
-        ch = Channel(self.path, Coords('dummy', (0,0,0)))
-        t = Timebase(data.data.dim)
-        s = Signal(data.data.signal)
-        output_data = TimeseriesData(timebase=t, signal=s, channels=ch)
-        output_data.meta.update({'shot':self.shot})
-        return output_data
+def do_test():
+    #test_url = 'http://h1svr/mdsplus/h1data/58623/OPERATIONS/MIRNOV/A14_14/INPUT_2/'
+    #return data_from_url(test_url)
+    return data_from_mds('h1data', '.operations.mirnov:a14_14:input_2', 58623)
+#######################################
+# Uncomment these lines to run tests: #
+# From here...                        #
+#######################################
 
+if __name__ == "__main__":
+    test_data = do_test()
+
+#######################################
+# To here.                            #
+#######################################

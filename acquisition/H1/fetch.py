@@ -1,6 +1,7 @@
 """Subclass of MDSplus data fetcher to grab additional H1-specific metadata."""
 
-from pyfusion.acquisition.MDSPlus.fetch import MDSPlusDataFetcher
+from pyfusion.acquisition.MDSPlus.fetch import MDSPlusDataFetcher, get_tree_path
+import pyfusion.acquisition.MDSPlus.h1ds as mdsweb
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
 from pyfusion.data.base import Coords, Channel, ChannelList, \
     get_coords_for_channel
@@ -18,8 +19,8 @@ class H1DataFetcher(MDSPlusDataFetcher):
 
     def get_kh(self):
         # TODO: shouldn't need to worry about fetch mode here...
-        imain2_path = '.operations.magnetsupply.lcu.setup_main.i2'
-        isec2_path = '.operations.magnetsupply.lcu.setup_sec.i2'
+        imain2_path = '\h1data::top.operations.magnetsupply.lcu.setup_main.i2'
+        isec2_path = '\h1data::top.operations.magnetsupply.lcu.setup_sec.i2'
         if self.fetch_mode == 'thin client':
             try:
                 imain2 = self.acq.connection.get(imain2_path)
@@ -28,7 +29,25 @@ class H1DataFetcher(MDSPlusDataFetcher):
             except:
                 return None
         elif self.fetch_mode == 'http':
-            pass
+            print "http fetch of k_h disabled until supported by H1DS"
+            return -1.0
+            """
+            imain2_path_comp = get_tree_path(imain2_path)
+            isec2_path_comp = get_tree_path(isec2_path)
+            
+            imain2_url = self.acq.server + '/'.join([imain2_path_comp['tree'],
+                                                     str(self.shot),
+                                                     imain2_path_comp['tagname'],
+                                                     imain2_path_comp['nodepath']])
+            isec2_url = self.acq.server + '/'.join([isec2_path_comp['tree'],
+                                                    str(self.shot),
+                                                    isec2_path_comp['tagname'],
+                                                    isec2_path_comp['nodepath']])
+            imain2 = mdsweb.data_from_url(imain2_url)
+            isec2 = mdsweb.data_from_url(isec2_url)
+            return float(isec2/imain2)
+            """
+            
         else:
             try:
                 imain2 = self.tree.getNode(imain2_path)
@@ -37,4 +56,3 @@ class H1DataFetcher(MDSPlusDataFetcher):
             except:
                 return None
         
-

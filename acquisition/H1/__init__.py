@@ -2,5 +2,5 @@
 
 
 This subpackage  contains a subclass  of the MDSplus data  fetcher which
-gets additional H1 sepecific metadata.
+gets additional H1 specific metadata.
 """

@@ -46,7 +46,6 @@ class MDSPlusDataFetcher(BaseDataFetcher):
                                         self.shot)
                self.fetch_mode = 'path'
           elif self.acq.server_mode == 'mds':
-               print self.mds_path_components['tree']
                self.acq.connection.openTree(self.mds_path_components['tree'],
                                             self.shot)
                self.fetch_mode = 'thin client'

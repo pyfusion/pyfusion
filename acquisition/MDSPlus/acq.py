@@ -9,10 +9,10 @@ except:
 class MDSPlusAcquisition(BaseAcquisition):
     """Acquisition class for MDSplus data systems.
 
-    If a 'server' configuration  parameter is provided, a connection for
-    thin  client  access  will  be  provided.  Also,  any  configuration
-    parameters  which   end  with  '_path'  will  be   loaded  into  the
-    environment.
+    If a 'server' configuration  parameter (not starting with 'http') is
+    provided, a connection for thin client access will be set up.  Also,
+    any configuration  parameters which end with '_path'  will be loaded
+    into the environment.
     """
     def __init__(self, *args, **kwargs):
         super(MDSPlusAcquisition, self).__init__(*args, **kwargs)

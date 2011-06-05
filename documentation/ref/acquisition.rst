@@ -61,6 +61,12 @@ Classes
 
 .. automodule:: pyfusion.acquisition.DSV
 
+Classes
+"""""""
+.. autoclass:: pyfusion.acquisition.DSV.acq.DSVAcquisition
+
+.. autoclass:: pyfusion.acquisition.DSV.fetch.DSVMultiChannelTimeseriesFetcher
+
 :mod:`FakeData`
 ^^^^^^^^^^^^^^^
 

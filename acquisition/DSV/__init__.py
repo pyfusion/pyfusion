@@ -1,5 +1,13 @@
 """Acquisition module for data in a delimiter-separated value (DSV) format.
 
+================= ===========
+parameter         description
+================= ===========
+:attr:`filename`  Name of data file, with ``(shot)`` substitution string, e.g. ``/data/(shot).dat`` -> ``/data/12345.dat`` for shot 12345. (required)
+:attr:`delimiter` Delimiter character for values, e.g. ``,`` for comma separated value (CSV) format. (optional, default is whitespace)
+================= ===========
+
+
 This module provides support for reading data from a plain text file via
 numpy's genfromtxt  function. The only  required configuration parameter
 is  filename,  which  can  include  a shot  number  substitution  string

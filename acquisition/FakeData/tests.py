@@ -65,18 +65,18 @@ class CheckFakeDataFetchers(PfTestBase):
 
     def test_base_classes(self):
         from pyfusion.acquisition.base import BaseDataFetcher
-        from pyfusion.acquisition.FakeData.fetch import SingleChannelSineDF
-        self.assertTrue(BaseDataFetcher in SingleChannelSineDF.__bases__)
+        from pyfusion.acquisition.FakeData.fetch import SingleChannelSineFetcher
+        self.assertTrue(BaseDataFetcher in SingleChannelSineFetcher.__bases__)
 
     def test_singlechannelsinedf(self):
-        from pyfusion.acquisition.FakeData.fetch import SingleChannelSineDF
+        from pyfusion.acquisition.FakeData.fetch import SingleChannelSineFetcher
         n_samples = 1000
         sample_freq=1.e6
         amplitude = 1.0
         frequency = 3.e4
         t0 = 0.0
         test_shot = -1
-        output_data_fetcher = SingleChannelSineDF(None, test_shot, sample_freq=sample_freq,
+        output_data_fetcher = SingleChannelSineFetcher(None, test_shot, sample_freq=sample_freq,
                                                   n_samples=n_samples,
                                                   amplitude=amplitude,
                                                   frequency=frequency,

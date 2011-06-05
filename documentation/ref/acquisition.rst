@@ -72,6 +72,12 @@ Classes
 
 .. automodule:: pyfusion.acquisition.FakeData
 
+Classes
+"""""""
+.. autoclass:: pyfusion.acquisition.FakeData.acq.FakeDataAcquisition
+
+.. autoclass:: pyfusion.acquisition.FakeData.fetch.SingleChannelSineFetcher
+
 
 
 

@@ -7,9 +7,9 @@
 *.o
 # emacs hash filenames
 \#*
-pyfusion_database.txt
-documentation/.build
+pyfusion/pyfusion_database.txt
+pyfusion/documentation/.build
 NOTES
 
 # benchmark profile stats
-test/benchmarks/stats
+pyfusion/test/benchmarks/stats

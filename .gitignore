@@ -13,3 +13,5 @@ NOTES
 
 # benchmark profile stats
 pyfusion/test/benchmarks/stats
+
+pyfusion.egg-info

@@ -5,7 +5,7 @@ execfile(os.path.join('pyfusion','version.py'))
 setup(name='pyfusion',
       version=__version__,
       packages=['pyfusion'],
-      install_requires=['numpy', 'matplotlib', 'sqlalchemy'],
+      install_requires=['numpy', 'sqlalchemy'],
       package_data={'pyfusion':['pyfusion.cfg',
                                 os.path.join('acquisition', 'DSV', '*.dat'),
                                 os.path.join('acquisition', 'LHD', '*.npz'),

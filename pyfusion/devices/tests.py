@@ -117,5 +117,5 @@ class TestDeviceGetdata(PfTestBase):
             if not is_in_other:
                 assert False
 
-TestDeviceGetdata.dev = True
+TestDeviceGetdata.dev = False
 

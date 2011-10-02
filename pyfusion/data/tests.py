@@ -1113,3 +1113,27 @@ CheckFilterCopy.dev = False
 ## Simpler interface for flucstrucs from range of shots               ##
 ########################################################################
 
+class CheckShotFlucstrucs(PfTestBase):
+
+    def test_shot_flucstrucs(self):
+        """Just check that the number  of flucstrucs is the same whether
+        we  use flucstruc  directly on  the shot  data with  the segment
+        kwarg or whether we explicitly call the segment method.
+
+        """
+        n_samples = 90
+        dev = pyfusion.getDevice("TestDevice")
+
+        # version with explicit calls to segment:
+        explicit_data = dev.getdata(12345,"test_multichannel_timeseries_large")
+        explicit_dataset = pyfusion.data.base.DataSet()        
+        for seg in explicit_data.segment(n_samples):
+            explicit_dataset.update(seg.flucstruc())
+
+        # version using flucstruc segment shortcut
+        shortcut_flucstrucs = dev.getdata(12345,"test_multichannel_timeseries_large").flucstruc(segment=n_samples)
+        self.assertEqual(len(explicit_dataset), len(shortcut_flucstrucs))
+
+CheckShotFlucstrucs.dev = True
+
+

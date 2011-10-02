@@ -52,7 +52,7 @@ def peak_freq(signal,timebase,minfreq=0,maxfreq=1.e18):
     [minfreq_elmt,maxfreq_elmt] = searchsorted(fft_freqs,[minfreq,maxfreq])
     sig_fft = sig_fft[minfreq_elmt:maxfreq_elmt]
     fft_freqs = fft_freqs[minfreq_elmt:maxfreq_elmt]
-    
+
     peak_elmt = (argsort(abs(sig_fft)))[-1]
     return [fft_freqs[peak_elmt], peak_elmt]
 

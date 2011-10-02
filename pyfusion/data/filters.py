@@ -14,7 +14,7 @@ except:
 
 import pyfusion
 
-
+DEFAULT_SEGMENT_OVERLAP = 1.0
 
 
 def cps(a,b):
@@ -66,7 +66,7 @@ def reduce_time(input_data, new_time_range):
 
 
 @register("TimeseriesData", "DataSet")
-def segment(input_data, n_samples, overlap=1.0):
+def segment(input_data, n_samples, overlap=DEFAULT_SEGMENT_OVERLAP):
     """Break into segments length n_samples.
 
     Overlap of 2.0 starts a new segment halfway into previous, overlap=1 is
@@ -232,7 +232,8 @@ def fs_group_threshold(input_data, threshold=0.2):
     return output_fs_list
 
 @register("TimeseriesData")
-def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, method='rms', separate=True, label=None):
+def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, method='rms', separate=True, label=None, segment=0, segment_overlap=DEFAULT_SEGMENT_OVERLAP):
+    """If segment is 0, then we dont segment the data (assume already done)"""
     from pyfusion.data.base import DataSet
     from pyfusion.data.timeseries import FlucStruc
 
@@ -240,6 +241,12 @@ def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, method='rm
         fs_dataset = DataSet(label)
     else:
         fs_dataset = DataSet('flucstrucs_%s' %datetime.now())
+
+    if segment > 0:
+        for seg in input_data.segment(segment, overlap=segment_overlap):
+            fs_dataset.update(seg.flucstruc(min_dphase=min_dphase, group=group, method=method, separate=separate, label=label, segment=0))
+        return fs_dataset
+
     svd_data = input_data.subtract_mean().normalise(method, separate).svd()
 
     for fs_gr in group(svd_data):

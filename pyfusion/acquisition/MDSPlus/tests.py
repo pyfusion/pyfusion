@@ -218,5 +218,5 @@ class TestWebDataAcq(WebTestCase):
         test_device = pyfusion.getDevice("TestWebDevice")
         test_data = test_device.acq.getdata(58063, "TestMirnovOne")
 
-TestWebDataAcq.net = True
-TestWebDataAcq.dev = True
+TestWebDataAcq.net = False
+TestWebDataAcq.dev = False

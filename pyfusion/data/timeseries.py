@@ -140,6 +140,9 @@ class TimeseriesData(BaseData):
                 raise ValueError, "signal has different number of samples to timebase"
         super(TimeseriesData, self).__init__(**kwargs)
 
+    def __eq__(self, other):
+        return all([np.array_equal(self.timebase, other.timebase),
+                    np.array_equal(self.signal, other.signal)])
 
 @orm_register()
 def orm_load_timeseries_data(man):

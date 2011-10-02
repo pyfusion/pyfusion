@@ -17,3 +17,15 @@ class SingleChannelSineFetcher(BaseDataFetcher):
                                      channels=ChannelList(dummy_channel))
         output_data.meta.update({'shot':self.shot})
         return output_data
+
+class SingleChannelSineUniqueForShotFetcher(BaseDataFetcher):
+    """Data fetcher for single channel sine wave, with amplitude determined by shot number."""
+    def fetch(self):
+        tb = generate_timebase(t0=float(self.t0), n_samples=int(self.n_samples),
+                               sample_freq=float(self.sample_freq))
+        sig = Signal(float(self.shot)*sin(2*pi*float(self.frequency)*tb))
+        dummy_channel = Channel('ch_01',Coords('dummy', (0,0,0)))
+        output_data = TimeseriesData(timebase=tb, signal=sig,
+                                     channels=ChannelList(dummy_channel))
+        output_data.meta.update({'shot':self.shot})
+        return output_data

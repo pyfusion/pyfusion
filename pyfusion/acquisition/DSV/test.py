@@ -38,4 +38,4 @@ class CheckDSVAcquisition(PfTestBase):
 
         
 
-CheckDSVAcquisition.dev = True
+CheckDSVAcquisition.dev = False

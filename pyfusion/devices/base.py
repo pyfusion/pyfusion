@@ -39,6 +39,20 @@ class Device(object):
             pyfusion.logging.warning(
                 "No acquisition class specified for device")
 
+    def getdata(self, shots, diag):
+        # check if shots is an iterable (list or set of shots)
+        try:
+            iterator = iter(shots)
+        except TypeError:
+            # not iterable -- assume single shot
+            return self.acq.getdata(shots, diag)
+        else:
+            # iterable - create dataset and loop through shots
+            dataset = pyfusion.data.base.DataSet()
+            for shot in shots:
+                dataset.add(self.acq.getdata(shot, diag))
+            return dataset
+
 
 
 @orm_register()

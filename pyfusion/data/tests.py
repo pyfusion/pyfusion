@@ -728,9 +728,6 @@ class CheckFlucstrucs(PfTestBase):
             assert False
             """
 
-
-
-        
 class CheckRemoveNonContiguousFilter(PfTestBase):
 
     def test_remove_noncontiguous(self):
@@ -1110,3 +1107,9 @@ class CheckFilterCopy(PfTestBase):
 
 
 CheckFilterCopy.dev = False
+
+
+########################################################################
+## Simpler interface for flucstrucs from range of shots               ##
+########################################################################
+

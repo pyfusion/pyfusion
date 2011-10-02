@@ -76,3 +76,46 @@ class CheckGetDevice(PfTestBase):
 
     def test_getDevice_from_pf(self):
         device = pyfusion.getDevice(self.listed_device)
+
+########################################################################
+## Test Device.getdata()                                              ##
+########################################################################
+
+class TestDeviceGetdata(PfTestBase):
+    
+    def test_device_getdata_single_shot(self):
+        dev = pyfusion.getDevice("TestDevice")
+
+        # what we want...
+        expected_data = dev.acq.getdata(12345, "test_timeseries_shot_unique")
+        # what we get....
+        data = dev.getdata(12345, "test_timeseries_shot_unique")
+        self.assertEqual(expected_data, data)
+
+
+    def test_device_getdatat_multishot(self):
+        dev = pyfusion.getDevice("TestDevice")
+
+        diag = "test_timeseries_shot_unique"
+
+        shot_list = [100, 200, 300]
+
+        # expected to get a dataset with the data from each shot
+        expected_dataset = pyfusion.data.base.DataSet()
+        for shot in shot_list:
+            expected_dataset.add(dev.acq.getdata(shot, diag))
+        
+        dataset = dev.getdata(shot_list, diag)
+
+        # TODO: better checking if two datasets are same.
+        ## using sets checks if the object is same, not using __eq__ ?
+        for i in dataset:
+            is_in_other = False
+            for j in expected_dataset:
+                if i == j:
+                    is_in_other = True
+            if not is_in_other:
+                assert False
+
+TestDeviceGetdata.dev = True
+

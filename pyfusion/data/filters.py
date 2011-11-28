@@ -196,7 +196,7 @@ def fs_group_geometric(input_data, max_energy = 1.0):
 
 
 #@register("SVDData")
-def fs_group_threshold(input_data, threshold=0.2):
+def fs_group_threshold(input_data, threshold=0.7):
     """
     no filtering implemented yet
     we don't register this as a filter, because it doesn't return a Data or DataSet subclass

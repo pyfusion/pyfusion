@@ -234,7 +234,8 @@ def orm_load_basedata(man):
     man.basedata_table = Table('basedata', man.metadata,
                                Column('basedata_id', Integer, primary_key=True),
                                Column('type', String(30), nullable=False),
-                               Column('meta', PickleType(comparator=operator.eq))
+                               Column('meta', PickleType(comparator=operator.eq)),
+                               Column('history', String(30))
                                )
     #man.metadata.create_all()
     mapper(BaseData, man.basedata_table, polymorphic_on=man.basedata_table.c.type, polymorphic_identity='basedata')

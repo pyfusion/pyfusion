@@ -80,8 +80,10 @@ class BaseAcquisition(object):
                                                config_name,
                                                'data_fetcher')
         fetcher_class = import_from_str(fetcher_class_name)
-        return fetcher_class(self, shot,
+        d = fetcher_class(self, shot,
                              config_name=config_name, **kwargs).fetch()
+        d.history += "\n:: shot: %d\n:: config: %s" %(shot, config_name)
+        return d
         
 class BaseDataFetcher(object):
     """Base  class  providing  interface   for  fetching  data  from  an

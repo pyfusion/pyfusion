@@ -22,7 +22,13 @@ except ImportError:
     print "could not import sqlalchemy"
 
     
-
+def get_history_args_string(*args, **kwargs):
+    args_string = ', '.join(map(str,args))
+    if args_string is not '':
+        args_string += ', '
+    kwargs_string = ', '.join("%s='%s'" %(str(i[0]), str(i[1]))
+                              for i in kwargs.items())
+    return [args_string, kwargs_string]
 
 def history_reg_method(method):
     """Wrapper for filter and plot methods which updates the data history."""
@@ -34,11 +40,8 @@ def history_reg_method(method):
             copy_history_string = "\n%s > (copy)" %(datetime.now())
             input_data.history = original_hist + copy_history_string
         
-        args_string = ', '.join(map(str,args))
-        if args_string is not '':
-            args_string += ', '
-        kwargs_string = ', '.join("%s='%s'" %(str(i[0]), str(i[1]))
-                                  for i in kwargs.items())
+        [args_string, kwargs_string] = get_history_args_string(*args, **kwargs)
+
         history_string = "\n%s > %s(%s%s)" %(datetime.now(), method.__name__,
                                                args_string, kwargs_string)
         input_data.history += history_string
@@ -214,7 +217,7 @@ class BaseData(object):
     """
     __metaclass__ = MetaMethods
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.meta = PfMetaData()
         self.history = "%s > New %s" %(datetime.now(), self.__class__.__name__)
         if not hasattr(self, 'channels'):

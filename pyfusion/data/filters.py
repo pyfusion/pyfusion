@@ -95,6 +95,7 @@ def segment(input_data, n_samples, overlap=DEFAULT_SEGMENT_OVERLAP):
                                       channels=input_data.channels, bypass_length_check=True)
             
         tmp_data.meta = input_data.meta.copy()
+        tmp_data.history = input_data.history
         output_data.add(tmp_data)
     return output_data
 
@@ -146,13 +147,16 @@ def normalise(input_data, method='peak', separate=False):
             norm_value = atleast_2d(var_vals).T            
     input_data.signal = input_data.signal / norm_value
     #print('norm_value = %s' % norm_value)
+    input_data.history += "\n:: norm_value\n%s" %(norm_value)
     input_data.scales = norm_value
     return input_data
     
 @register("TimeseriesData")
 def svd(input_data):
     from timeseries import SVDData
-    return SVDData(input_data.timebase, input_data.channels, linalg.svd(input_data.signal, 0))
+    svddata = SVDData(input_data.timebase, input_data.channels, linalg.svd(input_data.signal, 0))
+    svddata.history = input_data.history
+    return svddata
 
 
 #@register("TimeseriesData", "SVDData")
@@ -248,10 +252,10 @@ def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, method='rm
         return fs_dataset
 
     svd_data = input_data.subtract_mean().normalise(method, separate).svd()
-
     for fs_gr in group(svd_data):
         tmp = FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase)
         tmp.meta = input_data.meta
+        tmp.history = svd_data.history
         fs_dataset.add(tmp)
     
     return fs_dataset
@@ -267,10 +271,13 @@ def subtract_mean(input_data):
         return output_dataset
     if input_data.signal.ndim == 1:
         mean_value = mean(input_data.signal)
+        input_data.history += "\n:: mean_value\n%s" %(mean_value)
     else:
         mean_vector = mean(input_data.signal, axis=1)
+        input_data.history += "\n:: mean_vector\n%s" %(mean_vector)
         mean_value = resize(repeat(mean_vector, input_data.signal.shape[1]), input_data.signal.shape)
     input_data.signal -= mean_value
+
     return input_data
 
 ###############################

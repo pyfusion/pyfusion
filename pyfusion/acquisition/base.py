@@ -187,21 +187,30 @@ class MultiChannelFetcher(BaseDataFetcher):
         channels = ChannelList()
         timebase = None
         meta_dict={}
+        if hasattr(self, 't_min') and hasattr(self, 't_max'):
+            t_range = [float(self.t_min), float(self.t_max)]
+        else:
+            t_range = []
         for chan in ordered_channel_names:
             fetcher_class = import_setting('Diagnostic', chan, 'data_fetcher')
             tmp_data = fetcher_class(self.acq, self.shot,
                                      config_name=chan).fetch()
+            if len(t_range) == 2:
+                tmp_data = tmp_data.reduce_time(t_range)
             channels.append(tmp_data.channels)
             meta_dict.update(tmp_data.meta)
             if timebase == None:
                 timebase = tmp_data.timebase
                 data_list.append(tmp_data.signal)
             else:
-                try:
-                    assert_array_almost_equal(timebase, tmp_data.timebase)
+                if hasattr(self, 'skip_timebase_check') and self.skip_timebase_check == 'true':
                     data_list.append(tmp_data.signal)
-                except:
-                    raise
+                else:
+                    try:
+                        assert_array_almost_equal(timebase, tmp_data.timebase)
+                        data_list.append(tmp_data.signal)
+                    except:
+                        raise
         signal=Signal(data_list)
         output_data = TimeseriesData(signal=signal, timebase=timebase,
                                      channels=channels)

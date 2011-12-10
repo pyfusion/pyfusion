@@ -10,4 +10,4 @@ def orm_load_heliotronjdevice(man):
     from sqlalchemy.orm import mapper
     man.heliotronjdevice_table = Table('heliotronjdevice', man.metadata, 
                             Column('basedevice_id', Integer, ForeignKey('devices.id'), primary_key=True))
-    mapper(HeliotronJ, man.heliotronjidevice_table, inherits=Device, polymorphic_identity='heliotronj')
+    mapper(HeliotronJ, man.heliotronjdevice_table, inherits=Device, polymorphic_identity='heliotronj')

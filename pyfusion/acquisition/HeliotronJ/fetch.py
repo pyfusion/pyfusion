@@ -26,7 +26,7 @@ class HeliotronJDataFetcher(BaseDataFetcher):
                                          outfile.name, outdata)
          ch = Channel(self.path,
                       Coords('dummy', (0,0,0)))
-         print max(getrets[1::2])
+
          output_data = TimeseriesData(timebase=Timebase(getrets[1::2]),
                                  signal=Signal(getrets[2::2]), channels=ch)
          output_data.meta.update({'shot':self.shot})

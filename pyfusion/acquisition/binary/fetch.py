@@ -44,3 +44,44 @@ class BinaryMultiChannelTimeseriesFetcher(BaseDataFetcher):
                               signal=Signal(signal_data),
                               channels=ch)
 
+
+class MultiFileBinaryMultiChannelTimeseriesFetcher(BaseDataFetcher):
+    """Combine multiple binary datafiles into a single timeseries data instance.
+
+    """
+
+
+    def do_fetch(self):
+        # evaluate filename list
+        try:
+            filenames = eval(self.__dict__.get("filenames", "[]"))
+        except TypeError:
+            # assume we have been given a list of filenames as a keyword argument, rather than
+            # reading the config file.
+            filenames = self.__dict__.get("filenames")
+        
+        data_array = []
+        channel_names = []
+        dtypes=[]
+        for fn_i,fn in enumerate(filenames):
+            dt = eval(self.__dict__.get("dtype_%d" %(fn_i+1),None))
+            dtypes.append(dt)
+            data_array.append(np.fromfile(fn.replace("(shot)", str(self.shot)),
+                                          dtype=dt))
+            channel_names.extend([i for i in dt.names if i.startswith('channel_')])
+        
+        ch_generator = (named_ch(i) for i in channel_names)
+        ch = ChannelList(*ch_generator)
+        
+        signal_data = np.zeros((len(channel_names),data_array[0].shape[0]),dtype=dtypes[0][channel_names[0]])
+        
+        sig_counter = 0
+        for d_i,d in enumerate(data_array):
+            for ch_name in dtypes[d_i].names:
+                if ch_name.startswith('channel_'):
+                    signal_data[sig_counter,:] = d[ch_name]
+                    sig_counter +=1
+        
+        return TimeseriesData(timebase=Timebase(data_array[0]['timebase']),
+                              signal=Signal(signal_data),
+                              channels=ch)

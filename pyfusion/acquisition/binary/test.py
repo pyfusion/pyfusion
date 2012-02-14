@@ -52,3 +52,24 @@ class CheckBinaryAcquisition(PfTestBase):
         test_acq = BinaryAcquisition()
         test_shot_number = 12345
         test_data = test_acq.getdata(test_shot_number, "test_binary_diag", filename=filename)
+
+class CheckBinaryMultiFileFetch(PfTestBase):
+    """Test the multiple-file data fetcher class."""
+
+    def test_multi_fetch(self):
+        filename_1 = os.path.join(os.path.dirname(__file__), "test_binary_shot_(shot)_1.dat")
+        filename_2 = os.path.join(os.path.dirname(__file__), "test_binary_shot_(shot)_2.dat")
+        test_acq = BinaryAcquisition()
+        test_shot_number = 12345
+        test_data = test_acq.getdata(test_shot_number, "test_binary_diag_multifile", filenames=[filename_1, filename_2])
+        
+        data = np.fromfile(filename_1.replace("(shot)", str(test_shot_number)), dtype=binary_datafile_dtype)
+        assert_array_almost_equal(data['timebase'], test_data.timebase)        
+        assert_array_almost_equal(data['channel_1'], test_data.signal[0])
+        assert_array_almost_equal(data['channel_2'], test_data.signal[1])
+
+        data = np.fromfile(filename_2.replace("(shot)", str(test_shot_number)), dtype=binary_datafile_dtype)
+        assert_array_almost_equal(data['timebase'], test_data.timebase)        
+        assert_array_almost_equal(data['channel_1'], test_data.signal[2])
+        assert_array_almost_equal(data['channel_2'], test_data.signal[3])
+        

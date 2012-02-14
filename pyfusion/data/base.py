@@ -183,6 +183,13 @@ class ChannelList(list):
             session.commit()
             session.close()
 
+    def get_channel_index(self, channel_name):
+        for i,j in enumerate(self):
+            if j.name == channel_name:
+                return i
+        else:
+            return None
+
             
     @reconstructor
     def repopulate(self):

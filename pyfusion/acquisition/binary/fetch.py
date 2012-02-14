@@ -81,7 +81,13 @@ class MultiFileBinaryMultiChannelTimeseriesFetcher(BaseDataFetcher):
                 if ch_name.startswith('channel_'):
                     signal_data[sig_counter,:] = d[ch_name]
                     sig_counter +=1
-        
-        return TimeseriesData(timebase=Timebase(data_array[0]['timebase']),
+
+        tsd = TimeseriesData(timebase=Timebase(data_array[0]['timebase']),
                               signal=Signal(signal_data),
                               channels=ch)
+        tsd.phase_pairs = self.__dict__.get("phase_pairs", None)
+        if tsd.phase_pairs != None:
+            tsd.phase_pairs = eval(tsd.phase_pairs)
+
+        return tsd
+

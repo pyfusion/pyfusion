@@ -187,7 +187,7 @@ def orm_load_svd_data(man):
 
 
 class FlucStruc(BaseData):
-    def __init__(self, svd_data, sv_list, timebase, min_dphase = -np.pi):
+    def __init__(self, svd_data, sv_list, timebase, min_dphase = -np.pi, phase_pairs = None):
         # NOTE I'd prefer not to duplicate info here which is in svd_data - should be able to refer to that, once sqlalchemy is hooked in
         #self.topo_channels = svd_data.topo_channels
         self.channels = svd_data.channels
@@ -201,7 +201,7 @@ class FlucStruc(BaseData):
         # peak frequency for fluctuation structure
         self.timebase = timebase
         self.freq, self.freq_elmt = peak_freq(svd_data.chronos[sv_list[0]], self.timebase)
-
+        self.phase_pairs = phase_pairs
         self.t0 = timebase[0]
         # singular value filtered signals
         self.signal = np.dot(np.transpose(svd_data.topos[sv_list,:]),
@@ -225,12 +225,27 @@ class FlucStruc(BaseData):
         remap to [min_dphase, min_dphase+2pi]
         """
         phases = np.array([self._get_single_channel_phase(i) for i in range(self.signal.shape[0])])
-        d_phases = remap_periodic(phases[1:]-phases[:-1], min_val = min_dphase)
+        if self.phase_pairs != None:
+            tmp = []
+            for a,b in self.phase_pairs:
+                ind_a = self.channels.get_channel_index(a)
+                ind_b = self.channels.get_channel_index(b)
+                tmp.append(phases[ind_b]-phases[ind_a])
+            d_phases=remap_periodic(np.array(tmp), min_val=min_dphase)
+                
+        else:
+            d_phases = remap_periodic(phases[1:]-phases[:-1], min_val = min_dphase)
         #d_phase_dataset = OrderedDataSet(ordered_by="channel_1.name")
         d_phase_dataset = BaseOrderedDataSet('d_phase_%s' %datetime.now())
         ## append then sort should be faster than ordereddataset.add() [ fewer sorts()]
-        for i, d_ph in enumerate(d_phases):
-            d_phase_dataset.append(FloatDelta(self.channels[i], self.channels[i+1], d_ph))
+        if self.phase_pairs != None:
+            for i,phase_pair in enumerate(self.phase_pairs):
+                ind_a = self.channels.get_channel_index(phase_pair[0])
+                ind_b = self.channels.get_channel_index(phase_pair[1])
+                d_phase_dataset.append(FloatDelta(self.channels[ind_a],self.channels[ind_b],d_phases[i]))
+        else:
+            for i, d_ph in enumerate(d_phases):
+                d_phase_dataset.append(FloatDelta(self.channels[i], self.channels[i+1], d_ph))
 
         #d_phase_dataset.sort()
         return d_phase_dataset

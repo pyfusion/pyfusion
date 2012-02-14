@@ -253,7 +253,7 @@ def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, method='rm
 
     svd_data = input_data.subtract_mean().normalise(method, separate).svd()
     for fs_gr in group(svd_data):
-        tmp = FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase)
+        tmp = FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase, phase_pairs=input_data.__dict__.get("phase_pairs",None))
         tmp.meta = input_data.meta
         tmp.history = svd_data.history
         fs_dataset.add(tmp)

@@ -1134,6 +1134,5 @@ class CheckShotFlucstrucs(PfTestBase):
         shortcut_flucstrucs = dev.getdata(12345,"test_multichannel_timeseries_large").flucstruc(segment=n_samples)
         self.assertEqual(len(explicit_dataset), len(shortcut_flucstrucs))
 
-CheckShotFlucstrucs.dev = True
 
 

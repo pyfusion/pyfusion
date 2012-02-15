@@ -284,12 +284,12 @@ def subtract_mean(input_data):
 ## Wrappers to SciPy filters ##
 ###############################
 @register("TimeseriesData")
-def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_loss, min_stopband_attenuation):
+def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_loss, min_stopband_attenuation,btype='bandpass'):
     # The SciPy signal processing module uses normalised frequencies, so we need to normalise the input values
     norm_passband = input_data.timebase.normalise_freq(passband)
     norm_stopband = input_data.timebase.normalise_freq(stopband)
     ord,wn = sp_signal.filter_design.buttord(norm_passband, norm_stopband, max_passband_loss, min_stopband_attenuation)
-    b, a = sp_signal.filter_design.butter(ord, wn, btype = 'bandpass')
+    b, a = sp_signal.filter_design.butter(ord, wn, btype = btype)
     
     output_data = input_data
 

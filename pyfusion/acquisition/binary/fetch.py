@@ -1,3 +1,4 @@
+import bz2
 from pyfusion.acquisition.base import BaseDataFetcher
 from pyfusion.data.timeseries import Signal, Timebase, TimeseriesData
 from pyfusion.data.base import Coords, Channel, ChannelList
@@ -28,8 +29,13 @@ class BinaryMultiChannelTimeseriesFetcher(BaseDataFetcher):
 
     def do_fetch(self):
         dtype = self.read_dtype()
-        data = np.fromfile(self.filename.replace("(shot)", str(self.shot)),
-                          dtype=dtype)        
+        if self.filename.endswith('.bz2'):
+            f = bz2.BZ2File(self.filename.replace("(shot)", str(self.shot)))
+            data = np.fromstring(f.read(),dtype=dtype)
+            f.close()
+        else:
+            data = np.fromfile(self.filename.replace("(shot)", str(self.shot)),
+                               dtype=dtype)
 
         channel_names = [i for i in dtype.names if i.startswith('channel_')]
         
@@ -66,8 +72,14 @@ class MultiFileBinaryMultiChannelTimeseriesFetcher(BaseDataFetcher):
         for fn_i,fn in enumerate(filenames):
             dt = eval(self.__dict__.get("dtype_%d" %(fn_i+1),None))
             dtypes.append(dt)
-            data_array.append(np.fromfile(fn.replace("(shot)", str(self.shot)),
-                                          dtype=dt))
+            if fn.endswith('.bz2'):
+                f = bz2.BZ2File(fn.replace("(shot)", str(self.shot)))
+                data_array.append(np.fromstring(f.read(),
+                                                dtype=dt))
+                f.close()
+            else:
+                data_array.append(np.fromfile(fn.replace("(shot)", str(self.shot)),
+                                              dtype=dt))
             channel_names.extend([i for i in dt.names if i.startswith('channel_')])
         
         ch_generator = (named_ch(i) for i in channel_names)

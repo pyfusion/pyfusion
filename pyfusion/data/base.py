@@ -378,9 +378,15 @@ class BaseOrderedDataSet(object):
 
     def __getitem__(self, key):
         if pyfusion.orm_manager.IS_ACTIVE:
-            return self.data_items[key].item
+            try:
+                return self.data_items[key].item
+            except KeyError:
+                # for loops require IndexError to detect
+                # end of sequence.
+                raise IndexError
         else:
             return self.data_items.__getitem__(key)
+
 
 @orm_register()
 def orm_load_baseordereddataset(man):

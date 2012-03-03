@@ -81,10 +81,9 @@ service access if it begins with `http://`, for example::
 
  server = http://h1svr.anu.edu.au/mdsplus/
 
-The :attr:`server` attribute must be the URL component up to the MDSplus
-tree    name.   In    this    example,   the    URL    for   mds    path
-:attr:`\\\\h1data::top.operations.mirnov:a14_14:input_1`  and shot 58063
-corresponds                                                            to
+The :attr:`server` attribute must be the URL component up to the MDSplus 
+tree name.  In this example, the URL for mds 
+path:attr:`\\\\h1data::top.operations.mirnov:a14_14:input_1` and shot 58063 corresponds to
 http://h1svr.anu.edu.au/mdsplus/h1data/58063/top/operations/mirnov/a14_14/input_1/
 
 

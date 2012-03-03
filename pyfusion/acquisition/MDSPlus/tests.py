@@ -132,12 +132,12 @@ class CheckH1ConfigSection(MDSAcqTestCase):
 #        print(pyfusion.conf.utils.diff())
         h1 = pyfusion.getDevice('H1')
         test_mirnov = h1.acq.getdata(58123, 'H1_mirnov_array_1_coil_1')
-        self.assertEqual(round(test_data.signal[0],8),  -0.00732422)
+        self.assertEqual(round(test_mirnov.signal[0],8),  -0.00732422)
 
         
     def testH1Multichannel(self):
         import pyfusion
-        shot = 58133
+        shot = 58123
         diag = "H1_mirnov_array_1"
         #d=pyfusion.getDevice("H1")
         d=pyfusion.devices.base.Device("H1")
@@ -220,6 +220,7 @@ class TestWebDataAcq(WebTestCase):
     def test_acq(self):
         test_device = pyfusion.getDevice("TestWebDevice")
         test_data = test_device.acq.getdata(58123, "TestMirnovOne")
+        self.assertAlmostEqual(test_data.signal[0], 0.00244184375)
 
 TestWebDataAcq.net = False
 TestWebDataAcq.dev = False

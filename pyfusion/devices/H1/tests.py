@@ -42,10 +42,12 @@ class CheckH1MirnovCoords(H1DevTestCase):
 
     def test_single_mirnov_channel_kappah_from_metadata(self):
         h1test = pyfusion.getDevice('H1')
-        shot_kh = (58073, 0.74)
+        #shot_kh = (58073, 0.74)
+        shot_kh = (58123, 0.74)
         # TODO: why doesn't this work with thick client??
         data = h1test.acq.getdata(shot_kh[0],
                                   'H1_mirnov_array_1_coil_1')
+        print(shot_kh)
         #self.assertAlmostEqual(data.coordinates[0].magnetic(), data.coordinates[0].magnetic(kh=shot_kh[1]))        
 
     def test_single_channel_with_kappah_supplied_through_metadata(self):
@@ -81,7 +83,8 @@ class CheckH1Device(H1DevTestCase):
 
     def test_kh(self):
         h1test = pyfusion.getDevice('H1')
-        shot_kh = (58073, 0.74)
+        #shot_kh = (58073, 0.74)
+        shot_kh = (58123, 0.74)  # bdb - need to check - what is kappa here?
         data = h1test.acq.getdata(shot_kh[0], 'H1_mirnov_array_1_coil_1')        
         #self.assertAlmostEqual(data.meta['kh'], shot_kh[1])
 

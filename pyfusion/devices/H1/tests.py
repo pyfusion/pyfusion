@@ -22,7 +22,7 @@ class CheckH1MirnovCoords(H1DevTestCase):
 
     def test_single_mirnov_channel_kappah_as_argument(self):
         d=pyfusion.getDevice('H1')
-        data = d.acq.getdata(58073, 'H1_mirnov_array_1_coil_1')
+        data = d.acq.getdata(58123, 'H1_mirnov_array_1_coil_1')
         self.assertTrue(isinstance(data, TimeseriesData))
         from pyfusion.data.base import PfMetaData
         self.assertTrue(isinstance(data.meta, PfMetaData))
@@ -53,7 +53,7 @@ class CheckH1MirnovCoords(H1DevTestCase):
     
     def test_multichannel_mirnov_bean_kappah_as_argument(self):
         d=pyfusion.getDevice('H1')
-        data = d.acq.getdata(58073, 'H1_mirnov_array_1')
+        data = d.acq.getdata(58123, 'H1_mirnov_array_1')
         #self.assertEqual(data.signal.n_channels(), len(data.coordinates))
         
     def test_multichannel_mirnov_bean_kappah_from_metadata(self):

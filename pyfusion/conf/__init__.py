@@ -11,7 +11,7 @@ from pyfusion.conf.exceptions import DisallowedSectionType, \
 allowed_section_types = ['Device', 'Diagnostic', 'Acquisition', 'CoordTransform']
 ## sections which don't follow the [SectionType:Name] syntax
 special_section_names = ['variabletypes', 'global', 'Plots']
-
+history = {}
 
 class PyfusionConfigParser(ConfigParser):
     """Customised parser to facilitate [Type:Name] config sections.

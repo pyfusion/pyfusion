@@ -12,7 +12,7 @@ fetcher    class    is   not    handled    directly,    but   via    the
 
  >>> import pyfusion   
  >>> h1 = pyfusion.getDevice('H1')   
- >>> mirnov_data = h1.acq.getdata(58133, 'H1_mirnov_array_1_coil_1')
+ >>> mirnov_data = h1.acq.getdata(58123, 'H1_mirnov_array_1_coil_1')
 
 Here,  ``h1`` is an  instance of  :py:class:`~devices.H1.device.H1` (the
 subclass   of    :py:class:`~devices.base.Device`   specified   in   the

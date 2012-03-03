@@ -50,7 +50,13 @@ USER_ENV_CONFIG_FILE = os.getenv('PYFUSION_CONFIG_FILE','')
 # DEFAULT_CONFIG_FILE will be superseded by those in USER_CONFIG_FILE,
 # and USER_ENV_CONFIG_FILE will supersede both. As well as storing the
 # settings, read_config() will set up the ORM backend if required.
+VERBOSE = int(os.getenv('PYFUSION_VERBOSE','0'))  # allows config info to be debugged
 read_config([DEFAULT_CONFIG_FILE, USER_CONFIG_FILE, USER_ENV_CONFIG_FILE])
+
+# verbosity level from environment has priority, otherwise use config, which 
+# defaults to 0.  Note that we looked at the env var previously to allow debug of config
+VERBOSE = int(os.getenv('PYFUSION_VERBOSE',
+                    config.get('global','VERBOSE',vars={'VERBOSE':'0'})))
 
 # We import these into the base pyfusion namespace for convenience.
 from pyfusion.devices.base import getDevice

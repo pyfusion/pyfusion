@@ -9,13 +9,16 @@ nosetests pyfusion/acquisition/MDSPlus/tests.py:CheckH1ConfigSection
 generated tests
 nosetests pyfusion/test/generated_tests.py:TestSQLCheckMDSPlusH1Connection
 
-don't supress stdout on tests that pass
-nosetests -s 
+don't suppress stdout on tests that pass
+nosetests -s pyfusion
 
 nosetests -s pyfusion/test/generated_tests.py:TestSQLCheckDataHistory
 
 mdsplus tests:
 nosetests -vs pyfusion/acquisition/MDSPlus/tests.py
+
+avoid net access:
+nosetests -a '!net' pyfusion
 
 needs mdsip service to be running on 8000 with copy of test_tree
 included here, and h1data shot 58123 in the path
@@ -23,8 +26,15 @@ Might be good to define a port separately for test_tree, so that the
 unprivileged user can set it up (8000 is likely to be already used by
 an MDSPlus server owned by the system)
 
+test method:  (to ensure a clean environment)
+# clone a repository if required, and cd to the pyfusion directory
+if [ -f ../pyfusion/test/tests.py ]; then echo OK ; else echo not a pyfusion directory; fi
+export PYTHONPATH=`pwd`/..
+export PYFUSION_CONFIG_FILE=`pwd`/`/bin/ls pyfusion.cfg`
+nosetests -a '!net'
+
 The Mar 4 version executes with 8/9 errors out of 256 (on Boyds Ubuntu)
-nosetests -v pyfusion 2>&1|egrep 'ERROR:|FAIL|Ran'
+nosetests -v 2>&1|egrep 'ERROR:|FAIL|Ran'
 ERROR: test_thick_client_access (pyfusion.acquisition.MDSPlus.tests.TestRefactoredMDSThick)
 TreeException: %TREE-E-TreeFAILURE, Operation NOT successful
 ERROR: test_thin_client_access (pyfusion.acquisition.MDSPlus.tests.TestRefactoredMDSThin)

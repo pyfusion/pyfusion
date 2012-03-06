@@ -877,7 +877,14 @@ class CheckPlotMethods(PfTestBase):
 
         test_svd = multichannel_data.svd()
         self.assertTrue(hasattr(test_svd, 'svdplot'))
-        
+
+class CheckPlotSignals(PfTestBase):
+    def test_plot_signals(self):
+        # in this position, the local test.cfg is used - doesn't work as of Mar 7
+        dev = pyfusion.getDevice('H1')
+        print(pyfusion.conf.utils.dump())
+        dat = dev.acq.getdata(58123,'Test_H1_multi_small')
+        dat.plot_signals()
 
 class CheckDataHistory(PfTestBase):
     def testNewData(self):
@@ -1144,4 +1151,8 @@ class CheckShotFlucstrucs(PfTestBase):
         self.assertEqual(len(explicit_dataset), len(shortcut_flucstrucs))
 
 
+
+CheckPlotSignals.slow = True
+CheckPlotSignals.mds = True
+CheckPlotSignals.broken = True
 

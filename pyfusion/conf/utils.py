@@ -49,6 +49,12 @@ def dump():
         buff.append("[%s]:" % sec)
         for option in sort(pyfusion.config.options(sec)):
             buff.append("%s = %s" %(option, pyfusion.config.get(sec, option)))
+
+    # append all config filenames in order loaded        
+    hist = pyfusion.conf.history        
+    ordered_keys = sort(hist.keys())
+    for key in ordered_keys: 
+        buff.append(hist[key][0])
     return(buff)    
 
 def diff(dumpa=None, dumpb=None):

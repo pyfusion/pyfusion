@@ -6,7 +6,7 @@ import pylab as pl
 
 import numpy as np
 
-from pyfusion.data.utils import peak_freq, split_names
+from pyfusion.data.utils import peak_freq, split_names, make_title
 from pyfusion.data.filters import cps
 #can't from pyfusion.config import get
 import pyfusion
@@ -25,23 +25,82 @@ def register(*class_names):
     return reg_item
 
 @register("TimeseriesData")
-def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1):
+def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspace=None, sharey=False, ylim=None, xlim=None, marker='None', markersize=0.3,linestyle=True,labelfmt="%(short_name)s", filldown=True):
+    """ 
+    Plot a figure full of signals using n_columns[1], 
+        sharey [=1]  "gangs" y axes         
+        labelfmt["%(short_name)s"] controls the channel labels.  
+            The default ignores the shot and uses an abbreviated form of the channel name.  
+            If the short form is very short, it becomes a y label.
+            A full version is "%(name)s" and if > 8 chars, will become the x label.
+            Even longer is "Shot=%(shot), k_h=%(kh)s, %(name)s"
+        linestyle: default of True means use '-' if no marker, and nothing if a 
+            marker is given      
+            e.g. marker of '.' and markersize<1 will produce "shaded" waveforms, 
+            good to see harmonic structure even without zooming in (need to 
+            adjust markersize or plot size for best results.
+    """
     import pylab as pl
     n_rows = input_data.signal.n_channels()
     n_rows = int(n_rows/n_columns)
-    print str(n_rows) + ' ' + str(n_columns)
+    if (n_rows > 3) and (hspace == None): 
+        hspace = 0
+    if pyfusion.VERBOSE>3: print str(n_rows) + ' ' + str(n_columns)
+
+    if labelfmt != None:
+        if len(make_title(labelfmt, input_data, 0)) > 8: 
+            mylabel = pl.xlabel
+        else:
+            mylabel = pl.ylabel
+    fontkwargs = {'fontsize': 'small'}        
+    # True is the only sensible indicator I can think of that we want intelligient defaults
+    # If linestyle == True, we default to '-' UNLESS marker is set, in which case default to '' (no line)
+    if linestyle == True:
+        if marker == 'None': linestyle = '-'
+        else: linestyle = ''
+        
     for row in range(n_rows):
         for col in range(n_columns):
-            print (row)*n_columns+col+1
-            pl.subplot(n_rows, n_columns, row*n_columns+col+1)
-            if downsamplefactor==1:
-                pl.plot(input_data.timebase, input_data.signal.get_channel(row*n_columns+col))
-                pl.axis([-0.01,0.1,-5, 5])
+
+            # natural sequence for subplot is to fillacross l-r, then top-down 
+            subplot_num = row*n_columns+col
+
+            # we often want to fill downwards for simple arrays - especially if comparing with a 3x16 array
+            if filldown: chan_num = col*n_rows+row
+            else:        chan_num = row*n_columns+col
+
+            if pyfusion.VERBOSE>3: print (subplot_num+1,chan_num),
+            if (row==0) and (col==0):
+                ax1 = pl.subplot(n_rows, n_columns, subplot_num+1)
             else:
-                plotdata=input_data.signal.get_channel(row*n_columns+col)
+                if sharey: axn = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = ax1, sharey=ax1)
+                else: axn = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = ax1)
+            if downsamplefactor==1:
+                pl.plot(input_data.timebase, input_data.signal.get_channel(chan_num),
+                        marker=marker, markersize=markersize, linestyle=linestyle)
+            else:
+                plotdata=input_data.signal.get_channel(chan_num)
                 timedata=input_data.timebase
-                pl.plot(timedata[0:len(timedata):downsamplefactor], plotdata[0:len(timedata):downsamplefactor])
-                pl.axis([-0.01,0.1,-5,5])
+                pl.plot(timedata[0:len(timedata):downsamplefactor], plotdata[0:len(timedata):downsamplefactor], 
+                        marker=marker, markersize=markersize, linestyle=linestyle)
+#                pl.axis([-0.01,0.1,-5,5])
+
+            pl.xticks(**fontkwargs)
+            pl.yticks(**fontkwargs)
+
+            if labelfmt != None:    
+                if mylabel == pl.ylabel and np.mod(row,2): displace='\n'
+                else: displace = ''  # use \n to make two line label to displace every second one
+
+                mylabel(make_title(labelfmt+displace, input_data, chan_num),**fontkwargs)
+
+            if ylim != None: pl.ylim(ylim)
+            if xlim != None: pl.xlim(xlim)
+    if hspace != None:  # adjust vertical spacing between plots
+        pl.gcf().subplotpars.hspace = hspace
+        pl.gcf().subplotpars.bottom = 0.04 + hspace
+        pl.gcf().subplots_adjust(top = 1-(hspace+0.01))
+
     if filename != None:
         pl.savefig(filename)
     else:
@@ -62,11 +121,15 @@ def plot_spectrogram(input_data, windowfn=None, channel_number=0, filename=None,
     # also nice to have pyfusion.config.re-read()
     if NFFT == None:
         try:
-            NFFT=(eval(pyfusion.config.get('Plots','NFFT')))
+            NFFT=(int(pyfusion.config.get('Plots','NFFT')))
         except:
             NFFT = 2048
 
-    pl.specgram(input_data.signal.get_channel(channel_number), NFFT=NFFT, noverlap=noverlap, Fs=input_data.timebase.sample_freq, window=windowfn, **kwargs)
+    print(NFFT)        
+    ffact =1.        
+    xextent=(min(input_data.timebase)/ffact,max(input_data.timebase)/ffact)
+
+    pl.specgram(input_data.signal.get_channel(channel_number), NFFT=NFFT, noverlap=noverlap, Fs=input_data.timebase.sample_freq, window=windowfn, xextent=xextent, **kwargs)
     #accept multi or single channel data (I think?)
         
     if coloraxis != None: pl.clim(coloraxis)
@@ -194,18 +257,19 @@ def fsplot_phase(input_data, closed=True, hold=0):
     # bdb this line should be replaced by a call to a routine names something
     #like <plotted_width> to help in deciding if the label will fit on the 
     #current graph.
-    if (2*len(input_data.dphase)*len(input_data.dphase[0].item.channel_1.name))> 50:
+    if (2*len(input_data.dphase)*len(input_data.dphase[0].channel_1.name))> 50:
         sep = '\n-'
     else: sep = '-'
     #sep = '-'
     for dpn in input_data.dphase:
-        ch1n.append(dpn.item.channel_1.name)
-        ch2n.append(dpn.item.channel_2.name)
-        ch12n.append(dpn.item.channel_1.name+sep+dpn.item.channel_2.name)
-        dp.append(dpn.item.delta)
+        ch1n.append(dpn.channel_1.name)
+        ch2n.append(dpn.channel_2.name)
+        ch12n.append(dpn.channel_1.name+sep+dpn.channel_2.name)
+        dp.append(dpn.delta)
 
-    short_names_1,p,s = split_names(ch1n)  # need to break up loops to do this
-    short_names_2,p,s = split_names(ch2n)  # 
+    min_length = max(1,40/len(input_data.channels))    
+    short_names_1,p,s = split_names(ch1n, min_length-min_length)  # need to break up loops to do this
+    short_names_2,p,s = split_names(ch2n, min_length-min_length)  # 
 
 # need to know how big the shortened names are before deciding on the separator
     if (2*len(input_data.dphase)*len(short_names_1[0]))> 50:

@@ -3,6 +3,7 @@ Some un-pythonic code here (checking instance type inside
 function). Need to figure out a better way to do this.
 """
 from datetime import datetime
+from pyfusion.debug_ import debug_
 import copy
 from numpy import searchsorted, arange, mean, resize, repeat, fft, conjugate, linalg, array, zeros_like, take, argmin, pi, cumsum
 from numpy import correlate as numpy_correlate
@@ -95,7 +96,7 @@ def segment(input_data, n_samples, overlap=DEFAULT_SEGMENT_OVERLAP):
                                       channels=input_data.channels, bypass_length_check=True)
             
         tmp_data.meta = input_data.meta.copy()
-        tmp_data.history = input_data.history
+        tmp_data.history = input_data.history  # bdb - may be redundant now meta is copied
         output_data.add(tmp_data)
     return output_data
 
@@ -115,7 +116,9 @@ def normalise(input_data, method='peak', separate=False):
     from pyfusion.data.base import DataSet
     # this allows method='0'(or 0) to prevent normalisation for cleaner code
     # elsewhere
+    if pyfusion.DEBUG>3: print('separate = %d' % (separate))
     if (method == 0) or (method == '0'): return(input_data)
+
     if isinstance(input_data, DataSet):
         output_dataset = DataSet(input_data.label+"_normalise")
         for d in input_data:
@@ -149,6 +152,8 @@ def normalise(input_data, method='peak', separate=False):
     #print('norm_value = %s' % norm_value)
     input_data.history += "\n:: norm_value\n%s" %(norm_value)
     input_data.scales = norm_value
+
+    debug_(pyfusion.DEBUG, key='normalise',msg='about to return from normalise')
     return input_data
     
 @register("TimeseriesData")
@@ -156,6 +161,7 @@ def svd(input_data):
     from timeseries import SVDData
     svddata = SVDData(input_data.timebase, input_data.channels, linalg.svd(input_data.signal, 0))
     svddata.history = input_data.history
+    debug_(pyfusion.DEBUG, key='svd',msg='about to return from svd')
     return svddata
 
 
@@ -200,7 +206,7 @@ def fs_group_geometric(input_data, max_energy = 1.0):
 
 
 #@register("SVDData")
-def fs_group_threshold(input_data, threshold=0.7):
+def fs_group_threshold(input_data, threshold=0.7):   # was 0.2 in earlier version
     """
     no filtering implemented yet
     we don't register this as a filter, because it doesn't return a Data or DataSet subclass
@@ -291,7 +297,7 @@ def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_
     ord,wn = sp_signal.filter_design.buttord(norm_passband, norm_stopband, max_passband_loss, min_stopband_attenuation)
     b, a = sp_signal.filter_design.butter(ord, wn, btype = btype)
     
-    output_data = input_data
+    output_data = copy.deepcopy(input_data)  # was output_data = input_data
 
     for i,s in enumerate(output_data.signal):
         output_data.signal[i] = sp_signal.lfilter(b,a,s)

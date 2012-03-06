@@ -92,6 +92,13 @@ class MDSPlusDataFetcher(BaseDataFetcher):
                else:
                     raise Exception('Unsupported MDSplus node type')
 
+     def error_info(self, step=None):
+          msg = str("MDS: Could not open %s, shot %d, path %s"      
+                    %(self.tree, self.shot, self.mds_path))
+          if step == 'do_fetch':
+               msg += str(" using mode %s" % self.fetch_mode)
+          return(msg)
+
      def pulldown(self):
           if self.fetch_mode == 'thin client':
                self.acq.connection.closeTree(self.mds_path_components['tree'], self.shot)

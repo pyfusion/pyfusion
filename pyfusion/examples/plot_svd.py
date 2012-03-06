@@ -1,8 +1,10 @@
-""" plot the svd of a diag, either one with arbitrary time bounds
+""" Plot the svd of a diag, either one with arbitrary time bounds
 or the sequence of svds of numpts starting at start_time (sec)
 keys typed at the terminal allow stepping backward and forward.
 
 Typical usage : run  dm/plot_svd.py start_time=0.01 "normalise='v'" use_getch=0
+      separate [=1] if True, normalisation is separate for each channel
+
 """
 
 def order_fs(fs_set, by='p'):
@@ -33,16 +35,8 @@ except:
     use_getch = False
 print(" getch is %savailable" % (['not ', ''][use_getch]))
 
+diag_name = ''
 dev_name='H1Local'   # 'LHD'
-#dev_name='LHD'
-if dev_name == 'LHD': 
-    diag_name= 'MP'
-    shot_number = 27233
-    #shot_range = range(90090, 90110)
-elif dev_name == 'H1Local': 
-    diag_name = "H1DTacqAxial"
-    shot_number = 69270
-
 hold=0
 exception=Exception
 time_range = None
@@ -50,9 +44,27 @@ channel_number=0
 start_time = None
 numpts = 512
 normalise='0'
+help=0
 separate=1
 verbose=0
 max_fs = 2
+shot_number = None
+
+#execfile('process_cmd_line_args.py')
+exec(pf.utils.process_cmd_line_args())
+if help==1: 
+    print(__doc__) 
+    exit()
+
+#dev_name='LHD'
+if dev_name == 'LHD': 
+    if diag_name == '': diag_name= 'MP'
+    if shot_number == None: shot_number = 27233
+    #shot_range = range(90090, 90110)
+elif dev_name.find('H1')>=0: 
+    if diag_name == '': diag_name = "H1DTacqAxial"
+    if shot_number == None: shot_number = 69270
+
 
 device = pf.getDevice(dev_name)
 
@@ -61,11 +73,10 @@ try:
 except:
     old_shot=0
 
-#execfile('process_cmd_line_args.py')
-exec(pf.utils.process_cmd_line_args())
 
 print(" %s using getch" % (['not', 'yes, '][use_getch]))
 if use_getch: print('plots most likely will be suppressed - sad!')
+else: print('single letter commands need to be followed by a CR')
 
 if old_shot>0: # we can expect the variables to be still around, run with -i
     if (old_diag != diag_name) or (old_shot != shot_number): old_shot=0
@@ -99,27 +110,32 @@ else:
         if seg.timebase[0] > start_time: 
 #            print("normalise = %s" % normalise)
             if (normalise != 0) and (normalise != '0'): 
-                seg.subtract_mean().normalise(normalise,separate).svd().svdplot()
+# the old code used to change seg, even at the beginning of a long chain.
+                proc_seg=seg.subtract_mean().normalise(normalise,separate)
+                proc_seg.svd().svdplot()
             else: 
-                seg.subtract_mean().svd().svdplot()
+                proc_seg=seg.subtract_mean()
+                proc_seg.svd().svdplot()
             try:
-                if seg.scales != None:
+                if proc_seg.scales != None:
                     fig=pl.gcf()
                     oldtop=fig.subplotpars.top
                     fig.subplots_adjust(top=0.78)
                     ax=pl.subplot(8,2,-2)
-                    xticks = range(len(seg.scales))
-                    pl.bar(xticks, seg.scales, align='center')
+                    xticks = range(len(proc_seg.scales))
+                    if pyfusion.VERBOSE>3: print('scales',len(proc_seg.scales),proc_seg.scales)
+                    pl.bar(xticks, proc_seg.scales, align='center')
                     ax.set_xticks(xticks)
                     # still confused - sometimes the channels are the names bdb
                     try:
-                        seg.channels[0].name
-                        names = [sgch.name for sgch in seg.channels]
+                        proc_seg.channels[0].name
+                        names = [sgch.name for sgch in proc_seg.channels]
                     except:
-                        names = seg.channels
+                        names = proc_seg.channels
 
                     short_names,p,s = pf.data.plots.split_names(names)
-                    short_names[0]=seg.channels[0].name  # first one in full
+                    #short_names[0]="\n"+proc_seg.channels[0].name  # first one in full
+                    pl.xlabel('svd:' +proc_seg.channels[0].name)  # first one in full
                     ax.set_xticklabels(short_names)
                     ax.set_yticks(ax.get_ylim())
 # restoring it cancels the visible effect - if we restore, it should be on exit
@@ -127,13 +143,13 @@ else:
             except None:        
                 pass
             pl.suptitle("Shot %s, t_mid=%.5g, norm=%s, sep=%d" % 
-                        (shot_number, average(seg.timebase),
+                        (shot_number, average(proc_seg.timebase),
                          normalise, separate))
-
-            fs_set=seg.flucstruc(method=0, separate=separate)
+            # now group in flucstrucs - already normalised, so method=0
+            fs_set=proc_seg.flucstruc(method=0, separate=separate)
             fs_arr = order_fs(fs_set)
             for fs in fs_arr[0:min([len(fs_arr)-1,max_fs])]:
-                RMS_scale=sqrt(mean(seg.scales**2))
+                RMS_scale=sqrt(mean(proc_seg.scales**2))
                 print("amp=%.3g:" % (sqrt(fs.p)*RMS_scale)),
 
                 print("f=%.3gkHz, t=%.3g, p=%.2f, a12=%.2f, E=%.2g, adjE=%.2g, %s" %
@@ -143,6 +159,7 @@ else:
             fs=fs_arr[0]    
             ax=pl.subplot(8,2,-3)
             fs.fsplot_phase()    
+            pl.xlabel('fs_phase')
             pl.ylim([-np.pi,np.pi])
             if use_getch: 
                 pl.show()

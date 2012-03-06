@@ -1,7 +1,7 @@
 import os, string
 import random as _random
 from numpy import fft, conjugate, array, mean, arange, searchsorted, argsort, pi
-
+from pyfusion.utils.utils import warn
 
 try:
     import uuid
@@ -75,7 +75,7 @@ def bin2list(input_value):
             output_list.append(ind)
     return output_list
 
-def split_names(names, pad=' '):
+def split_names(names, pad=' ',min_length=3):
     """ Given an array of strings, return an array of the part of the string
     (e.g. channel name) that varies, and optionally the prefix and suffix.
     The array of varying parts is first in the tuple in case others are not
@@ -86,7 +86,7 @@ def split_names(names, pad=' '):
     """
     # make a new array with elements padded to the same length with <pad>
     nms = []
-    maxlen = max([len(nm) for nm in names])
+    maxlen = max([len(nm) for nm in names])  # length of the longest name
     for nm in names:
         nmarr = [c for c in nm]
         while len(nmarr)< maxlen: nmarr.append(pad)
@@ -114,6 +114,48 @@ def split_names(names, pad=' '):
     # check for no mismatch        
     if first==maxlen: return(['' for nm in names], ''.join(nms[0]),'')
     # otherwise return, (no need for special code for the case of no match at all)
+    if (1+last-first) < min_length:
+        add_chars = min_length - (1+last-first)
+        first = max(0, first-add_chars)
+        print(first, add_chars)
     return(([''.join(s) for s in nms_arr[:,first:last+1]],
             ''.join(nms_arr[0,0:first]),
             ''.join(nms_arr[0,last+1:maxlen+1])))
+
+def make_title(formatstr, input_data, channum=None, dict = {}, min_length=3):
+    """ return a string describing the shot number, channel name etc using a formatstr
+    which referes to items in a dictionary, assembled in this routine, based on input_data
+    and an optional dictionary which contains anything not otherwise available in input_data
+    """
+##    dict.update({'shot': input_data.meta['shot']})
+    try:
+        dict.update(input_data.meta)  # this gets all of it!
+
+
+        if channum == None:
+            name = ''
+        else:
+            try: name = input_data.channels[channum].name
+            except: name = input_data.channels.name
+
+        dict.update({'name': name})
+# replace internal strings of non-numbers with a single .  a14_input03 -> 14.03
+        short_name=''
+        last_was_number = False
+        for c in name:
+            if c>='0' and c<='9': 
+                short_name += c
+                last_was_number=True
+            else:  
+                if last_was_number: short_name += '.'
+                last_was_number=False
+
+                
+        if len(short_name) <= min_length: short_name=name
+        dict.update({'short_name': short_name})
+
+        return(formatstr % dict)
+    except Exception as ex:
+        warn('in make_title for format="%s", dict=%s' % (formatstr, dict),
+             exception=ex)
+        return('')

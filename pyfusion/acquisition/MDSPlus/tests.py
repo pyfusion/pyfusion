@@ -19,6 +19,7 @@ except:
     from pyfusion.data.base import BaseData as MDSPlusBaseDataFetcher
 
 
+#this path is used to find the test tree also (in mdsplus local mode)
 TEST_DATA_PATH = os.path.abspath(os.path.dirname(__file__))
 TEST_CONFIG_FILE = os.path.join(TEST_DATA_PATH, "test.cfg")
 TEST_MDSPLUS_SERVER = 'localhost:8000'  # 8000 is the basic mdsplus port

@@ -50,6 +50,9 @@ USER_ENV_CONFIG_FILE = os.getenv('PYFUSION_CONFIG_FILE','')
 # DEFAULT_CONFIG_FILE will be superseded by those in USER_CONFIG_FILE,
 # and USER_ENV_CONFIG_FILE will supersede both. As well as storing the
 # settings, read_config() will set up the ORM backend if required.
+DEBUG = int(os.getenv('PYFUSION_DEBUG','0'))  # probably better as an env var
+# VERBOSE is likely to be used as an env var for debugging and as a config
+# var, depending on taste.
 VERBOSE = int(os.getenv('PYFUSION_VERBOSE','0'))  # allows config info to be debugged
 read_config([DEFAULT_CONFIG_FILE, USER_CONFIG_FILE, USER_ENV_CONFIG_FILE])
 

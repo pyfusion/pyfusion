@@ -122,6 +122,12 @@ class BaseDataFetcher(object):
     def pulldown(self):
         """Called by :py:meth:`fetch` after retrieving the data."""
         pass
+    def error_info(self, step=None):
+        """ return specific information about error to aid interpretation - e.g for mds, path
+        The dummy return should be replaced in the specific routines
+        """
+        return('(further info not provided by %s)' % (self.acq.acq_class))
+
     def fetch(self):
         """Always use  this to fetch the data,  so that :py:meth:`setup`
         and  :py:meth:`pulldown` are  used to  setup and  pull  down the
@@ -132,8 +138,14 @@ class BaseDataFetcher(object):
         :py:class:`~pyfusion.data.base.BaseDataSet` returned by \
         :py:meth:`do_fetch`
         """        
-        self.setup()
-        data = self.do_fetch()
+        try:
+            self.setup()
+        except Exception as details:
+            raise LookupError("%s\n%s" % (self.error_info(step='setup'),details))
+        try:
+            data = self.do_fetch()
+        except Exception as details:
+            raise LookupError("%s\n%s" % (self.error_info(step='do_fetch'),details))
         data.meta.update({'shot':self.shot})
         # Coords shouldn't be fetched for BaseData (they are required
         # for TimeSeries)

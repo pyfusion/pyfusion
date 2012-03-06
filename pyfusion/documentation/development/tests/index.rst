@@ -39,8 +39,10 @@ ERROR: test_orm_manager (pyfusion.test.generated_tests.TestSQLCheckORMManager)
 Ran 265 tests in 13.117s
 FAILED (errors=8 or 9: test_device_getdatat_multishot sometimes passes)
 
-3 would pass in the right environemnt
-TestRefactoredMDSThick,TestRefactoredMDSThin,CheckLHDDevice
+3 of these would pass in the right environment
+TestRefactoredMDSThick, TestRefactoredMDSThin, CheckLHDDevice
+
+
 
 
 

@@ -34,7 +34,10 @@ def get_config_as_dict(component_type, component_name):
     return dict(map(config_map, config_option_list))
 
 
-def dump():
+def dump(eol = '\n'):
+    """ dump the present state of the config data
+    with the history of config file names loaded at the end
+    """
     buff = []
     sections = pyfusion.config.sections()
     front = []
@@ -53,11 +56,13 @@ def dump():
     # append all config filenames in order loaded        
     hist = pyfusion.conf.history        
     ordered_keys = sort(hist.keys())
-    for key in ordered_keys: 
+    oldest_printed_name = max(1,len(ordered_keys)-2) 
+    for key in ordered_keys[oldest_printed_name:]: 
         buff.append(hist[key][0])
+    if eol != '': buff = [lin + eol for lin in buff]
     return(buff)    
 
-def diff(dumpa=None, dumpb=None):
+def diff(dumpa=None, dumpb=None, eol='\n'):
     """ use /usr/bin/diff or alternative in PYFUSION_DIFF to show the differences
     adding a config file made.
     key gives the read sequence of files - this would be lost in a dictionary
@@ -65,18 +70,20 @@ def diff(dumpa=None, dumpb=None):
     if dumpa == None:
         pf_hist = pyfusion.conf.history
         seq = sort(pf_hist.keys())
-        for s in seq[0:-1]:
-            diff(pf_hist[seq[s]], pf_hist[seq[s+1]])
+        oldest_printed = max(1,len(seq)-2) 
+        for s in seq[oldest_printed:]:
+            diff(pf_hist[seq[s-1]], pf_hist[seq[s]],eol=eol)
         return
 
     import os
+    if dumpa[0].find(eol): eol=''  # don;t set eol if we already have it 
     fa = '/tmp/filea'
     fb = '/tmp/fileb'
     filea = open(fa,'w')
-    filea.writelines([lin+'\n' for lin in dumpa])
+    filea.writelines([lin+eol for lin in dumpa])
     filea.close()
     fileb = open(fb,'w')
-    fileb.writelines([lin+'\n' for lin in dumpb])
+    fileb.writelines([lin+eol for lin in dumpb])
     fileb.close()
     diffprog = os.getenv('PYFUSION_DIFF','/usr/bin.diff')
     os.spawnvp(os.P_NOWAIT,diffprog,[diffprog,fa, fb])

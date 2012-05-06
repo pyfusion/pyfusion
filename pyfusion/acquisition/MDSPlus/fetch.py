@@ -7,6 +7,8 @@ from pyfusion.acquisition.base import BaseDataFetcher
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
 from pyfusion.data.base import Coords, ChannelList, Channel
 import pyfusion.acquisition.MDSPlus.h1ds as mdsweb
+from pyfusion.debug_ import debug_
+from pyfusion import VERBOSE, DEBUG  # maybe dave had a good reason not to import pyfusion
 
 mds_path_regex = re.compile(
     r'^\\(?P<tree>\w+?)::(?P<tagname>\w+?)[.|:](?P<nodepath>[\w.:]+)')
@@ -44,7 +46,10 @@ class MDSPlusDataFetcher(BaseDataFetcher):
           if hasattr(self.acq, '%s_path' %self.mds_path_components['tree']):
                self.tree = MDSplus.Tree(self.mds_path_components['tree'],
                                         self.shot)
-               self.fetch_mode = 'path'
+               self.fetch_mode = 'local_path_mode'  # this refers to access by _path e.g. h1data_path
+                                         # bdb wants to call it local_path_mode, but maybe
+                                         # TestNoSQLTestDeviceGetdata fails
+
           elif self.acq.server_mode == 'mds':
                self.acq.connection.openTree(self.mds_path_components['tree'],
                                             self.shot)
@@ -52,6 +57,7 @@ class MDSPlusDataFetcher(BaseDataFetcher):
           elif self.acq.server_mode == 'http':
                self.fetch_mode = 'http'
           else:
+               debug_(DEBUG, level=1, key='Cannot_determine_MDSPlus_fetch_mode')
                raise Exception('Cannot determine MDSPlus fetch mode')
 
      def do_fetch(self):
@@ -93,10 +99,21 @@ class MDSPlusDataFetcher(BaseDataFetcher):
                     raise Exception('Unsupported MDSplus node type')
 
      def error_info(self, step=None):
+          debug_(DEBUG, level=3, key='error_info',msg='enter error_info')
+          try:
+               tree = self.tree
+          except:
+               try: 
+                    tree = self.mds_path_components['tree']
+               except:
+                    tree = "<can't determine>"
+                    debug_(DEBUG, level=1, key='error_info_cant_determine')
+
           msg = str("MDS: Could not open %s, shot %d, path %s"      
-                    %(self.tree, self.shot, self.mds_path))
+                    %(tree, self.shot, self.mds_path))
           if step == 'do_fetch':
-               msg += str(" using mode %s" % self.fetch_mode)
+               msg += str(" using mode [%s]" % self.fetch_mode)
+
           return(msg)
 
      def pulldown(self):

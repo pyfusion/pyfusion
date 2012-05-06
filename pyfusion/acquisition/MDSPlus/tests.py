@@ -4,6 +4,8 @@ import os
 import pyfusion
 from pyfusion.test.tests import PfTestBase, BasePyfusionTestCase
 from pyfusion.data.base import BaseData
+from pyfusion.debug_ import debug_
+
 try:
     from pyfusion.acquisition.MDSPlus.fetch import MDSPlusBaseDataFetcher
 except:
@@ -163,7 +165,9 @@ class TestRefactoredMDSLocal(MDSAcqTestCase):
     """
 
     def test_local_access(self):
+        # This tests access to a small test tree included in this directory
         shot = -1
+        debug_(pyfusion.DEBUG, level=3, key='local_access',msg='enter test_local_access')
         tree_path = os.path.join(TEST_DATA_PATH, 'test_tree')
         from pyfusion.acquisition.utils import get_acq_from_config
         test_acq_class = get_acq_from_config('test_local_tree')

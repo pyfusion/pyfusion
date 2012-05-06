@@ -10,15 +10,22 @@ generated tests
 nosetests pyfusion/test/generated_tests.py:TestSQLCheckMDSPlusH1Connection
 
 don't suppress stdout on tests that pass
+This is supposed to find all test in the path, but some are
+deliberately hidden as they are meant to be executed under program
+control for both SQL and no SQL
 nosetests -s pyfusion
 
+Note that some tests may fail or not be possible to execute in 
+the "-s" mode  - the ones below do work.
 nosetests -s pyfusion/test/generated_tests.py:TestSQLCheckDataHistory
 
 mdsplus tests:
 nosetests -vs pyfusion/acquisition/MDSPlus/tests.py
+nosetests -vs acquisition/MDSPlus/tests.py:TestRefactoredMDSLocal
 
 avoid net access:
 nosetests -a '!net' pyfusion
+
 
 needs mdsip service to be running on 8000 with copy of test_tree
 included here, and h1data shot 58123 in the path
@@ -32,6 +39,8 @@ if [ -f ../pyfusion/test/tests.py ]; then echo OK ; else echo not a pyfusion dir
 export PYTHONPATH=`pwd`/..
 export PYFUSION_CONFIG_FILE=`pwd`/`/bin/ls pyfusion.cfg`
 nosetests -a '!net'
+# use comma separated list for multiple attributes
+nosetests -v -a'!net,!mds,!slow' pyfusion 2>&1|egrep 'ERROR:|FAIL|Ran'
 
 The Mar 4 version executes with 8/9 errors out of 256 (on Boyds Ubuntu)
 nosetests -v 2>&1|egrep 'ERROR:|FAIL|Ran'

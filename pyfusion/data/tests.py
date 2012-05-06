@@ -880,9 +880,11 @@ class CheckPlotMethods(PfTestBase):
 
 class CheckPlotSignals(PfTestBase):
     def test_plot_signals(self):
-        # in this position, the local test.cfg is used - doesn't work as of Mar 7
+        # in this position, the local data/test.cfg is used, so to run separately,
+        # you need to point your PYTHON_CONFIG_FILE at that file.
+        # - doesn't work as of Mar 7   - 
         dev = pyfusion.getDevice('H1')
-        print(pyfusion.conf.utils.dump())
+        print('\n'.join(pyfusion.conf.utils.dump(eol='')))
         dat = dev.acq.getdata(58123,'Test_H1_multi_small')
         dat.plot_signals()
 

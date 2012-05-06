@@ -50,6 +50,7 @@ USER_ENV_CONFIG_FILE = os.getenv('PYFUSION_CONFIG_FILE','')
 # DEFAULT_CONFIG_FILE will be superseded by those in USER_CONFIG_FILE,
 # and USER_ENV_CONFIG_FILE will supersede both. As well as storing the
 # settings, read_config() will set up the ORM backend if required.
+# Note that the $HOME/.pyfusion file overrides the $PYFUSION_ROOT_DIR file.
 DEBUG = os.getenv('PYFUSION_DEBUG','0')  # probably better as an env var
 try:   # if it looks like an int, make it one.
     DEBUG=int(DEBUG)

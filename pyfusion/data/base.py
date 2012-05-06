@@ -9,6 +9,7 @@ from pyfusion.data.filters import filter_reg
 from pyfusion.data.plots import plot_reg
 from pyfusion.data.utils import unique_id
 import pyfusion
+import pyfusion.utils
 from pyfusion.orm.utils import orm_register
 
 

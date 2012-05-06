@@ -29,6 +29,7 @@ def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspac
     """ 
     Plot a figure full of signals using n_columns[1], 
         sharey [=1]  "gangs" y axes         
+        x axes are always ganged
         labelfmt["%(short_name)s"] controls the channel labels.  
             The default ignores the shot and uses an abbreviated form of the channel name.  
             If the short form is very short, it becomes a y label.
@@ -42,9 +43,10 @@ def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspac
     """
     import pylab as pl
     n_rows = input_data.signal.n_channels()
-    n_rows = int(n_rows/n_columns)
+    n_rows = int(round(0.49+(n_rows/float(n_columns))))
     if (n_rows > 3) and (hspace == None): 
-        hspace = 0
+        hspace = 0.001 # should be 0, but some plots omitted if 
+                       #exactly zero - fixed in matplotlib 1
     if pyfusion.VERBOSE>3: print str(n_rows) + ' ' + str(n_columns)
 
     if labelfmt != None:
@@ -69,12 +71,14 @@ def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspac
             if filldown: chan_num = col*n_rows+row
             else:        chan_num = row*n_columns+col
 
+            if chan_num >= input_data.signal.n_channels(): break
             if pyfusion.VERBOSE>3: print (subplot_num+1,chan_num),
             if (row==0) and (col==0):
                 ax1 = pl.subplot(n_rows, n_columns, subplot_num+1)
             else:
                 if sharey: axn = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = ax1, sharey=ax1)
                 else: axn = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = ax1)
+
             if downsamplefactor==1:
                 pl.plot(input_data.timebase, input_data.signal.get_channel(chan_num),
                         marker=marker, markersize=markersize, linestyle=linestyle)

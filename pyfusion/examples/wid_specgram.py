@@ -124,7 +124,9 @@ _type='F'
 fmod=0
 # t_max=0.08
 
-execfile('process_cmd_line_args.py')
+#execfile('process_cmd_line_args.py')
+import pyfusion.utils
+exec(pyfusion.utils.process_cmd_line_args())
 
 device = pyfusion.getDevice(dev_name)
 
@@ -161,7 +163,8 @@ if pyfusion.VERBOSE>2:
 if channel_number==None: channel_number=0
 
 # tweak above parameters according to command line args
-execfile('process_cmd_line_args.py')
+#execfile('process_cmd_line_args.py')
+exec(pyfusion.utils.process_cmd_line_args())
 
 # arrays for test signal
 tm=arange(0,0.02,1e-6)
@@ -190,7 +193,7 @@ def call_spec():
 
 #        data = pyfusion.load_channel(shot,name)
 #        data = pyfusion.acq.getdata(shot_number, diag_name)    
-        if data==None: return(False)
+        if type(data)==type(None): return(False)
         
         if _window==local_none: windowfn=pl.window_none
 #        else: windowfn=pl.window_hanning

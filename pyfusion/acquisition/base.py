@@ -8,6 +8,8 @@ from pyfusion.conf.utils import import_setting, kwarg_config_handler, \
      get_config_as_dict, import_from_str
 from pyfusion.data.timeseries import Signal, Timebase, TimeseriesData
 from pyfusion.data.base import ChannelList
+from pyfusion.debug_ import debug_
+import pyfusion  # only needed for .VERBOSE and .DEBUG
 
 class BaseAcquisition(object):
     """Base class for datasystem specific acquisition classes.
@@ -47,7 +49,7 @@ class BaseAcquisition(object):
         """Get the data and return prescribed subclass of BaseData.
         
         :param shot: shot number
-        :param config_name: name of a fetcher class in the configuration file
+        :param config_name: ?? bdb name of a fetcher class in the configuration file
         :returns: an instance of a subclass of \
         :py:class:`~pyfusion.data.base.BaseData` or \
         :py:class:`~pyfusion.data.base.BaseDataSet`
@@ -83,6 +85,7 @@ class BaseAcquisition(object):
         d = fetcher_class(self, shot,
                              config_name=config_name, **kwargs).fetch()
         d.history += "\n:: shot: %d\n:: config: %s" %(shot, config_name)
+
         return d
         
 class BaseDataFetcher(object):
@@ -102,7 +105,11 @@ class BaseDataFetcher(object):
         self.acq = acq
         if config_name != None:
             self.__dict__.update(get_config_as_dict('Diagnostic', config_name))
+
         self.__dict__.update(kwargs)
+        self.config_name=config_name
+#        print('BDFinit',config_name,self.__dict__.keys())
+
     def setup(self):
         """Called by :py:meth:`fetch` before retrieving the data."""
         pass
@@ -144,7 +151,9 @@ class BaseDataFetcher(object):
             raise LookupError("%s\n%s" % (self.error_info(step='setup'),details))
         try:
             data = self.do_fetch()
-        except Exception as details:
+        except Exception as details:   # put None here to show exceptions.
+                                       # then replace with Exection once
+                                       # "error_info" is working well
             raise LookupError("%s\n%s" % (self.error_info(step='do_fetch'),details))
         data.meta.update({'shot':self.shot})
         # Coords shouldn't be fetched for BaseData (they are required
@@ -194,6 +203,8 @@ class MultiChannelFetcher(BaseDataFetcher):
         """
  
         ## initially, assume only single channel signals
+        # this base debug breakpoint will apply to all flavours of acquisition
+        debug_(pyfusion.DEBUG, level=2, key='base_fetch')
         ordered_channel_names = self.ordered_channel_names()
         data_list = []
         channels = ChannelList()
@@ -207,9 +218,14 @@ class MultiChannelFetcher(BaseDataFetcher):
             fetcher_class = import_setting('Diagnostic', chan, 'data_fetcher')
             tmp_data = fetcher_class(self.acq, self.shot,
                                      config_name=chan).fetch()
+
             if len(t_range) == 2:
                 tmp_data = tmp_data.reduce_time(t_range)
             channels.append(tmp_data.channels)
+            # two tricky things here - tmp.data.channels only gets one channel hhere
+            #config_name for a channel is attached to the multi part -
+            #we need to move it to the particular channel 
+            channels[-1].config_name = tmp_data.config_name
             meta_dict.update(tmp_data.meta)
             if timebase == None:
                 timebase = tmp_data.timebase

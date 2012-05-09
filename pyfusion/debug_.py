@@ -74,7 +74,7 @@ def debug_(debug,level=1,key=None,msg=''):
         set_trace(_getframe().f_back)
         ' use up to get to frame, or c to continue '
     except ImportError:
-        warnings.warn('error importing ipdb: try pdb instead')
+        warnings.warn('error importing ipdb: try pdb instead - or pip install ipdb')
         from pdb import set_trace
         set_trace()
         'debugging '+ msg + ' use up to get to frame, or c to continue '

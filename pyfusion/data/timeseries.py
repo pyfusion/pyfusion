@@ -108,12 +108,15 @@ class Signal(np.ndarray):
         else:
             return self.shape[1]
 
-    def get_channel(self, channel_number):
+    def get_channel(self, channel_number, bounds=None):
         """allows us to use get_channel(0) no matter what ndim is"""
         if self.ndim == 1 and channel_number == 0:
-            return self
+            if bounds == None: return self
+            else: return self[bounds[0]:bounds[1]]
         elif self.ndim > 1:
-            return self[channel_number,:]
+            if bounds == None:
+                return self[channel_number,:]
+            else:return self[channel_number,bounds[0]:bounds[1]]
         else:
             raise ValueError
 

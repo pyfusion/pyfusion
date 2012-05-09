@@ -1,5 +1,10 @@
 """LHD data fetchers.
 Large chunks of code copied from Boyd, not covered by unit tests.
+
+need:
+export Retrieve=~/retrieve/bin/  # (maybe not) 
+export INDEXSERVERNAME=DasIndex.LHD.nifs.ac.jp/LHD
+
 """
 import subprocess
 import sys
@@ -12,21 +17,49 @@ import numpy as np
 from pyfusion.acquisition.base import BaseDataFetcher
 from pyfusion.data.timeseries import TimeseriesData, Signal, Timebase
 from pyfusion.data.base import Coords, Channel, ChannelList
+from pyfusion.debug_ import debug_
+#from pyfusion import VERBOSE, DEBUG  really want to import just pyfusion.DEBUG,VERBOSE
+import pyfusion
 
 this_dir = path.dirname(path.abspath(__file__)) 
 
-VERBOSE = 1
-data_filename = "%(diag_name)s-%(shot)d-1-%(channel_number)s"
+data_fileformat = "%(diag_name)s-%(shot)d-1-%(channel_number)s"
 
 class LHDBaseDataFetcher(BaseDataFetcher):
-    pass
+
+     def error_info(self, step=None):
+          """ can only access items that are part of self - others may be volatile
+          """
+          debug_(pyfusion.DEBUG, level=3, key='error_info',msg='enter error_info')
+          """try:
+               tree = self.tree
+          except:
+               try: 
+                    tree = self.mds_path_components['tree']
+               except:
+                    tree = "<can't determine>"
+                    debug_(DEBUG, level=1, key='error_info_cant_determine')
+
+          """
+          msg = str("MDS: Could not open %s, shot %d, channel = %s, step=%s"      
+                    %(self.diag_name, self.shot, self.channel_number, step))
+          if step == 'do_fetch':
+              pass
+          #msg += str(" using mode [%s]" % self.fetch_mode)
+
+          return(msg)
+
+     pass
 
 class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
 
     def do_fetch(self):
         # Allow for movement of Mirnov signals from A14 to PXI crate
+        if pyfusion.VERBOSE>1: print('LHDfetch - timeseries')
         chnl = int(self.channel_number)
         dggn = self.diag_name
+        debug_(pyfusion.DEBUG, level=4, key='LHD fetch debug') 
+
         if (dggn == 'FMD'):
             if (self.shot < 72380):
                 dggn = 'SX8O'
@@ -37,11 +70,11 @@ class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
         filename_dict = {'diag_name':dggn, 
                          'channel_number':chnl, 
                          'shot':self.shot}
-        self.basename = path.join(self.filepath, data_filename %filename_dict)
+        self.basename = path.join(self.filepath, data_fileformat %filename_dict)
 
         files_exist = path.exists(self.basename + ".dat") and path.exists(self.basename + ".prm")
         if not files_exist:
-            if VERBOSE>3: print('RETR: retrieving %d chn %d to %s' % 
+            if pyfusion.VERBOSE>3: print('RETR: retrieving %d chn %d to %s' % 
                               (self.shot, int(chnl),
                                self.filepath))
             tmp = retrieve_to_file(diagg_name=dggn, shot=self.shot, subshot=1, 
@@ -121,20 +154,25 @@ def fetch_data_from_file(fetcher):
     else:  raise NotImplementedError, "timebase not recognised"
     
     ch = Channel("%s-%s" %(fetcher.diag_name, fetcher.channel_number), Coords('dummy', (0,0,0)))
-    if fetcher.gain != None: 
-        gain = fetcher.gain
-    else: 
+#    if fetcher.gain != None:   # this may have worked once...not now!
+#        gain = fetcher.gain
+#    else: 
+    try:
+        gain = float(fetcher.gain)
+    except: 
         gain = 1
+    # not sure how this worked before I added array() - but has using
+    # array slowed things?  I clearly went to trouble using tailored ints above?
     output_data = TimeseriesData(timebase=Timebase(timebase),
-                                 signal=Signal(gain*dat_arr), channels=ch)
+                                 signal=Signal(gain*array(dat_arr)), channels=ch)
     output_data.meta.update({'shot':fetcher.shot})
-
+    output_data.config_name = fetcher.config_name
     return output_data
 
 
 def read_prm_file(filename):
     """ Read a prm file into a dictionary.  Main entry point is via filename,
-    possibly reserve the option to access vai shot and subshot
+    possibly reserve the option to access via shot and subshot
     >>> pd = read_prm_file(filename=filename)
     >>> pd['Resolution(bit)']
     ['14', '2']
@@ -161,7 +199,7 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
 
     cmd = str("retrieve %s %d %d %d %s" % (diagg_name, shot, subshot, channel, path.join(outdir, diagg_name)))
 
-    if (VERBOSE > 1): print('RETR: %s' % (cmd))
+    if (pyfusion.VERBOSE > 1): print('RETR: %s' % (cmd))
     retr_pipe = subprocess.Popen(cmd,  shell=True, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
     (resp,err) = retr_pipe.communicate()

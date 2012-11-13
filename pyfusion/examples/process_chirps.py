@@ -28,10 +28,10 @@ def plotdfdt(dd, inds, join=False, **kwargs):
         pl.figure()
         Ns = np.unique(dd['N'][np.where((dd['shot'] == shot)
                                         & (abs(dd['N'])< 10))[0]])
-        for N in Ns:
+        for (i,N) in enumerate(Ns):
             sub_inds = np.where((dd['shot'] == shot) & ((dd['N'] == N)))[0]
-            tord = argsort(dd['t_mid'][sub_inds])
-            pl.plot(dd['t_mid'][sub_inds], dd['freq'][sub_inds],'o',
+            tord = np.argsort(dd['t_mid'][sub_inds])
+            pl.plot(dd['t_mid'][sub_inds], dd['freq'][sub_inds],'os1234'[i],
                     hold=(N!=Ns[0]),label=str(N))
             if join:
                 for id in np.unique(dd['lead'][sub_inds]):
@@ -81,7 +81,7 @@ def process_chirps_m_shot(t_mid, freq, indx, maxd = 4, dfdtunit=1000, minlen=2, 
     num = len(indx)
     lead = indx*0 - 1
     islead = np.zeros(num, dtype=int)
-    dfdt = np.zeros(num, dtype=float32)
+    dfdt = np.zeros(num, dtype=np.float32)
     dfdt[:]=np.nan
     chirping = 0
     for line in lines:
@@ -94,7 +94,7 @@ def process_chirps_m_shot(t_mid, freq, indx, maxd = 4, dfdtunit=1000, minlen=2, 
             # point is left without a dfdt
             dfdt[line[0:-1]] = ((freq[line[1:]] - freq[line[0:-1]])/
                                 (t_mid[line[1:]] - t_mid[line[0:-1]])/
-                                dfdtunit).astype(float32)
+                                dfdtunit).astype(np.float32)
     print("{0} connected of {1} chirping,".format(chirping, len(freq))),
     debug_(debug, 4, key='detail')
     return(islead, lead, dfdt)
@@ -115,7 +115,7 @@ def process_chirps(dd, shots, Ns, Ms=None, maxd = 4, dfdtunit=1000, minlen=2,
         dd.update({'dfdt': np.zeros(num, dtype=np.float32)})
         dd['dfdt'][:]=np.nan
     # extract the shot, M and N
-    for k in ['shot', 'M', 'N']: exec("all_{0}=array(dd['{0}'])[:]".format(k))
+    for k in ['shot', 'M', 'N']: exec("all_{0}=np.array(dd['{0}'])[:]".format(k))
 
     if Ms == None: 
         Ms = np.unique(all_M) 
@@ -128,14 +128,14 @@ def process_chirps(dd, shots, Ns, Ms=None, maxd = 4, dfdtunit=1000, minlen=2,
         for N_ in Ns:
             if verbose>0: print(" {0}:".format(N_)),
             for M_ in Ms:
-                inds = where((shot_ == all_shot) & 
+                inds = np.where((shot_ == all_shot) & 
                              (M_ == all_M) & (N_ == all_N))[0]
     # extract, but order in time
-                tord=argsort(dd['t_mid'][inds])
+                tord=np.argsort(dd['t_mid'][inds])
                 if verbose > 4:
                     print("shot {0}, len tord={1}".format(shot_,len(tord)))
                 for k in dd.keys(): 
-                    exec("{0}=array(dd['{0}'])[inds[tord]]".format(k))
+                    exec("{0}=np.array(dd['{0}'])[inds[tord]]".format(k))
                 (islead, lead, dfdt) = \
                     process_chirps_m_shot(t_mid, freq, indx, maxd=maxd, 
                                           dfdtunit=dfdtunit, minlen=minlen,
@@ -169,7 +169,7 @@ dd['M']=np.zeros(num, dtype=np.int16)
 dd['M'][:]=-999
 dd['N'][neq2]=2
 dd['N'][neq1]=1
-dd['N'][neq0]=0
+np.dd['N'][neq0]=0
 
 
 """

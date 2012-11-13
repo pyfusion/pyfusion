@@ -27,10 +27,12 @@ ind = []
 # read in the delta phases from the aggregated pyfusion database
 # and build up a list of flucstrucs and the sum of squares relative to the
 # three modes.
-fsfile='MP512all.txt'
-fsfile='PF2_120229_MP_27233_27233_1_256.dat'
+#fsfile='MP512all.txt'
+#fsfile='PF2_120229_MP_27233_27233_1_256.dat'
+
+## let plot_text_pyfusion choose the file and skip
 #fsfile='PF2_120229_MP_50633_50633_1_256.dat'
-skip=4
+#skip=4
 hold=1
 dt=140e-6
 def twopi(x):
@@ -39,7 +41,21 @@ def twopi(x):
 
 import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())
-arr=loadtxt(fsfile,skiprows=skip)
+#run -i ./examples/plot_text_pyfusion.py filename='MP_27233_cf_syama.txt' skip=4
+#run -i ./examples/plot_text_pyfusion.py filename=fsfile skip=skip
+#sys.argv = ['filename='+fsfile, 'skip='+str(skip)]
+execfile("./examples/plot_text_pyfusion.py") 
+
+try:
+    oldmodefilename
+except:
+    oldmodefilename = None
+
+if fsfile != oldmodefilename:
+    arr=loadtxt(fsfile,skiprows=skip)
+    oldmodefilename = fsfile
+else:
+    print('reusing old mode file data')
 for i,rw in enumerate(arr):
     sh.append(int(rw[0]))
     sd.append(sum(twopi(rw[8:]-blue)**2))
@@ -48,10 +64,6 @@ for i,rw in enumerate(arr):
     amp.append(rw[4])
     ind.append(i)
 
-#run -i ./examples/plot_text_pyfusion.py filename='MP_27233_cf_syama.txt' skip=4
-#run -i ./examples/plot_text_pyfusion.py filename=fsfile skip=skip
-#sys.argv = ['filename='+fsfile, 'skip='+str(skip)]
-execfile("./examples/plot_text_pyfusion.py") 
 exec(pyfusion.utils.process_cmd_line_args())
 
 # find the indices of modes within a  short distance from the classification

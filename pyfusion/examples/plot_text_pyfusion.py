@@ -213,28 +213,39 @@ import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())
 
 if verbose>1: print(filename, oldfilename)
-
-first_words = np.loadtxt(filename, dtype=str,usecols=[0])
-shotline = where(first_words == 'Shot')[0]
-if len(shotline) == 1: 
-    skip = shotline[0]+1
-else: 
-    print('"Shot..." line not found in {0}, default to skipping {1}'
-          .format(filename, skip))
-f='f8'
-ph_dtype = [('p12',f),('p23',f),('p34',f),('p45',f),('p56',f)]
-#ph_dtype = [('p12',f)]
 if oldfilename==filename:
     print('re-using old data - put oldfilename=None to re-read')
 else:
+    first_words = np.loadtxt(filename, dtype=str,usecols=[0])
+    shotline = where(first_words == 'Shot')[0]
+    if len(shotline) == 1: 
+        skip = shotline[0]+1
+    else: 
+        print('"Shot..." line not found in {0}, default to skipping {1}'
+              .format(filename, skip))
+    f='f8'
+    ph_dtype = [('p12',f),('p23',f),('p34',f),('p45',f),('p56',f)]
+    #ph_dtype = [('p12',f)]
+
     # it seems as if skiprows requires a seek facility, which .gz won't allow
     print('\nLoading data from line {0} of {1}'.format(skip, filename))
-    ds = np.loadtxt(fname=filename, skiprows = skip, 
-                    dtype= [ ('shot','i8'), ('t_mid','f8'), 
-                             ('_binary_svs','i8'), 
-                             ('freq','f8'), ('amp', 'f8'), ('a12','f8'),
-                             ('p', 'f8'), ('H','f8'), ('phases',ph_dtype)])
-    oldfilename=filename
+    try:  # fudge the + 6 error
+        ds = np.loadtxt(fname=filename, skiprows = skip, 
+                        dtype= [ ('shot','i8'), ('t_mid','f8'), 
+                                 ('_binary_svs','i8'), 
+                                 ('freq','f8'), ('amp', 'f8'), ('a12','f8'),
+                                 ('p', 'f8'), ('H','f8'), ('phases',ph_dtype)])
+        oldfilename=filename
+    except:
+        print('problem loading - assuming + 6 error')
+        print('\nLoading data from line {0} of {1}'.format(skip, filename))
+        skip += 6
+        ds = np.loadtxt(fname=filename, skiprows = skip,
+                        dtype= [ ('shot','i8'), ('t_mid','f8'), 
+                                 ('_binary_svs','i8'), 
+                                 ('freq','f8'), ('amp', 'f8'), ('a12','f8'),
+                                 ('p', 'f8'), ('H','f8'), ('phases',ph_dtype)])
+        oldfilename=filename
 
 # default to scatter plotting the first shot
 if (shot == None): shot = ds['shot'][0]

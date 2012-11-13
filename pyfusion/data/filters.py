@@ -111,14 +111,16 @@ def remove_noncontiguous(input_dataset):
     return input_dataset
 
 @register("TimeseriesData", "DataSet")
-def normalise(input_data, method='peak', separate=False):
+def normalise(input_data, method=None, separate=False):
+    """ method=None -> default, method=0 -> DON'T normalise
+    """
     from numpy import mean, sqrt, max, abs, var, atleast_2d
     from pyfusion.data.base import DataSet
     # this allows method='0'(or 0) to prevent normalisation for cleaner code
     # elsewhere
     if pyfusion.DEBUG>3: print('separate = %d' % (separate))
     if (method == 0) or (method == '0'): return(input_data)
-
+    if (method == None) or (method.lower() == "none"): method='rms'
     if isinstance(input_data, DataSet):
         output_dataset = DataSet(input_data.label+"_normalise")
         for d in input_data:
@@ -150,7 +152,8 @@ def normalise(input_data, method='peak', separate=False):
             norm_value = atleast_2d(var_vals).T            
     input_data.signal = input_data.signal / norm_value
     #print('norm_value = %s' % norm_value)
-    input_data.history += "\n:: norm_value\n%s" %(norm_value)
+    input_data.history += "\n:: norm_value %s" %(norm_value)
+    input_data.history += ", method={0}, separate={1}".format(method, separate)
     input_data.scales = norm_value
 
     debug_(pyfusion.DEBUG, key='normalise',msg='about to return from normalise')

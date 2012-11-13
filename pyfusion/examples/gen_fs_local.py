@@ -8,9 +8,10 @@ python dm/gen_fs.py shot_range=[27233] exception=None
 17 secs to text 86kB - but only 1k fs
 """
 import subprocess, sys, warnings
-from numpy import sqrt, mean
+from numpy import sqrt, mean, argsort, average
 import pyfusion as pf
 from pyfusion.debug_ import debug_
+import sys
 
 lhd = pf.getDevice('LHD')
 
@@ -30,6 +31,10 @@ exception=Exception
 time_range = None
 min_svs=1
 max_H=0.97
+info=2
+separate=1
+method='rms'
+
 
 # ids are usually handled by sqlalchemy, without SQL we need to look after them ourselves
 fs_id = 0
@@ -39,6 +44,8 @@ import pyfusion.utils
 exec(pf.utils.process_cmd_line_args())
 #execfile('process_cmd_line_args.py')
 
+count = 0  #  we print the header right before the first data
+
 for shot in shot_range:
     try:
         d = lhd.acq.getdata(shot, diag_name)
@@ -46,10 +53,25 @@ for shot in shot_range:
             d.reduce_time(time_range, copy=False)
         sections = d.segment(n_samples, overlap)
         print(d.history, len(sections))
+        try:
+            for k in pyfusion.conf.history.keys():
+                print(pyfusion.conf.history[k][0].split('"')[1])
+                if info>1: sys.stdout.writelines(pyfusion.conf.utils.dump())
+        except: pass    
 
+        ord_segs = []
         for ii,t_seg in enumerate(sections):
-            fs_set = t_seg.flucstruc()
+            ord_segs.append(t_seg)
+        ord = argsort([average(t_seg.timebase) for t_seg in ord_segs])
+        for idx in ord:
+            t_seg = ord_segs[idx]
+            fs_set = t_seg.flucstruc(method=method, separate=separate)
             for fs in fs_set:
+                if count==0: 
+                    # show history if info says to, and avoid starting line wit a digit
+                    if info > 0: print('< '+fs.history.replace('\n201','\n< 201'))
+                    print('Shot    time      SVS    freq  Amp    a12   p    H        Phases')
+                count += 1
                 if fs.H < max_H and fs.p>0.01 and len(fs.svs())>min_svs:
                     phases = ' '.join(["%5.2f" % j.delta for j in fs.dphase])
                     RMS_scale = sqrt(mean(t_seg.scales**2))

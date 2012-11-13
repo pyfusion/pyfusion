@@ -58,6 +58,9 @@ class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
         if pyfusion.VERBOSE>1: print('LHDfetch - timeseries')
         chnl = int(self.channel_number)
         dggn = self.diag_name
+        # the clever "-" thing should only be used in members of multi signal diagnostics.
+        # so I moved it to base.py
+        # dggn = (self.diag_name.split('-'))[-1]  # remove -
         debug_(pyfusion.DEBUG, level=4, key='LHD fetch debug') 
 
         if (dggn == 'FMD'):
@@ -137,6 +140,7 @@ def fetch_data_from_file(fetcher):
     fp = open(fetcher.basename + '.dat', 'rb')
     dat_arr.fromfile(fp, bytes/bytes_per_sample)
     fp.close()
+    #print(fetcher.config_name)
 
     clockHz = None
 
@@ -157,14 +161,24 @@ def fetch_data_from_file(fetcher):
 #    if fetcher.gain != None:   # this may have worked once...not now!
 #        gain = fetcher.gain
 #    else: 
+    #  was - crude!! if channel ==  20: arr = -arr   # (MP5 and HMP13 need flipping)
     try:
         gain = float(fetcher.gain)
     except: 
         gain = 1
+
+    # dodgy - should only apply to a diag in a list - don't want to define -MP5 separately - see other comment on "-"
+    #if fetcher.diag_name[0]=='-': flip = -1
+    #else: 
+    flip = 1
+
+    # not sure if this needs a factor of two for RangePolarity,Bipolar (A14)
+    scale_factor = flip*double(prm_dict['Range'][0])/(2**bits)
     # not sure how this worked before I added array() - but has using
     # array slowed things?  I clearly went to trouble using tailored ints above?
     output_data = TimeseriesData(timebase=Timebase(timebase),
-                                 signal=Signal(gain*array(dat_arr)), channels=ch)
+                                 signal=Signal(scale_factor*gain*(array(dat_arr)-offset)),
+                                 channels=ch)
     output_data.meta.update({'shot':fetcher.shot})
     output_data.config_name = fetcher.config_name
     return output_data
@@ -175,7 +189,11 @@ def read_prm_file(filename):
     possibly reserve the option to access via shot and subshot
     >>> pd = read_prm_file(filename=filename)
     >>> pd['Resolution(bit)']
-    ['14', '2']
+    ['12', '4']
+
+    This comes from the line
+    Aurora14,Resolution(bit),12,4
+    where (maybe?) last digit is 1: string, 4: mediumint, 5: float, 6 signed int, 7, bigint??
     """
     f = open(filename)
     prm_dict = {}

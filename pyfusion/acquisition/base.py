@@ -9,6 +9,8 @@ from pyfusion.conf.utils import import_setting, kwarg_config_handler, \
 from pyfusion.data.timeseries import Signal, Timebase, TimeseriesData
 from pyfusion.data.base import ChannelList
 from pyfusion.debug_ import debug_
+import traceback
+import sys
 import pyfusion  # only needed for .VERBOSE and .DEBUG
 
 class BaseAcquisition(object):
@@ -154,6 +156,18 @@ class BaseDataFetcher(object):
         except Exception as details:   # put None here to show exceptions.
                                        # then replace with Exection once
                                        # "error_info" is working well
+
+            # this is to provide traceback from deep in a call stack
+            # the normal traceback doesn't see past the base.py into whichever do_fetch
+            # this simple method doesn't work, as it only has info after getting to the prompt
+            if  hasattr(sys, "last_type"):traceback.print_last()
+            else: print('sys has not recorded any exception - needs to be at prompt?')
+
+            # this one DOES work.
+            print(sys.exc_info())
+            (extype, ex, tb) = sys.exc_info()
+            for tbk in traceback.extract_tb(tb):
+                print("Line {0}: {1}, {2}".format(tbk[1],tbk[0],tbk[2:]))
             raise LookupError("%s\n%s" % (self.error_info(step='do_fetch'),details))
         data.meta.update({'shot':self.shot})
         # Coords shouldn't be fetched for BaseData (they are required
@@ -204,7 +218,7 @@ class MultiChannelFetcher(BaseDataFetcher):
  
         ## initially, assume only single channel signals
         # this base debug breakpoint will apply to all flavours of acquisition
-        debug_(pyfusion.DEBUG, level=2, key='base_fetch')
+        debug_(pyfusion.DEBUG, level=2, key='base_multi_fetch')
         ordered_channel_names = self.ordered_channel_names()
         data_list = []
         channels = ChannelList()
@@ -215,9 +229,12 @@ class MultiChannelFetcher(BaseDataFetcher):
         else:
             t_range = []
         for chan in ordered_channel_names:
-            fetcher_class = import_setting('Diagnostic', chan, 'data_fetcher')
+            sgn = 1
+            if chan[0]=='-': sgn = -sgn
+            bare_chan = (chan.split('-'))[-1]
+            fetcher_class = import_setting('Diagnostic', bare_chan, 'data_fetcher')
             tmp_data = fetcher_class(self.acq, self.shot,
-                                     config_name=chan).fetch()
+                                     config_name=bare_chan).fetch()
 
             if len(t_range) == 2:
                 tmp_data = tmp_data.reduce_time(t_range)
@@ -227,6 +244,9 @@ class MultiChannelFetcher(BaseDataFetcher):
             #we need to move it to the particular channel 
             channels[-1].config_name = tmp_data.config_name
             meta_dict.update(tmp_data.meta)
+            #print(tmp_data.signal[-1], sgn)
+            tmp_data.signal = sgn * tmp_data.signal
+            #print(tmp_data.signal[-1], sgn)
             if timebase == None:
                 timebase = tmp_data.timebase
                 data_list.append(tmp_data.signal)

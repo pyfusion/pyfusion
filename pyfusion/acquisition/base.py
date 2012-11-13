@@ -107,7 +107,7 @@ class BaseDataFetcher(object):
         self.acq = acq
         if config_name != None:
             self.__dict__.update(get_config_as_dict('Diagnostic', config_name))
-
+            print(get_config_as_dict('Diagnostic', config_name))
         self.__dict__.update(kwargs)
         self.config_name=config_name
 #        print('BDFinit',config_name,self.__dict__.keys())
@@ -147,9 +147,13 @@ class BaseDataFetcher(object):
         :py:class:`~pyfusion.data.base.BaseDataSet` returned by \
         :py:meth:`do_fetch`
         """        
+        if pyfusion.DEBUG>3:
+            exception = None  # defeat the try/except
+        else: exception = Exception
+
         try:
             self.setup()
-        except Exception as details:
+        except exception as details:
             raise LookupError("%s\n%s" % (self.error_info(step='setup'),details))
         try:
             data = self.do_fetch()
@@ -242,6 +246,7 @@ class MultiChannelFetcher(BaseDataFetcher):
             # two tricky things here - tmp.data.channels only gets one channel hhere
             #config_name for a channel is attached to the multi part -
             #we need to move it to the particular channel 
+            # was  channels[-1].config_name = chan
             channels[-1].config_name = tmp_data.config_name
             meta_dict.update(tmp_data.meta)
             #print(tmp_data.signal[-1], sgn)

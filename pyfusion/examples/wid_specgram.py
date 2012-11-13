@@ -124,20 +124,29 @@ _type='F'
 fmod=0
 # t_max=0.08
 
+chan_name=''
+
 #execfile('process_cmd_line_args.py')
 import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())
 
 device = pyfusion.getDevice(dev_name)
 
-chan_name=''
 
 if dev_name=='TestDevice':
     chan_name='testch1'
     shot_number=1000
 elif (dev_name=='H1') or(dev_name=='H1Local'):
-    chan_name='mirnov_1_8'
-    shot_number=58123
+    if shot_number == None:
+        shot_number = 71059
+    #shot_number=58123
+    if shot_number > 70000:
+        diag_name='H1Poloidal1'
+        chan_name = 'H1PoloidalMirnov_1x'
+    else:
+        diag_name='H1_mirnov_array_1'
+        chan_name='H1_mirnov_array_1_coil_7'
+
 elif dev_name=='HeliotronJ': 
     chan_name='MP1'
     shot_number=33911

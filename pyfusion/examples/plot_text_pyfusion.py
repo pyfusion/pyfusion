@@ -197,7 +197,7 @@ skip = 4
 min_e=0.8
 hold=0
 time_range=None
-plot=0
+plot=1
 fsc=1e3
 sym='o'
 
@@ -214,6 +214,13 @@ exec(pyfusion.utils.process_cmd_line_args())
 
 if verbose>1: print(filename, oldfilename)
 
+first_words = np.loadtxt(filename, dtype=str,usecols=[0])
+shotline = where(first_words == 'Shot')[0]
+if len(shotline) == 1: 
+    skip = shotline[0]+1
+else: 
+    print('"Shot..." line not found in {0}, default to skipping {1}'
+          .format(filename, skip))
 f='f8'
 ph_dtype = [('p12',f),('p23',f),('p34',f),('p45',f),('p56',f)]
 #ph_dtype = [('p12',f)]
@@ -221,7 +228,7 @@ if oldfilename==filename:
     print('re-using old data - put oldfilename=None to re-read')
 else:
     # it seems as if skiprows requires a seek facility, which .gz won't allow
-    print('\nLoading data from {0}'.format(filename))
+    print('\nLoading data from line {0} of {1}'.format(skip, filename))
     ds = np.loadtxt(fname=filename, skiprows = skip, 
                     dtype= [ ('shot','i8'), ('t_mid','f8'), 
                              ('_binary_svs','i8'), 
@@ -248,8 +255,9 @@ if time_range != None:  # doesn't work!
 if hold==0:  pl.clf()  # gets rid of extra colorbar
 if plot==1: pl.scatter(ds['t_mid'][sind], freq_scale*ds['freq'][sind],\
                dot_size*np.log(ds['amp'][sind]/amp_scale),ds['a12'][sind],sym,hold=hold)
-#pl.colorbar()
-pl.xlabel('t_mid, size is amplitude, colour is a12')
+pl.colorbar()
+conditions = ", min E = {0:.3f}, amp_scale={1:.3g}".format(min_e, amp_scale)
+pl.xlabel('t_mid, size is amplitude, colour is a12'+conditions)
 pl.ylabel('freq')
 pl.title("%s %d, %d fs" % (filename,shot,len(sind)))
 if not(pl.isinteractive()): pl.show()

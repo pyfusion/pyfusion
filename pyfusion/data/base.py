@@ -185,7 +185,8 @@ class ChannelList(list):
             session.close()
 
             # to what extent does this duplicate time range?
-    def get_channel_index(self, channel_name, bounds):
+
+    def get_channel_index(self, channel_name, bounds = None):
         for i,j in enumerate(self):
             if j.name == channel_name:
                 return i

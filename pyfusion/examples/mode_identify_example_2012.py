@@ -1,6 +1,8 @@
 import pylab as pl
+import sys
 
-from numpy import intersect1d
+from numpy import intersect1d, pi
+from numpy import loadtxt
 
 # manually enter the mean and sd for three modes, called by color
 # n=1
@@ -21,20 +23,36 @@ sh = []
 amp = []
 ind = []
 #arr=loadtxt('MP_27233_cf_syama.txt',skiprows=4)
+# arr=loadtxt('MP512all.txt',skiprows=4)
 # read in the delta phases from the aggregated pyfusion database
 # and build up a list of flucstrucs and the sum of squares relative to the
 # three modes.
-arr=loadtxt('MP512all.txt',skiprows=4)
+fsfile='MP512all.txt'
+fsfile='PF2_120229_MP_27233_27233_1_256.dat'
+#fsfile='PF2_120229_MP_50633_50633_1_256.dat'
+skip=4
+hold=1
+dt=140e-6
+def twopi(x):
+    return ((pi+array(x)) % (2*pi) -pi)
+
+
+import pyfusion.utils
+exec(pyfusion.utils.process_cmd_line_args())
+arr=loadtxt(fsfile,skiprows=skip)
 for i,rw in enumerate(arr):
     sh.append(int(rw[0]))
-    sd.append(sum((rw[8:]-blue)**2))
-    sdlb.append(sum((rw[8:]-lblue)**2))
-    sdred.append(sum((rw[8:]-red)**2))
+    sd.append(sum(twopi(rw[8:]-blue)**2))
+    sdlb.append(sum(twopi(rw[8:]-lblue)**2))
+    sdred.append(sum(twopi(rw[8:]-red)**2))
     amp.append(rw[4])
     ind.append(i)
 
-#run -i ../../plot_text_pyfusion.py filename='MP_27233_cf_syama.txt' skip=4
-run -i ../../plot_text_pyfusion.py filename='MP512all.txt' skip=4
+#run -i ./examples/plot_text_pyfusion.py filename='MP_27233_cf_syama.txt' skip=4
+#run -i ./examples/plot_text_pyfusion.py filename=fsfile skip=skip
+#sys.argv = ['filename='+fsfile, 'skip='+str(skip)]
+execfile("./examples/plot_text_pyfusion.py") 
+exec(pyfusion.utils.process_cmd_line_args())
 
 # find the indices of modes within a  short distance from the classification
 neq0 = (array(sdlb) < 1).nonzero()[0]
@@ -43,10 +61,17 @@ neq2 = (array(sdred) < 1).nonzero()[0]
 
 # do a crude plout by color=mode only
 msize=40
-pl.scatter(ds['t_mid'][neq1],ds['freq'][neq1],hold=0,s=msize)
-pl.scatter(ds['t_mid'][neq0],ds['freq'][neq0],c='cyan',s=msize)
-pl.scatter(ds['t_mid'][neq2],ds['freq'][neq2],c='red',s=msize)
+print(hold)
+pl.scatter(dt+ds['t_mid'][neq0],fsc*ds['freq'][neq0],hold=hold,label='N=0',c='cyan',s=msize)
+pl.scatter(dt+ds['t_mid'][neq1],fsc*ds['freq'][neq1],label='N=1',s=msize)
+pl.scatter(dt+ds['t_mid'][neq2],fsc*ds['freq'][neq2],label='N=2',c='red',s=msize)
 
+pl.legend()
+
+#for x in array([ds['t_mid'][neq0],1e3*ds['freq'][neq0],neq0]).T.tolist(): text(x[0],x[1],int(x[2])) 
+# inds=[5106,5302,5489,1228,1233,1236,478,657,1260] ; average(arr[inds,8:],0); arr[inds,8:]
+
+"""
 # now read in HB database into arrays of ne, beta indexed by shot
 arr=loadtxt("../../../datamining/LHD_iss_DB07_data_only_selected.csv", skiprows=1,delimiter=',',usecols=[0,1,2,3,4,5,6,7,10,17,18,19])
 
@@ -72,7 +97,7 @@ for i,s in enumerate(shot):
     ne[s]=arr[i,8]
 
 # We are now ready to plot all neq2 (or 1 etc) shots coded by density or beta
-
+"""
 """
 pl.clf()  # gets rid of extra colorbar
 rc('font', **{'size':18})
@@ -88,7 +113,7 @@ pl.ylabel('Frequency (kHz)') ; pl.xlabel('time (S)'); pl.title('N=2 modes, by de
 
 """
 
-
+"""
 hbshots = [46357,46365,46370,47576,47577,47644,47648,47650,47725]
 # These are alternatives for selecting for mode (first example), mode and the high beta subgroup
 

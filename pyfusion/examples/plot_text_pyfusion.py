@@ -216,13 +216,17 @@ if verbose>1: print(filename, oldfilename)
 if oldfilename==filename:
     print('re-using old data - put oldfilename=None to re-read')
 else:
-    first_words = np.loadtxt(filename, dtype=str,usecols=[0])
-    shotline = where(first_words == 'Shot')[0]
+
+    alltext = open(filename,'r').readlines()
+    first_words = array([ln.split(' ')[0] for ln in alltext])
+#    first_words = np.loadtxt(filename, dtype=str,usecols=[0])
+    shotline = np.where(first_words == 'Shot')[0]
     if len(shotline) == 1: 
         skip = shotline[0]+1
     else: 
         print('"Shot..." line not found in {0}, default to skipping {1}'
               .format(filename, skip))
+
     f='f8'
     ph_dtype = [('p12',f),('p23',f),('p34',f),('p45',f),('p56',f)]
     #ph_dtype = [('p12',f)]

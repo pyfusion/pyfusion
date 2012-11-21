@@ -152,7 +152,8 @@ def normalise(input_data, method=None, separate=False):
             norm_value = atleast_2d(var_vals).T            
     input_data.signal = input_data.signal / norm_value
     #print('norm_value = %s' % norm_value)
-    input_data.history += "\n:: norm_value %s" %(norm_value)
+    norm_hist = ','.join(["{0:.2g}".format(v) for v in norm_value.flatten()])
+    input_data.history += "\n:: norm_value =[{0}]".format(norm_hist)
     input_data.history += ", method={0}, separate={1}".format(method, separate)
     input_data.scales = norm_value
 
@@ -164,6 +165,8 @@ def svd(input_data):
     from timeseries import SVDData
     svddata = SVDData(input_data.timebase, input_data.channels, linalg.svd(input_data.signal, 0))
     svddata.history = input_data.history
+    svddata.scales = input_data.scales # need to pass it on to caller
+    if pyfusion.DEBUG>4: print("input_data.scales",input_data.scales)
     debug_(pyfusion.DEBUG, key='svd',msg='about to return from svd')
     return svddata
 
@@ -265,8 +268,8 @@ def flucstruc(input_data, min_dphase = -pi, group=fs_group_geometric, method='rm
         tmp = FlucStruc(svd_data, fs_gr, input_data.timebase, min_dphase=min_dphase, phase_pairs=input_data.__dict__.get("phase_pairs",None))
         tmp.meta = input_data.meta
         tmp.history = svd_data.history
-        fs_dataset.add(tmp)
-    
+        tmp.scales = svd_data.scales
+        fs_dataset.add(tmp)    
     return fs_dataset
 
 

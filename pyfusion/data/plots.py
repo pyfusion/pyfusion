@@ -111,7 +111,7 @@ def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspac
         pl.show()
 
 @register("TimeseriesData")
-def plot_spectrogram(input_data, windowfn=None, channel_number=0, filename=None, coloraxis=None, noverlap=0,NFFT=None, **kwargs):
+def plot_spectrogram(input_data, windowfn=None, units='kHz', channel_number=0, filename=None, coloraxis=None, noverlap=0,NFFT=None, **kwargs):
     import pylab as pl
     
     if windowfn == None: windowfn=pl.window_hanning
@@ -130,10 +130,11 @@ def plot_spectrogram(input_data, windowfn=None, channel_number=0, filename=None,
             NFFT = 2048
 
     print(NFFT)        
-    ffact =1.        
-    xextent=(min(input_data.timebase)/ffact,max(input_data.timebase)/ffact)
+    if units.lower() == 'khz': ffact = 1000.
+    else: ffact =1.        
+    xextent=(min(input_data.timebase),max(input_data.timebase))
 
-    pl.specgram(input_data.signal.get_channel(channel_number), NFFT=NFFT, noverlap=noverlap, Fs=input_data.timebase.sample_freq, window=windowfn, xextent=xextent, **kwargs)
+    pl.specgram(input_data.signal.get_channel(channel_number), NFFT=NFFT, noverlap=noverlap, Fs=input_data.timebase.sample_freq/ffact, window=windowfn, xextent=xextent, **kwargs)
     #accept multi or single channel data (I think?)
         
     if coloraxis != None: pl.clim(coloraxis)
@@ -143,13 +144,19 @@ def plot_spectrogram(input_data, windowfn=None, channel_number=0, filename=None,
         except:
             pass
 
-    # look in the config file section Plots for a string like FT_Axis = [0,0.08,0,500]
-    # don't quote
+    # look in the config file section Plots for a string like 
+    # FT_Axis = [0,0.08,0,500e3]   don't quote
     try:
-        pl.axis(eval(pyfusion.config.get('Plots','FT_Axis')))
+        #pl.axis(eval(pyfusion.config.get('Plots','FT_Axis')))
+        # this is clumsier now we need to consider freq units.
+        axt = eval(pyfusion.config.get('Plots','FT_Axis'))
+        pl.axis([axt[0], axt[1], axt[2]/ffact, axt[3]/ffact])
     except:
         pass
-
+    # but override X if we have zoomed in bdb
+    if 'reduce_time' in input_data.history:
+        pl.xlim(np.min(input_data.timebase),max(input_data.timebase))
+        
     try:
         pl.title("%d, %s"%(input_data.meta['shot'], input_data.channels[channel_number].name))
     except:

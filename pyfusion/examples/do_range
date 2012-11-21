@@ -1,5 +1,7 @@
 #!/bin/bash
-fileroot=${6:-`date +PF2_%y%m%d`} ; 
+fileroot=${6:-`date +PF2_%y%m%d`}
+norm=${7:-rms}
+sep=${8:-1}
 exc=${5:-Exception}
 step=${4:-1}
 last=${3:-27233}
@@ -7,5 +9,5 @@ from=${2:-27233}
 diag=${1:-LHD_Mirnov_toroidal}
 n_samples=${PYFUSION_N_SAMPLES:-512}
 overlap=${PYFUSION_OVERLAP:-2}
-echo python examples/gen_fs_local.py shot_range=range\(${from},${last}+1,$step\) diag_name=$diag exception=$exc n_samples=$n_samples overlap=$overlap \> ${fileroot}_${diag}_${from}_${last}_${step}_${n_samples}.dat
-python examples/gen_fs_local.py shot_range=range\(${from},${last}+1,$step\) diag_name=$diag exception=$exc n_samples=$n_samples overlap=$overlap > ${fileroot}_${diag}_${from}_${last}_${step}_${n_samples}.dat
+echo python examples/gen_fs_local.py shot_range=range\(${from},${last}+1,$step\) diag_name=$diag exception=$exc method=$norm separate=$sep n_samples=$n_samples overlap=$overlap \> ${fileroot}_${diag}_${from}_${last}_${step}_${n_samples}_${norm}_${sep}.dat
+python examples/gen_fs_local.py shot_range=range\(${from},${last}+1,$step\) diag_name=$diag exception=$exc method=$norm separate=$sep n_samples=$n_samples overlap=$overlap > ${fileroot}_${diag}_${from}_${last}_${step}_${n_samples}_${norm}_${sep}.dat

@@ -12,6 +12,14 @@ dev_name='H1Local'   # 'LHD'
 dev_name='LHD'
 # ideally should be a direct call, passing the local dictionary
 import pyfusion.utils
+
+NFFT=256
+noverlap=None
+time_range = None
+channel_number=0
+hold=0
+
+
 exec(pf.utils.process_cmd_line_args())
 #execfile('process_cmd_line_args.py')
 
@@ -26,16 +34,10 @@ elif dev_name[0:1] == "H1":
 
 exec(pf.utils.process_cmd_line_args())
 
-NFFT=256
-noverlap=None
-time_range = None
-channel_number=0
-hold=0
-
 if noverlap==None: noverlap = NFFT/2
 
 d = device.acq.getdata(shot_number, diag_name)
 if time_range != None:
-    d.reduce_time(time_range)
+    dr = d.reduce_time(time_range)
 
-d.subtract_mean().plot_spectrogram(noverlap=noverlap, NFFT=NFFT, channel_number=channel_number, hold=hold)
+dr.subtract_mean().plot_spectrogram(noverlap=noverlap, NFFT=NFFT, channel_number=channel_number, hold=hold)

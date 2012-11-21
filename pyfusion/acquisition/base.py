@@ -107,7 +107,7 @@ class BaseDataFetcher(object):
         self.acq = acq
         if config_name != None:
             self.__dict__.update(get_config_as_dict('Diagnostic', config_name))
-            print(get_config_as_dict('Diagnostic', config_name))
+            if pyfusion.VERBOSE>3: print(get_config_as_dict('Diagnostic', config_name))
         self.__dict__.update(kwargs)
         self.config_name=config_name
 #        print('BDFinit',config_name,self.__dict__.keys())

@@ -213,8 +213,20 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
 
     Retrieve Usage from Oct 2009 tar file:
     Retrieve DiagName ShotNo SubShotNo ChNo [FileName] [-f FrameNo] [-h TransdServer] [-p root] [-n port] [-w|--wait [-t timeout] ] [-R|--real ]
-    """
+   """
+    from pyfusion.acquisition.LHD.LHD_utils import get_free_bytes, purge_old
 
+# The old pyfusion used None to indicate this code could choose the location
+# in the new pyfusion, it is fixed in the config file.
+#    if outdir == None: 
+#        outdir = tempfile.gettempdir() + '/'
+    freebytes=get_free_bytes(outdir)
+    if freebytes < 200e6:
+         purge_old(outdir, '*dat')  # ONLY DO .DAT have to manually purge prm
+         if (get_free_bytes(outdir) > freebytes*0.9):
+              print("Warning - unable to clear much space!")
+
+#
     cmd = str("retrieve %s %d %d %d %s" % (diagg_name, shot, subshot, channel, path.join(outdir, diagg_name)))
 
     if (pyfusion.VERBOSE > 1): print('RETR: %s' % (cmd))

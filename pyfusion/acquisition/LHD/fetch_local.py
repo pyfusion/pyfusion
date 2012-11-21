@@ -68,6 +68,8 @@ class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
         ch = Channel(self.diag_name,  Coords('dummy', (0,0,0)))
         output_data = TimeseriesData(timebase=Timebase(signal_dict['timebase']),
                                  signal=Signal(flip*signal_dict['signal']), channels=ch)
+        # bdb - used "fetcher" instead of "self" in the "direct from LHD data" version
+        output_data.config_name = self.config_name  # when using saved files, same as name
         output_data.meta.update({'shot':self.shot})
 
         return output_data

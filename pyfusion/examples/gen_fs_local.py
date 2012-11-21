@@ -68,13 +68,14 @@ for shot in shot_range:
             fs_set = t_seg.flucstruc(method=method, separate=separate)
             for fs in fs_set:
                 if count==0: 
-                    # show history if info says to, and avoid starting line wit a digit
+                    # show history if info says to, and avoid starting line with a digit
                     if info > 0: print('< '+fs.history.replace('\n201','\n< 201'))
                     print('Shot    time      SVS    freq  Amp    a12   p    H        Phases')
                 count += 1
                 if fs.H < max_H and fs.p>0.01 and len(fs.svs())>min_svs:
                     phases = ' '.join(["%5.2f" % j.delta for j in fs.dphase])
-                    RMS_scale = sqrt(mean(t_seg.scales**2))
+                    # was t_seg.scales, but now it is copies, t_seg is not updated 
+                    RMS_scale = sqrt(mean(fs.scales**2)) 
                     adjE = fs.p*fs.E*RMS_scale**2
                     debug_(debug)
                     if pyfusion.orm_manager.IS_ACTIVE: 

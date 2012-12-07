@@ -215,13 +215,14 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
     Retrieve DiagName ShotNo SubShotNo ChNo [FileName] [-f FrameNo] [-h TransdServer] [-p root] [-n port] [-w|--wait [-t timeout] ] [-R|--real ]
    """
     from pyfusion.acquisition.LHD.LHD_utils import get_free_bytes, purge_old
+    from time import sleep
 
 # The old pyfusion used None to indicate this code could choose the location
 # in the new pyfusion, it is fixed in the config file.
 #    if outdir == None: 
 #        outdir = tempfile.gettempdir() + '/'
     freebytes=get_free_bytes(outdir)
-    if freebytes < 200e6:
+    if freebytes < 1e9:
          purge_old(outdir, '*dat')  # ONLY DO .DAT have to manually purge prm
          if (get_free_bytes(outdir) > freebytes*0.9):
               print("Warning - unable to clear much space!")
@@ -230,15 +231,23 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
     cmd = str("retrieve %s %d %d %d %s" % (diagg_name, shot, subshot, channel, path.join(outdir, diagg_name)))
 
     if (pyfusion.VERBOSE > 1): print('RETR: %s' % (cmd))
-    retr_pipe = subprocess.Popen(cmd,  shell=True, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-    (resp,err) = retr_pipe.communicate()
-    if (err != '') or (retr_pipe.returncode != 0):
-
-        raise LookupError(str("Error %d accessing retrieve: cmd=%s\nstdout=%s, stderr=%s" % 
-                              (retr_pipe.poll(), cmd, resp, err)))
+    attempt = 0
+    while(1):
+         print('attempt', attempt)
+         retr_pipe = subprocess.Popen(cmd,  shell=True, stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
+         (resp,err) = retr_pipe.communicate()
+         if (err != '') or (retr_pipe.returncode != 0): 
+              attempt += 1
+              print(resp,err,attempt,'.') #,
+              if attempt>10: 
+                   raise LookupError(str("Error %d accessing retrieve: cmd=%s \nstdout=%s, stderr=%s" % 
+                                         (retr_pipe.poll(), cmd, resp, err)))
+              sleep(2)
 
     for lin in resp.split('\n'):
         if lin.find('parameter file')>=0:
             fileroot = lin.split('[')[1].split('.prm')[0]
+        else:
+             raise LookupError('parameter file not found in {r}', resp)
     return(resp, err, fileroot)

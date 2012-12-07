@@ -1,4 +1,5 @@
 import os, sys
+import pyfusion
 
 def purge_old(path, wild, number=20):
     import subprocess
@@ -11,11 +12,11 @@ def purge_old(path, wild, number=20):
         del_pipe = subprocess.Popen(cmd,  shell=True, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
         (resp,err) = del_pipe.communicate()
-        if VERBOSE > 0: print del_pipe.returncode, resp, err
+        if pyfusion.VERBOSE > 0: print del_pipe.returncode, resp, err
         if (err != '') or (del_pipe.returncode != 0):
             print("Error %d freeing space: cmd=%s\nstdout=%s, stderr=%s" % 
                   (del_pipe.poll(), cmd, resp, err))
-    except Exception, delerr: raise Exception, 'unexpected error in purge_old'
+    except Exception, delerr: raise Exception('unexpected error in purge_old: {err=0}'.format(err=delerr))
     finally: os.chdir(old_dir)
 
 def get_free_bytes(path):

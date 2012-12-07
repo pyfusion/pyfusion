@@ -1,6 +1,8 @@
 """
 Extract data from the text output of the new pyfusion code
-And plot anything vs anything:  Default will plot freq vs t_mid for the first shot
+And plot anything vs anything: (not implemented yet?)
+ Default will plot freq vs t_mid for the first shot
+In any case, can use the sp function easily from the command line
 Just use the scatter function with the appropriate quantity as the 'index'
 e.g    pl.scatter(ds['t_mid'][sind], freq_scale*ds['freq'][sind])
 To reuse old data, use -i option on run (in ipython)
@@ -18,6 +20,7 @@ import numpy as np
 from numpy import max
 import pylab as pl
 import os
+import matplotlib
 from matplotlib.cbook import is_string_like, is_numlike
 from warnings import warn
 from pyfusion.debug_ import debug_
@@ -64,9 +67,9 @@ def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None,
     """
     def size_val(marker_size):
         if size_scale<0: 
-            return(-size_scale*np.exp(sqrt(marker_size/(dot_size/20))))
+            return(-size_scale*np.exp(np.sqrt(marker_size/(dot_size/20))))
         else:
-            return(size_scale*(sqrt(marker_size/dot_size)))
+            return(size_scale*(np.sqrt(marker_size/dot_size)))
  
     if type(ds) == type({}): keys = np.sort(ds.keys())
     elif type(ds) == np.ndarray: keys = np.sort(ds.dtype.names)
@@ -139,15 +142,15 @@ def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None,
         sz=dot_size*(sz[ind]/size_scale)  # squarung may make sense, but too big
 
         
-    if max(sz)>500: 
-        if pl.is_interactive():
-            inp=raw_input('huge circles, radius~ %.3g, Y/y to continue'
+    if max(sz)>1000: 
+        if pl.isinteractive():
+            inp=raw_input('huge circles, radius~ {:.3g}, Y/y to continue'
                           .format(max(sz)))
             if inp.upper() != 'Y': raise ValueError
         else:
              warn('reducing symbol size')
              sz=200/max(sz) * sz
-    debug_(debug)
+    debug_(debug,3)
 
     if hold==0: pl.clf()    
     coll = pl.scatter(x[ind],y[ind],sz,col, hold=hold,marker=marker,label='')
@@ -157,7 +160,7 @@ def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None,
     big=matplotlib.collections.CircleCollection([max_size])
     med=matplotlib.collections.CircleCollection([max_size/10])
     sml=matplotlib.collections.CircleCollection([max_size/100])
-    legend([big,med,sml],
+    pl.legend([big,med,sml],
            [("%s=%.3g" % (size_string,size_val(max_size))),
             ("%.3g" % (size_val(max_size/10))),
             ("%.3g" % (size_val(max_size/100)))])
@@ -197,9 +200,10 @@ skip = 4
 min_e=0.8
 hold=0
 time_range=None
-plot=1
-fsc=1e3
-sym='o'
+plot=0
+fsc=1.   # 1e3
+sym='8' # oct  'H'  # hexagon
+colorbar=None
 
 # this is a way to check existence of variable
 
@@ -210,14 +214,16 @@ except:
 
 #execfile('process_cmd_line_args.py')
 import pyfusion.utils
+import gzip
 exec(pyfusion.utils.process_cmd_line_args())
 
 if verbose>1: print(filename, oldfilename)
 if oldfilename==filename:
     print('re-using old data - put oldfilename=None to re-read')
 else:
-
-    alltext = open(filename,'r').readlines()
+    # this .open works for both gzip and ordinary files
+    alltext = gzip.open(filename,'r').readlines()
+    if len(alltext) > 1e6: print("{l} lines read ".format(l=len(alltext)))
     first_words = array([ln.split(' ')[0] for ln in alltext])
 #    first_words = np.loadtxt(filename, dtype=str,usecols=[0])
     shotline = np.where(first_words == 'Shot')[0]
@@ -268,9 +274,9 @@ if time_range != None:  # doesn't work!
     else: sind = sind[subind]
 
 if hold==0:  pl.clf()  # gets rid of extra colorbar
-if plot==1: pl.scatter(ds['t_mid'][sind], freq_scale*ds['freq'][sind],\
+if plot==1: pl.scatter(ds['t_mid'][sind], fsc*freq_scale*ds['freq'][sind],\
                dot_size*np.log(ds['amp'][sind]/amp_scale),ds['a12'][sind],sym,hold=hold)
-pl.colorbar()
+if plot and colorbar: pl.colorbar()
 conditions = ", min E = {0:.3f}, amp_scale={1:.3g}".format(min_e, amp_scale)
 pl.xlabel('t_mid, size is amplitude, colour is a12'+conditions)
 pl.ylabel('freq')

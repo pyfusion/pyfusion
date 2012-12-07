@@ -3,6 +3,9 @@
     run pyfusion/examples/plot_specgram shot_number=69270
 
     See process_cmd_line_args.py
+    channel_number
+    shot_number
+    diag_name
 """
 
 import pyfusion as pf
@@ -13,6 +16,8 @@ dev_name='LHD'
 # ideally should be a direct call, passing the local dictionary
 import pyfusion.utils
 
+shot_number = None
+diag_name = None
 NFFT=256
 noverlap=None
 time_range = None
@@ -26,11 +31,11 @@ exec(pf.utils.process_cmd_line_args())
 device = pf.getDevice(dev_name)
 
 if dev_name == 'LHD':
-    shot_number = 27233
-    diag_name= 'MP'
+    if shot_number == None: shot_number = 27233
+    if diag_name == None: diag_name= 'MP'
 elif dev_name[0:1] == "H1":
-    shot_number = 69270
-    diag_name = "H1DTacqAxial"
+    if shot_number == None: shot_number = 69270
+    if diag_name == None: diag_name = "H1DTacqAxial"
 
 exec(pf.utils.process_cmd_line_args())
 
@@ -39,5 +44,6 @@ if noverlap==None: noverlap = NFFT/2
 d = device.acq.getdata(shot_number, diag_name)
 if time_range != None:
     dr = d.reduce_time(time_range)
-
+else:
+    dr = d
 dr.subtract_mean().plot_spectrogram(noverlap=noverlap, NFFT=NFFT, channel_number=channel_number, hold=hold)

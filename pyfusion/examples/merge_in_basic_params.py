@@ -35,9 +35,9 @@ import os.path
 debug=0
 exception = IOError
 
-dd={}
-for name in ds.dtype.names: dd.update({name: ds[name]})
-diags="n_e,b_0,i_p,w_p,beta".split(',')
+#dd={}
+#for name in ds.dtype.names: dd.update({name: ds[name]})
+diags="<n_e19>,b_0,i_p,di_pdt,w_p,dw_pdt,dw_pdt2,beta".split(',')
 
 import pyfusion.utils
 exec(pf.utils.process_cmd_line_args())
@@ -58,11 +58,19 @@ for shot in np.unique(dd['shot']):
        try:
           times = dd['t_mid'][ws]
           basic_data = get_basic_params(diags,shot=shot,times=times)
+          (tstart,tend,inds) = get_flat_top(times=None, shot=shot) # None important
+          flat_level = times*0
+          w=np.where((times>tstart) & (times<tend))[0]
+          flat_level[w] = 1.0
+          if debug>0: print("len = {0}".format(len(w)))
+          basic_data.update({'flat_level': flat_level})
+
           good_shots.append(shot)
        except exception:		
           missing_shots.append(shot)
           basic_data={}
 
+       bsign = np.sign(basic_data['b_0'][0])
        for key in basic_data.keys():
            if debug>0: print(key)
            if dd.has_key(key): 
@@ -75,7 +83,13 @@ for shot in np.unique(dd['shot']):
                print('Creating new key {0}'.format(key))               
                dd.update({key: array(np.zeros(sz)+np.nan)})
 
-           dd[key][ws] = basic_data[key]
+           #store it at the corresponding indices
+
+           if key in ['w_p','i_p','dw_pdt','dw_pdt2','di_pdt']:
+               dd[key][ws] = bsign*basic_data[key]
+           else:
+               dd[key][ws] = basic_data[key]
+
 
 save_name = 'saved_'+os.path.splitext(os.path.split(filename)[1])[0]
 print('Saving as {0}'.format(save_name))
@@ -86,4 +100,4 @@ print("{0} missing shots out of {1}".format(len(missing_shots),(len(missing_shot
 if verbose>0: print('missing shots are {0}'.format(missing_shots))
 
 for key in basic_data.keys():
-        print('{0:10s}: {1:.1f}%'.format(key, 100*np.sum(dd[key]*0==0)/sz))
+        print('{0:10s}: {1:.1f}%'.format(key, 100.0*np.sum(dd[key]*0==0)/sz))

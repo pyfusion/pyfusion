@@ -1,4 +1,15 @@
 import pyfusion as pf
-h1=pf.getDevice("LHD")
-data=h1.acq.getdata(27233,'MP')
+
+dev_name = "LHD"
+diag_name = 'MPflip5'
+shot_number=27233
+
+import pyfusion.utils
+exec(pyfusion.utils.process_cmd_line_args())
+
+device = pf.getDevice(dev_name)
+
+data=device.acq.getdata(shot_number,diag_name)
 data.plot_signals()
+
+

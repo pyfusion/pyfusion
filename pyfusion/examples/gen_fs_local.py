@@ -83,7 +83,9 @@ for shot in shot_range:
                     # commits don't seem to reduce time.    
                         fs.save(commit=True)           
                     else: 
-                        print ("%d %7.4g %s %6.3g %6.3f %.2f %.3f %.3f    %s" % (
+                        # 20121206 - time as %8.5g (was 7.4) 
+                        # caused apparent duplicate times
+                        print ("%d %8.5g %s %6.3g %6.3f %.2f %.3f %.3f    %s" % (
                                 shot, fs.t0, "{0:8b}".format(fs._binary_svs), 
                                 fs.freq/1000., sqrt(fs.E*fs.p)*RMS_scale, 
                                 fs.a12, fs.p, fs.H, phases))

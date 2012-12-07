@@ -4,6 +4,9 @@ import sys
 from numpy import intersect1d, pi
 from numpy import loadtxt
 
+##
+##  See new_mode_identify_script.py
+##
 # manually enter the mean and sd for three modes, called by color
 # n=1
 blue = [1.020, 1.488, 1.348, -0.080, 0.989]
@@ -35,6 +38,8 @@ ind = []
 #skip=4
 hold=1
 dt=140e-6
+# This simple strategy works when the number is near zero +- 2Npi,
+# which is true for calculating the deviation from the cluster centre.
 def twopi(x):
     return ((pi+array(x)) % (2*pi) -pi)
 
@@ -44,7 +49,11 @@ exec(pyfusion.utils.process_cmd_line_args())
 #run -i ./examples/plot_text_pyfusion.py filename='MP_27233_cf_syama.txt' skip=4
 #run -i ./examples/plot_text_pyfusion.py filename=fsfile skip=skip
 #sys.argv = ['filename='+fsfile, 'skip='+str(skip)]
+
+oldcolorbar=colorbar
+colorbar=0
 execfile("./examples/plot_text_pyfusion.py") 
+colorbar=oldcolorbar
 
 try:
     oldmodefilename
@@ -79,7 +88,7 @@ pl.scatter(dt+ds['t_mid'][neq1],fsc*ds['freq'][neq1],label='N=1',s=msize)
 pl.scatter(dt+ds['t_mid'][neq2],fsc*ds['freq'][neq2],label='N=2',c='red',s=msize)
 
 pl.legend()
-
+pl.suptitle(filename)
 #for x in array([ds['t_mid'][neq0],1e3*ds['freq'][neq0],neq0]).T.tolist(): text(x[0],x[1],int(x[2])) 
 # inds=[5106,5302,5489,1228,1233,1236,478,657,1260] ; average(arr[inds,8:],0); arr[inds,8:]
 

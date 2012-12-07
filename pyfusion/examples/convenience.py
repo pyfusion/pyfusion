@@ -5,7 +5,7 @@ def decimate(data, fraction=None, limit=None):
     if (fraction == None and limit==None):
         limit=2000
     if fraction != None:
-        step = max(int(1/fraction),1)
+        step = max([int(1/fraction),1])
     else:
         step = max([int(len(data)/limit),1])
     return(array(data)[arange(0,len(data), step)])        

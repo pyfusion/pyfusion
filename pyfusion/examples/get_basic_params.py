@@ -11,26 +11,10 @@ import pylab as pl
 from pyfusion.debug_ import debug_
 from pyfusion.acquisition.LHD.read_igetfile import igetfile
 
-# I guess I copied this from LHD/read_igetfile to help with debugging this file.
-#print(os.path.split(???__str__.split("'")[3])[0]+'/TS099000.dat')
-filename='/home/bdb112/pyfusion/pyfusion/acquisition/LHD/TS090000.dat.bz2'
-self=igetfile(filename)
-dim=self.vardict['DimSize']
-nv=self.vardict['ValNo']
-nd=self.vardict['DimNo']
-data3D=self.data.reshape(dim[0],dim[1],nd+nv)
-for t in range(0,dim[0],5): pl.plot(np.average(data3D[t:t+10,:,4],0))
-#for (t,dat) in enumerate(data3D[:,:]): print(dat[0])
-tend=dim[0]/2
-for t in range(0,tend,5): pl.plot(10*t+np.average(data3D[t:t+10,:,4],0),color=0.8*np.array([1,1,1]))
-
-for t in range(0,tend,25): pl.plot(10*t+np.average(data3D[t:t+10,:,4],0),label=("%d ms" % (data3D[t,0,0])))
-
-pl.legend()
 #from read_igetfile import igetfile
 from  pyfusion.acquisition.LHD.read_igetfile import igetfile
 from matplotlib.mlab import stineman_interp
-from read_csv_data import read_csv_data
+from pyfusion.utils.read_csv_data import read_csv_data
 from warnings import warn
 import re
 
@@ -38,6 +22,9 @@ verbose = 0
 numints=100
 times=np.linspace(2,3,numints)
 local_dir = '/LINUX23/home/bdb112/datamining/cache/'
+this_file = os.path.abspath( __file__ )
+this_dir = os.path.split(this_file)[0]
+acq_LHD = this_dir+'/../acquisition/LHD/'
 
 """ Make a list of diagnostics, and how to obtain them, as a dictionary of dictionaries:
 Top level keys are the short names for the dignostics
@@ -55,6 +42,7 @@ file_info.update({'w_p': {'format': 'wp@{0}.dat','name':'Wp$'}})
 file_info.update({'dw_pdt': {'format': 'wp@{0}.dat','name':'ddt:Wp$'}})
 file_info.update({'dw_pdt2': {'format': 'wp@{0}.dat','name':'ddt2:Wp$'}})
 file_info.update({'beta': {'format': 'wp@{0}.dat','name':'<beta-dia>'}})
+file_info.update({'NBI': {'format': 'nbi@{0}.dat','name':'NBI1(Iacc)'}})
 file_info.update({'b_0': {'format': 'lhd_summary_data.csv','name':'MagneticField'}})
 file_info.update({'R_ax': {'format': 'lhd_summary_data.csv','name':'MagneticAxis'}})
 file_info.update({'Quad': {'format': 'lhd_summary_data.csv','name':'Quadruple'}})
@@ -115,7 +103,7 @@ def get_delay(shot):
     return(delay)
 
 
-def get_basic_params(diags=None, shot=54196, times=None, delay=None):
+def get_basic_params(diags=None, shot=54196, times=None, delay=None, debug=0):
     """ return a list of np.arrays of normally numeric values for the 
     times given, for the given shot.
     """
@@ -149,7 +137,7 @@ def get_basic_params(diags=None, shot=54196, times=None, delay=None):
                     test=lhd_summary.keys()
                 except:    
                     print('reloading {0}'.format(info['format']))
-                    lhd_summary = read_csv_data(local_dir+info['format'], header=3)
+                    lhd_summary = read_csv_data(acq_LHD+info['format'], header=3)
 
                 val = lhd_summary[varname][shot]    
                 valarr = np.double(val)+(times*0)
@@ -175,15 +163,16 @@ def get_basic_params(diags=None, shot=54196, times=None, delay=None):
                             'Expecting a 1 D array in {0}, got {1}!'
                             .format(dg.filename, nd))
 
-                    w = np.where(np.array(dg.vardict['ValName'])==varname)[0]
+                    # pre re. w = np.where(np.array(dg.vardict['ValName'])==varname)[0]
                     matches = [re.match(varname,nam) 
                                != None for nam in dg.vardict['ValName']]
                     w = np.where(np.array(matches) != False)[0]
                     if len(w) != 1:
                         raise LookupError(
-                            'Need one instance of variable {0} in {1}'.
+                            'Need just one instance of variable {0} in {1}'.
                             format(varname, dg.filename))
 
+                    # get the column of the array corresponding to the name
                     valarr = dg.data[:,nd+w[0]]
                     tim =  dg.data[:,0] - delay
 
@@ -201,7 +190,8 @@ def get_basic_params(diags=None, shot=54196, times=None, delay=None):
                     w = np.where(times > max(tim))
                     valarr[w] = np.nan
 
-            if valarr != None: vals.update({diag: valarr})
+            if valarr != None: vals.update({diag: 1.0*valarr})
+    debug_(max(pyfusion.DEBUG, debug), level=5, key='interp')
     return(vals)                
 
 get_basic_params.__doc__ += 'Some diagnostics are \n' + ', '.join(file_info.keys())
@@ -230,3 +220,21 @@ print("{0} missing shots out of {1}".format(len(missing_shots),(len(missing_shot
 if verbose>0: print('missing shots are {0}'.format(missing_shots))
 pl.plot(basic_data['check_tm'],basic_data['w_p'],hold=0)
 
+"""
+# I guess I copied this from LHD/read_igetfile to help with debugging this file.
+#print(os.path.split(???__str__.split("'")[3])[0]+'/TS099000.dat')
+filename='/home/bdb112/pyfusion/pyfusion/acquisition/LHD/TS090000.dat.bz2'
+self=igetfile(filename)
+dim=self.vardict['DimSize']
+nv=self.vardict['ValNo']
+nd=self.vardict['DimNo']
+data3D=self.data.reshape(dim[0],dim[1],nd+nv)
+for t in range(0,dim[0],5): pl.plot(np.average(data3D[t:t+10,:,4],0))
+#for (t,dat) in enumerate(data3D[:,:]): print(dat[0])
+tend=dim[0]/2
+for t in range(0,tend,5): pl.plot(10*t+np.average(data3D[t:t+10,:,4],0),color=0.8*np.array([1,1,1]))
+
+for t in range(0,tend,25): pl.plot(10*t+np.average(data3D[t:t+10,:,4],0),label=("%d ms" % (data3D[t,0,0])))
+
+pl.legend()
+"""

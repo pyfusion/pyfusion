@@ -40,7 +40,7 @@ exception = IOError
 diags="<n_e19>,b_0,i_p,di_pdt,w_p,dw_pdt,dw_pdt2,beta".split(',')
 
 import pyfusion.utils
-exec(pf.utils.process_cmd_line_args())
+exec(pyfusion.utils.process_cmd_line_args())
 
 # now to merge the two.
 

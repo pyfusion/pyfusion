@@ -1,8 +1,57 @@
 from numpy import sin, cos, shape, average, array, max, abs, mod
+import os
+import pyfusion
+import subprocess
+from time import sleep
 
-""" ts=igetfile('cache/TS{0:06d}.dat.bz2',shot=36248)
-    ts.plot() 
+""" get data from the "routine diagnostics" server, using igetfile
+The data comes in a text form, self describing.  The class "igetfile"
+  igetfile -s shot -d wp  -> wp@99999.dat
+  Example for data locally stored in a file
+     ts=igetfile('cache/TS{0:06d}.dat.bz2',shot=36248)
+     ts.plot() 
+  read_igetfile is procedural and is used by the class.  plotting
+  in the class version is nicer than for the procedural version.
+
 """ 
+def call_igetfile(path_to_igetfile, filename):
+    """ run the igetfile program, returning the filename, which can be
+    used for later deleting.
+    assume filename looks like somedir/wp@90000.dat
+    """
+    
+    filepart = filename.split('/')[-1]
+    (name, rest) = filepart.split('@')
+    shot = int(rest.split('.')[0])
+    cmd = str("{ptoexe} -s {sh} -d {diag} -o {fn}"
+              .format(ptoexe = path_to_igetfile,
+                      sh = shot, diag = name, fn = filename))
+
+    if (pyfusion.VERBOSE > 1): print('IGETFILE: %s' % (cmd))
+
+    attempt = 1
+    while(1):
+         if attempt>1: print('attempt {a}, {c}'.format(a=attempt, c=cmd))
+         retr_pipe = subprocess.Popen(cmd,  shell=True, stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE)
+         (resp,err) = retr_pipe.communicate()
+         if (resp != "") or (retr_pipe.returncode != 0): 
+              attempt += 1
+              print("IGETFILE Error code {ecode}, err = {err}, \n"
+                    "on attempt {att}, stdout => {resp}"
+                    .format(ecode=retr_pipe.returncode,resp=resp,
+                            err=err,att=attempt))
+              if attempt>10: 
+                   raise LookupError(str("Error %d accessing igetfile: cmd=%s \n"
+                                         "stdout=%s, stderr=%s" % 
+                                         (retr_pipe.poll(), cmd, resp, err)))
+              sleep(2)
+         else:
+              break
+         
+    return(filename)
+
+
 
 class igetfile():
     data = None
@@ -10,6 +59,7 @@ class igetfile():
     shot = None
     filename = ""
     
+
     def __init__(self, filename=None, fileformat=None, shot=None, verbose=0, plot=False, hold=True):
         """ read in data, optionally plot (True gets default channel, N gets ch=N
         if filename contains a {, assume it is a format
@@ -22,8 +72,16 @@ class igetfile():
         else:
             self.filename = filename
 
+        path_to_igetfile = os.getenv('IGETFILE') 
+        if path_to_igetfile != None: # returns None starting 2.6
+            self.filename = call_igetfile(path_to_igetfile, self.filename)
+                                     
         (self.data,self.vardict) = read_igetfile(filename=self.filename, 
                                                  verbose=0, plot=plot, hold=hold)
+        # get rid of file if we got it from the server
+        if path_to_igetfile != None and pyfusion.DEBUG<3:
+            os.remove(self.filename)
+
         if plot !=0: 
             if type(plot) == type(True):  self.plot()
             else: self.plot(ch=plot)
@@ -217,7 +275,7 @@ def read_igetfile(filename=None, verbose=0, plot=True, hold=True, quiet=0):
     arr=loadtxt(sio,delimiter=',')
     if plot: 
         import pylab as pl
-        ax.plot(arr[:,0],arr[:,1],'.',markersize=1, hold=hold)
+        pl.plot(arr[:,0],arr[:,1],'.',markersize=1, hold=hold)
     return(arr,vardict)
     
 if __name__ == "__main__":

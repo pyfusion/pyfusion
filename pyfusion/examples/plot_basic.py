@@ -4,7 +4,7 @@ import numpy as np
 
 dev_name = "LHD"
 shot_number=38075
-diags = ['<n_e19>']
+diags = ['<n_e19>', 'w_p', 'b_0']
 times = np.linspace(0,4,1000)
 delay=None
 hold=1
@@ -45,5 +45,6 @@ for (i,k) in enumerate(bp.keys()):
 
     pl.plot(times, scale*y, label = label)
     pl.legend()
+    pl.title("{s}: {b_0:.3g}T".format(s=shot, b_0=bp['b_0'][0]))
 pl.show()
  

@@ -233,7 +233,7 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
     if (pyfusion.VERBOSE > 1): print('RETR: %s' % (cmd))
     attempt = 0
     while(1):
-         print('attempt', attempt)
+         print('attempt {a}, {c}'.format(a=attempt, c=cmd))
          retr_pipe = subprocess.Popen(cmd,  shell=True, stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE)
          (resp,err) = retr_pipe.communicate()
@@ -244,10 +244,15 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
                    raise LookupError(str("Error %d accessing retrieve: cmd=%s \nstdout=%s, stderr=%s" % 
                                          (retr_pipe.poll(), cmd, resp, err)))
               sleep(2)
+         else:
+              break
 
+    fileroot = ''
     for lin in resp.split('\n'):
-        if lin.find('parameter file')>=0:
-            fileroot = lin.split('[')[1].split('.prm')[0]
-        else:
-             raise LookupError('parameter file not found in {r}', resp)
+         print('*****************',lin)
+         if lin.find('parameter file')>=0:
+              fileroot = lin.split('[')[1].split('.prm')[0]
+    if fileroot == '':
+         raise LookupError('parameter file not found in <<{r}>>'.format(r=resp))
+
     return(resp, err, fileroot)

@@ -26,7 +26,7 @@ def askif(message, quiet=0):
     """ give messge, ask if continue (if quiet=0) or go on 
          anyway (quiet-1)
     """
-    if quiet == 0: suffix =  " continue?(y/N)"
+    if quiet == 0: suffix =  " Continue?(y/N) "
     else: suffix = "continuing, set quiet=0 to stop..."
     if quiet==0: 
         ans = raw_input("Warning: {0}: {1}".format(message, suffix))
@@ -70,11 +70,6 @@ class Mode():
 
         sd = self.std(dd['phases'])
         w = np.where(sd<threshold)[0]
-        if len(w) == 0: 
-            print('threshold is too low for data: '+
-                  'minimum std for {0} is {1:.1f}'
-                  .format(self.name, np.min(sd)))
-            return()
 
         # normally apply to all shots, but can restrict to a particular
         # range of shots - e.g. dead MP1 for shot 54186 etc.
@@ -87,6 +82,12 @@ class Mode():
             # is changed, it might
             w = np.unique(where_in_shot)    
 
+        if len(w) == 0: 
+            print('threshold {th:.2g} is too low for phases: '
+                  'minimum std for {m} is {sd:.1f}'
+                  .format(th=threshold, m=self.name, sd=np.min(sd)))
+            return()
+
         w_already = np.where(dd['NN'][w]>=0)[0]
         if len(w_already)>0:
             (cnts,bins) = np.histogram(dd['NN'][w], arange(-0.5,1.5+max(dd['NN'][w]),1))
@@ -97,7 +98,7 @@ class Mode():
             print("NN={0} is most frequent ({1} inst.)"
                   .format(amx[-1],cnts[amx[-1]]))
             fract = len(w_already)/float(len(w))
-            if fract>0.2: askif("more than {0:.1f}% already set".
+            if fract>0.2: askif("{0:.1f}% already set?".
                                 format(fract*100),quiet=quiet)
 
         dd['NN'][w]=NNval
@@ -195,15 +196,24 @@ weird=Mode('W1', N=2, NN=203, cc =[2.5, 0.3, -1.4, 0.7, 2.2], csd =[0.5, 0.5, 0.
 
 ind = None
 mode=redlow
+threshold=None
 
 import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())
 
 if ind == None: ind = arange(len(dd['shot']))
 phases = dd["phases"][ind]
-phases = np.array(phases.tolist())
+#phases = np.array(phases.tolist())
 
 sd = mode.std(phases)
+
+for mname in 'N,NN,M,MM'.split(','):
+    if not(dd.has_key(mname)):
+        dd[mname]=-np.ones(len(dd['shot']),dtype=int16)
+
+for mode in modelist:
+    mode.store(dd, threshold)
+
 
 """
 29th Nov method- obsolete

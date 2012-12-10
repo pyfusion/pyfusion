@@ -1,5 +1,7 @@
 """LHD data fetchers.
-Large chunks of code copied from Boyd, not covered by unit tests.
+This gets the data directly from the data server, and so only runs on LHD dmana
+v0: Large chunks of code copied from Boyd, not covered by unit tests.
+v1: 
 
 need:
 export Retrieve=~/retrieve/bin/  # (maybe not) 
@@ -231,9 +233,9 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
     cmd = str("retrieve %s %d %d %d %s" % (diagg_name, shot, subshot, channel, path.join(outdir, diagg_name)))
 
     if (pyfusion.VERBOSE > 1): print('RETR: %s' % (cmd))
-    attempt = 0
+    attempt = 1
     while(1):
-         print('attempt {a}, {c}'.format(a=attempt, c=cmd))
+         if attempt>1: print('attempt {a}, {c}'.format(a=attempt, c=cmd))
          retr_pipe = subprocess.Popen(cmd,  shell=True, stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE)
          (resp,err) = retr_pipe.communicate()
@@ -241,7 +243,8 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
               attempt += 1
               print(resp,err,attempt,'.') #,
               if attempt>10: 
-                   raise LookupError(str("Error %d accessing retrieve: cmd=%s \nstdout=%s, stderr=%s" % 
+                   raise LookupError(str("Error %d accessing retrieve:"
+                                         "cmd=%s \nstdout=%s, stderr=%s" % 
                                          (retr_pipe.poll(), cmd, resp, err)))
               sleep(2)
          else:
@@ -249,7 +252,7 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
 
     fileroot = ''
     for lin in resp.split('\n'):
-         print('*****************',lin)
+         if pyfusion.DEBUG>3: print('*******',lin)
          if lin.find('parameter file')>=0:
               fileroot = lin.split('[')[1].split('.prm')[0]
     if fileroot == '':

@@ -8,10 +8,12 @@ python dm/gen_fs.py shot_range=[27233] exception=None
 17 secs to text 86kB - but only 1k fs
 """
 import subprocess, sys, warnings
-from numpy import sqrt, mean, argsort, average
+from numpy import sqrt, mean, argsort, average, random
 import pyfusion as pf
 from pyfusion.debug_ import debug_
 import sys
+from time import sleep
+import os
 
 lhd = pf.getDevice('LHD')
 
@@ -47,6 +49,10 @@ exec(pf.utils.process_cmd_line_args())
 count = 0  #  we print the header right before the first data
 
 for shot in shot_range:
+    while(os.path.exists(pyfusion.root_dir+'/pause')):
+        print('paused until '+ pyfusion.root_dir+'/pause'+ ' is removed')
+        sleep(int(20*(1+random.uniform())))  # wait 20-40 secs, so they don't all start together
+
     try:
         d = lhd.acq.getdata(shot, diag_name)
         if time_range != None:

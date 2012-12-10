@@ -65,6 +65,17 @@ read_config([DEFAULT_CONFIG_FILE, USER_CONFIG_FILE, USER_ENV_CONFIG_FILE])
 # defaults to 0.  Note that we looked at the env var previously to allow debug of config
 VERBOSE = int(os.getenv('PYFUSION_VERBOSE',
                     config.get('global','VERBOSE',vars={'VERBOSE':'0'})))
+## Variable precision - allows data sets to be much bigger - up to 4x  bdb Dec-2012
+
+root_dir = os.path.split(os.path.abspath( __file__ ))[0]
+
+try:
+    from numpy import dtype as npdtype
+    prec_med=npdtype(config.get('global','precision_medium',vars={'precision_medium':'float32'}))
+except:
+    print('unknown medium precision value')
+    from numpy import dtype as npdtype
+    prec_med=npdtype('float32')
 
 # We import these into the base pyfusion namespace for convenience.
 from pyfusion.devices.base import getDevice

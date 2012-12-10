@@ -1,4 +1,15 @@
-"""
+""" Script to merge a list of diagnostics and summary values into a data dictionary dd
+Usage
+dd=numpy.load('pyfusion/90091_MP2012_384_rms_1.npz')['dd'].tolist()
+run -i pyfusion/examples/merge_in_basic_params.py
+   optional arguments   
+   exception=None   suppress no exceptions (for debugging)
+   debug   set to 1 or higher to activate breakpoints
+   diags   List of diagnostic names as defined in the info ditcionary (below is a shorthand)
+              diags="<n_e19>,b_0,i_p,di_pdt,w_p,dw_pdt,dw_pdt2,beta,NBI".split(',')
+
+
+===Earlier notes during development=== (obsolete now)
 shot 46365, time 1.967 s
 
 fsfile='54194.txt'
@@ -31,13 +42,14 @@ run -i pyfusion/examples/test_lasso_fs.py
 """
 
 import os.path
+from pyfusion.acquisition.LHD.get_basic_diagnostics import get_basic_diagnostics, get_flat_top
 
 debug=0
 exception = IOError
 
 #dd={}
 #for name in ds.dtype.names: dd.update({name: ds[name]})
-diags="<n_e19>,b_0,i_p,di_pdt,w_p,dw_pdt,dw_pdt2,beta".split(',')
+diags="<n_e19>,b_0,i_p,di_pdt,w_p,dw_pdt,dw_pdt2,beta,NBI".split(',')
 
 import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())
@@ -57,7 +69,7 @@ for shot in np.unique(dd['shot']):
     else: 
        try:
           times = dd['t_mid'][ws]
-          basic_data = get_basic_params(diags,shot=shot,times=times)
+          basic_data = get_basic_diagnostics(diags,shot=shot,times=times)
           (tstart,tend,inds) = get_flat_top(times=None, shot=shot) # None important
           flat_level = times*0
           w=np.where((times>tstart) & (times<tend))[0]
@@ -81,15 +93,20 @@ for shot in np.unique(dd['shot']):
                    print(key),
            else:    
                print('Creating new key {0}'.format(key))               
-               dd.update({key: array(np.zeros(sz)+np.nan)})
+               dd.update({key: array(np.zeros(sz,dtype=pyfusion.prec_med)+np.nan)})
 
            #store it at the corresponding indices
 
            if key in ['w_p','i_p','dw_pdt','dw_pdt2','di_pdt']:
-               dd[key][ws] = bsign*basic_data[key]
+               dd[key][ws] = bsign*basic_data[key].astype(pyfusion.prec_med)
            else:
-               dd[key][ws] = basic_data[key]
+               dd[key][ws] = basic_data[key].astype(pyfusion.prec_med)
 
+try:
+    filename
+except:
+    filename='ddfile'
+    print('filename defaulting to ', filename)
 
 save_name = 'saved_'+os.path.splitext(os.path.split(filename)[1])[0]
 print('Saving as {0}'.format(save_name))

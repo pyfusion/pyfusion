@@ -3,7 +3,7 @@ import pylab as pl
 import numpy as np
 
 dev_name = "LHD"
-shot_number=38075
+shot=38075
 diags = ['<n_e19>', 'w_p', 'b_0']
 times = np.linspace(0,4,1000)
 delay=None
@@ -15,10 +15,10 @@ exec(pyfusion.utils.process_cmd_line_args())
 
 device = pf.getDevice(dev_name)
 
-#data=dev.acq.getdata(shot_number,diag_name)
+#data=dev.acq.getdata(shot,diag_name)
 #data.plot_signals()
 
-bp = get_basic_params(diags,shot=shot_number,times=times,delay=delay)
+bp = get_basic_params(diags,shot=shot,times=times,delay=delay)
 junk = bp.pop('check_tm')
 junk = bp.pop('check_shot')
 

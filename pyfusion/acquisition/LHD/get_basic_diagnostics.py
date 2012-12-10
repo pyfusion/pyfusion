@@ -1,9 +1,11 @@
-""" get the basic plasma params for a given shot and range of times
+""" 
+Originally a script in example (called get_basic_params - still there
+get the basic plasma params for a given shot and range of times
 interpolation overhead only begins at 10k points, doubles time at 1Million!!
 
 """
 
-import pyfusion as pf
+import pyfusion
 import pylab as pl
 import numpy as np
 import os
@@ -18,13 +20,10 @@ from pyfusion.utils.read_csv_data import read_csv_data
 from warnings import warn
 import re
 
-verbose = 0
-numints=100
-times=np.linspace(2,3,numints)
-local_dir = '/LINUX23/home/bdb112/datamining/cache/'
 this_file = os.path.abspath( __file__ )
 this_dir = os.path.split(this_file)[0]
-acq_LHD = this_dir+'/../acquisition/LHD/'
+acq_LHD = this_dir   #  from when it was in examples      + '/../acquisition/LHD/'
+localigetfilepath=pyfusion.config.get('Acquisition:LHD','localigetfilepath')+'/'
 
 """ Make a list of diagnostics, and how to obtain them, as a dictionary of dictionaries:
 Top level keys are the short names for the dignostics
@@ -42,7 +41,7 @@ file_info.update({'w_p': {'format': 'wp@{0}.dat','name':'Wp$'}})
 file_info.update({'dw_pdt': {'format': 'wp@{0}.dat','name':'ddt:Wp$'}})
 file_info.update({'dw_pdt2': {'format': 'wp@{0}.dat','name':'ddt2:Wp$'}})
 file_info.update({'beta': {'format': 'wp@{0}.dat','name':'<beta-dia>'}})
-file_info.update({'NBI': {'format': 'nbi@{0}.dat','name':'NBI1(IAcc)'}})
+file_info.update({'NBI': {'format': 'nbi@{0}.dat','name':'sum:NBI.*.Iacc.'}})
 file_info.update({'b_0': {'format': 'lhd_summary_data.csv','name':'MagneticField'}})
 file_info.update({'R_ax': {'format': 'lhd_summary_data.csv','name':'MagneticAxis'}})
 file_info.update({'Quad': {'format': 'lhd_summary_data.csv','name':'Quadruple'}})
@@ -53,7 +52,7 @@ def get_flat_top(shot=54196, times=None, smooth_dt = None, maxddw = None, hold=0
     if times==None: times=np.linspace(0.02,8,8020) ;  
     from pyfusion.data.signal_processing import smooth
 
-    bp=get_basic_params(shot=shot,diags=['w_p','dw_pdt','b_0'],times=times)
+    bp=get_basic_diagnostics(shot=shot,diags=['w_p','dw_pdt','b_0'],times=times)
     # assume get_basic corrects the sign
     w_p = bp['w_p']
     dw = bp['dw_pdt']
@@ -103,7 +102,7 @@ def get_delay(shot):
     return(delay)
 
 
-def get_basic_params(diags=None, shot=54196, times=None, delay=None, debug=0):
+def get_basic_diagnostics(diags=None, shot=54196, times=None, delay=None, debug=0):
     """ return a list of np.arrays of normally numeric values for the 
     times given, for the given shot.
     """
@@ -137,19 +136,19 @@ def get_basic_params(diags=None, shot=54196, times=None, delay=None, debug=0):
                     test=lhd_summary.keys()
                 except:    
                     print('reloading {0}'.format(info['format']))
-                    lhd_summary = read_csv_data(acq_LHD+info['format'], header=3)
+                    lhd_summary = read_csv_data(acq_LHD+'/'+info['format'], header=3)
 
                 val = lhd_summary[varname][shot]    
                 valarr = np.double(val)+(times*0)
             else:    
                 try:
-                    dg = igetfile(local_dir + info['format'], shot=shot)
+                    dg = igetfile(localigetfilepath + info['format'], shot=shot)
                 except IOError:
                     try:
-                        dg = igetfile(local_dir + info['format']+'.bz2', shot=shot)
+                        dg = igetfile(localigetfilepath + info['format']+'.bz2', shot=shot)
                     except IOError:
                         try:
-                            dg = igetfile(local_dir + info['format']+'.gz', shot=shot)
+                            dg = igetfile(localigetfilepath + info['format']+'.gz', shot=shot)
                         except exception:
                             #debug_(1)
                             dg=None
@@ -167,13 +166,22 @@ def get_basic_params(diags=None, shot=54196, times=None, delay=None, debug=0):
                     matches = [re.match(varname,nam) 
                                != None for nam in dg.vardict['ValName']]
                     w = np.where(np.array(matches) != False)[0]
-                    if len(w) != 1:
-                        raise LookupError(
-                            'Need just one instance of variable {0} in {1}'.
-                            format(varname, dg.filename))
+                    # get the column(s) of the array corresponding to the name
+                    if (oper in 'sum,average,rms,max,min'.split(',')):
+                        if oper=='sum': op = np.sum
+                        elif oper=='average': op = np.average
+                        elif oper=='min': op = np.min
+                        elif oper=='std': op = np.std
+                        else: raise ValueError('operator {o} in {n} not known to get_basic_diagnostics'
+                                               .format(o=oper, n=info['name']))
+                        valarr = op(dg.data[:,nd+w],1)
+                    else:
+                        if len(w) != 1:
+                            raise LookupError(
+                                'Need just one instance of variable {0} in {1}'
+                                .format(varname, dg.filename))
+                        valarr = dg.data[:,nd+w[0]]
 
-                    # get the column of the array corresponding to the name
-                    valarr = dg.data[:,nd+w[0]]
                     tim =  dg.data[:,0] - delay
 
                     if oper == 'ddt':  # derivative operator
@@ -194,31 +202,44 @@ def get_basic_params(diags=None, shot=54196, times=None, delay=None, debug=0):
     debug_(max(pyfusion.DEBUG, debug), level=5, key='interp')
     return(vals)                
 
-get_basic_params.__doc__ += 'Some diagnostics are \n' + ', '.join(file_info.keys())
+if not(os.path.exists(localigetfilepath)):
+    os.makedirs(localigetfilepath)
+
+get_basic_diagnostics.__doc__ += 'Some diagnostics are \n' + ', '.join(file_info.keys())
 
 
-#shots=np.loadtxt('lhd_clk4.txt',dtype=type(1))
-shots=[54194]
-separate=0
-diags="<n_e19>,b_0,i_p,w_p,dw_pdt,dw_pdt2,beta".split(',')
-exception = IOError
+if __name__ == "__main__":
 
-import pyfusion.utils
-exec(pf.utils.process_cmd_line_args())
+    numints=100
+    times=np.linspace(2,3,numints)
+    localigetfilepath = '/LINUX23/home/bdb112/datamining/cache/'
 
-missing_shots = []
-good_shots =[]
-for shot in shots:
-    try:
-        basic_data=get_basic_params(diags,shot=shot,times=times)
-        good_shots.append(shot)
-    except exception:		
-        missing_shots.append(shot)
+    #shots=np.loadtxt('lhd_clk4.txt',dtype=type(1))
+    shots=[54194]
+    separate=0
+    diags="<n_e19>,b_0,i_p,w_p,dw_pdt,dw_pdt2,beta".split(',')
+    exception = IOError
+    verbose = 0
 
-print("{0} missing shots out of {1}".format(len(missing_shots),(len(missing_shots)+len(good_shots))))
 
-if verbose>0: print('missing shots are {0}'.format(missing_shots))
-pl.plot(basic_data['check_tm'],basic_data['w_p'],hold=0)
+    import pyfusion.utils
+    exec(pyfusion.utils.process_cmd_line_args())
+
+    missing_shots = []
+    good_shots =[]
+    for shot in shots:
+        try:
+            basic_data=get_basic_params(diags,shot=shot,times=times)
+            good_shots.append(shot)
+        except exception:		
+            missing_shots.append(shot)
+
+    print("{0} missing shots out of {1}".format(len(missing_shots),(len(missing_shots)+len(good_shots))))
+
+    if verbose>0: print('missing shots are {0}'.format(missing_shots))
+    pl.plot(basic_data['check_tm'],basic_data['w_p'],hold=0)
+
+
 
 """
 # I guess I copied this from LHD/read_igetfile to help with debugging this file.

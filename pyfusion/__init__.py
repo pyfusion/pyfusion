@@ -45,6 +45,11 @@ USER_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'pyfusion.cfg')
 # Also allow specification of other configuration files from
 # a PYFUSION_CONFIG_FILE environment variable
 USER_ENV_CONFIG_FILE = os.getenv('PYFUSION_CONFIG_FILE','')
+if not(os.path.exists(USER_ENV_CONFIG_FILE)): 
+    raise IOError('Error - cfg file {f} ponted to by USER_ENV_CONFIG_FILE'
+                  ' not found!  Check/delete the env var {v}'
+                  .format(f=USER_ENV_CONFIG_FILE,v="PYFUSION_CONFIG_FILE"))
+
 
 # Now we actually load the configuration files. Settings in
 # DEFAULT_CONFIG_FILE will be superseded by those in USER_CONFIG_FILE,

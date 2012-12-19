@@ -9,13 +9,13 @@ python dm/gen_fs.py shot_range=[27233] exception=None
 """
 import subprocess, sys, warnings
 from numpy import sqrt, mean, argsort, average, random
-import pyfusion as pf
+import pyfusion
 from pyfusion.debug_ import debug_
 import sys
 from time import sleep
 import os
 
-lhd = pf.getDevice('LHD')
+lhd = pyfusion.getDevice('LHD')
 
 #min_shot = 84000
 #max_shot = 94000
@@ -43,7 +43,7 @@ fs_id = 0
 
 # ideally should be a direct call, passing the local dictionary
 import pyfusion.utils
-exec(pf.utils.process_cmd_line_args())
+exec(pyfusion.utils.process_cmd_line_args())
 #execfile('process_cmd_line_args.py')
 
 count = 0  #  we print the header right before the first data
@@ -58,7 +58,7 @@ for shot in shot_range:
         if time_range != None:
             d.reduce_time(time_range, copy=False)
         sections = d.segment(n_samples, overlap)
-        print(d.history, len(sections))
+        print(d.history, len(sections), pyfusion.version.get_version('verbose'))
         try:
             for k in pyfusion.conf.history.keys():
                 print(pyfusion.conf.history[k][0].split('"')[1])

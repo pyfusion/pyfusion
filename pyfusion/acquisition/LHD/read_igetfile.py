@@ -209,7 +209,7 @@ def read_igetfile(filename=None, verbose=0, plot=True, hold=True, quiet=0):
         if quiet>0: 
             pass
         else:
-            raise(IOError,'finish me: {0}'.format(info))
+            raise IOError('{f} not found: {info}'.format(f=filename,info=info))
 
     if verbose>0: print ("Used %s" % reader), 
     pinds = [st.upper().find("[PARAMETERS]") for st in fbuff ]

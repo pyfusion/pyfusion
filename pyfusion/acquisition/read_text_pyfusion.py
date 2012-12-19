@@ -29,7 +29,7 @@ def find_data(file, target, skip = 0, recursion_level=0, debug=0):
 
         sk1 = find_data(file, target=target, skip=sk, 
                         recursion_level=recursion_level+1)
-        if debug>0: print(sk, shotlines[sk1])
+        if debug>0: print(sk, sk1)
         
         if sk1 ==0: return(sk)
         else: sk += sk1
@@ -39,27 +39,39 @@ def find_data(file, target, skip = 0, recursion_level=0, debug=0):
                       format(t=target, f=file))
 
 
-
-def read_text_pyfusion(files, skip='^Shot .*', ph_dtype=None, plot=pl.isinteractive(), ms=100, hold=0):
-    st = seconds()
+def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isinteractive(), ms=100, hold=0, debug=0, quiet=1,  exception = Exception):
+    st = seconds(); last_update=seconds()
     file_list = files
     if len(np.shape(files)) == 0: file_list = [file_list]
     f='f8'
     if ph_dtype == None: ph_dtype = [('p12',f),('p23',f),('p34',f),('p45',f),('p56',f)]
     #ph_dtype = [('p12',f)]
     ds_list =[]
+    count = 0
     for filename in file_list:
-        if pl.is_string_like(skip): skip = 1+find_data(filename,skip)
+        if seconds() - last_update > 30:
+            last_update = seconds()
+            print('processing {f}'.format(filename))
+        try:
+            if pl.is_string_like(target): 
+                skip = 1+find_data(filename, target,debug=debug)
+            else: 
+                skip = target
+            if quiet == 0:
+                print('{t:.1f} sec, loading data from line {s} of {f}'
+                      .format(t = seconds()-st, s=skip, f=filename))
+            ds_list.append(
+                np.loadtxt(fname=filename, skiprows = skip, 
+                           dtype= [ ('shot','i8'), ('t_mid','f8'), 
+                                    ('_binary_svs','i8'), 
+                                    ('freq','f8'), ('amp', 'f8'), ('a12','f8'),
+                                    ('p', 'f8'), ('H','f8'), ('phases',ph_dtype)])
+            )
+            count += 1
+        except exception, info:
+            print('Error in {f} - {info}'.format(f=filename, info=info))
 
-        print('{t:.1f} sec, loading data from line {s} of {f}'
-              .format(t = seconds()-st, s=skip, f=filename))
-        ds_list.append(
-            np.loadtxt(fname=filename, skiprows = skip, 
-                       dtype= [ ('shot','i8'), ('t_mid','f8'), 
-                                ('_binary_svs','i8'), 
-                                ('freq','f8'), ('amp', 'f8'), ('a12','f8'),
-                                ('p', 'f8'), ('H','f8'), ('phases',ph_dtype)])
-        )
+    print("{c} out of {t} files".format(c=count, t=len(file_list)))
     if plot>0: 
         ds = ds_list[0]
         if hold == 0: pl.clf() # for the colorbar()
@@ -69,6 +81,11 @@ def read_text_pyfusion(files, skip='^Shot .*', ph_dtype=None, plot=pl.isinteract
     return(ds_list)
 
 def merge_ds(ds_list):
+    """ Take a list of structured arrays, and merge into one
+    """
+    if len(np.shape(ds_list)) == 0: 
+        raise ValueError("{d} should be a list".format(d=ds_list))
+
     if type(ds_list[0]) == type({}): keys = np.sort(ds_list[0].keys())
     elif type(ds_list[0]) == np.ndarray: keys = np.sort(ds_list[0].dtype.names)
 
@@ -76,11 +93,16 @@ def merge_ds(ds_list):
     for k in keys:
         if np.issubdtype(type(ds_list[0][k][0]), int): 
             newtype = np.dtype('int32')
-        if np.issubdtype(type(np.array(ds_list[0][k].tolist()).flatten()[0]), float): 
+        elif np.issubdtype(type(np.array(ds_list[0][k].tolist()).flatten()[0]), float): 
             newtype = pyfusion.prec_med
         else: 
-            print("defaulting {0}".format(k))
+            print("defaulting {0} to its type in ds_list".format(k))
             newtype = type(ds_list[0][k][0])
+
+        # make sure t_mid is at least f32 (so that 100 sec shot records
+        # to a few usec
+        if k == 't_mid' and np.issubdtype(newtype, np.dtype('float32')):
+            newtype = np.dtype('float32')
 
         arr = np.array(ds_list[0][k].tolist(),dtype=newtype)  # this gets rid 
         # of the record stuff and saves space (pyfusion.med_prec is in .cfg)

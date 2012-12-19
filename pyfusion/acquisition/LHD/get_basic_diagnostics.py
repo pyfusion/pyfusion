@@ -56,7 +56,7 @@ def get_flat_top(shot=54196, times=None, smooth_dt = None, maxddw = None, hold=0
     # assume get_basic corrects the sign
     w_p = bp['w_p']
     dw = bp['dw_pdt']
-    w=np.where(w_p < 1e6)[0]
+    w=np.where(w_p < 1e6)[0]  # I guess this is to exclude nans
     len(w)
     cent = np.sum(w_p[w]*times[w])/np.sum(w_p[w])
     icent = np.where(times > cent)[0][0]
@@ -74,8 +74,13 @@ def get_flat_top(shot=54196, times=None, smooth_dt = None, maxddw = None, hold=0
 
     wb = int(0.5*offs) + np.nanargmax(dwsm)
     we = int(0.1*offs) + np.nanargmin(dwsm) # 
-    wbf = offs + np.where(np.abs(ddw[0:icent])> maxddw)[0][-1]
-    wef = offs + icent + np.where(np.abs(ddw[icent:])> maxddw)[0][0]
+    wgt = np.where(np.abs(ddw[0:icent])> maxddw)[0]
+    if len(wgt) < 10: 
+        print('*** flat_top not found on shot {s}'.format(s=shot))
+        return (0,0,(0,0,0,0,0))
+
+    wbf = offs + icent + wgt[-1]
+    wef = offs + icent + wgt[0]
     if debug>0:
         pl.plot(w_p,label='w_p',hold=hold)
         pl.plot(dwsm,label='sm(dw)')
@@ -102,12 +107,15 @@ def get_delay(shot):
     return(delay)
 
 
-def get_basic_diagnostics(diags=None, shot=54196, times=None, delay=None, debug=0):
+def get_basic_diagnostics(diags=None, shot=54196, times=None, delay=None, exception=None, debug=0):
     """ return a list of np.arrays of normally numeric values for the 
     times given, for the given shot.
     """
 
     global lhd_summary
+    # if no exception given and we are not debugging
+    # note - exception=None is a valid entry, so the default we use is False
+    if exception==False and debug==0: exception=Exception
 
     if diags == None: diags = "<n_e19>,b_0,i_p,w_p,dw_pdt,dw_pdt2".split(',')
     
@@ -128,6 +136,8 @@ def get_basic_diagnostics(diags=None, shot=54196, times=None, delay=None, debug=
         else:
             info = file_info[diag]
             varname = info['name']
+            subfolder = info['format'].split('@')[0]
+            filepath = os.path.sep.join([localigetfilepath,subfolder,info['format']])
             if ':' in varname: (oper,varname) = varname.split(':')
             else: oper = None
 
@@ -142,13 +152,14 @@ def get_basic_diagnostics(diags=None, shot=54196, times=None, delay=None, debug=
                 valarr = np.double(val)+(times*0)
             else:    
                 try:
-                    dg = igetfile(localigetfilepath + info['format'], shot=shot)
+
+                    dg = igetfile(filepath, shot=shot)
                 except IOError:
                     try:
-                        dg = igetfile(localigetfilepath + info['format']+'.bz2', shot=shot)
+                        dg = igetfile(filepath+'.bz2', shot=shot)
                     except IOError:
                         try:
-                            dg = igetfile(localigetfilepath + info['format']+'.gz', shot=shot)
+                            dg = igetfile(filepath + '.gz', shot=shot)
                         except exception:
                             #debug_(1)
                             dg=None
@@ -180,6 +191,11 @@ def get_basic_diagnostics(diags=None, shot=54196, times=None, delay=None, debug=
                             raise LookupError(
                                 'Need just one instance of variable {0} in {1}'
                                 .format(varname, dg.filename))
+                        if len(np.shape(dg.data))!=2:
+                           raise LookupError(
+                                'insufficient data for {0} in {1}'
+                                .format(varname, dg.filename))
+                             
                         valarr = dg.data[:,nd+w[0]]
 
                     tim =  dg.data[:,0] - delay
@@ -193,6 +209,11 @@ def get_basic_diagnostics(diags=None, shot=54196, times=None, delay=None, debug=
                         ddw = np.diff(dw)/(np.average(np.diff(tim)))
                         tim = tim[2:]
                         valarr = 4e-6 * dw[1:] * np.abs(ddw)
+
+                    if (len(tim) < 10) or (np.std(tim)<0.1):
+                        raise ValueError('Insufficient points or degenerate'
+                                         'timebase data in {0}, {1}'
+                                         .format(varname, dg.filename))
 
                     valarr = (stineman_interp(times, tim, valarr))
                     w = np.where(times > max(tim))

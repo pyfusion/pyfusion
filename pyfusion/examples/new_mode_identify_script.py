@@ -39,7 +39,7 @@ class Mode():
         self.name = name
         self.N = N
         self.NN = NN
-        self.cc = cc
+        self.cc = np.array(cc)#-np.pi
         self.csd = csd
         if threshold == None: threshold = 1
         self.threshold = threshold

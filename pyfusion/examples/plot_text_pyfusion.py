@@ -1,4 +1,5 @@
 """
+This has been largely supeseded by splitting into acquisition/read_text_pyfusion and visual/sp.py
 Extract data from the text output of the new pyfusion code
 And plot anything vs anything: (not implemented yet?)
  Default will plot freq vs t_mid for the first shot
@@ -62,7 +63,7 @@ def extract_vars(datadict, varlist, indices=None, debug=debug):
 def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None, 
        size_scale=None, hold=0, seed=None, colorbar=None, marker='o'):
     """ Scatter plot front end, size_scale 
-    x, y, sz, col can be keys or variables (of matching size)
+    x, y, sz, col can be keys or variables (of matching size to ds)
     decimate = 0.1 selects 10% of the input, -0.1 uses a fixed key. 
     """
     def size_val(marker_size):

@@ -11,7 +11,7 @@ export INDEXSERVERNAME=DasIndex.LHD.nifs.ac.jp/LHD
 import subprocess
 import sys
 import tempfile
-from os import path
+from os import path, makedirs
 import array as Array
 from numpy import mean, array, double, arange, dtype, load
 import numpy as np
@@ -223,6 +223,9 @@ def retrieve_to_file(diagg_name=None, shot=None, subshot=None,
 # in the new pyfusion, it is fixed in the config file.
 #    if outdir == None: 
 #        outdir = tempfile.gettempdir() + '/'
+
+    if not(path.exists(outdir)): makedirs(outdir)
+
     freebytes=get_free_bytes(outdir)
     if freebytes < 1e9:
          purge_old(outdir, '*dat')  # ONLY DO .DAT have to manually purge prm

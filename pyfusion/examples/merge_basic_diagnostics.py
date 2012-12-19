@@ -44,12 +44,18 @@ run -i pyfusion/examples/test_lasso_fs.py
 import os.path
 from pyfusion.acquisition.LHD.get_basic_diagnostics import get_basic_diagnostics, get_flat_top
 
+import logging
+logging.basicConfig(format='%(levelname)s:%(message)s', 
+                    filename='pyfusion.log', level=logging.DEBUG)
+
 debug=0
 exception = IOError
 
 #dd={}
 #for name in ds.dtype.names: dd.update({name: ds[name]})
 diags="<n_e19>,b_0,i_p,di_pdt,w_p,dw_pdt,dw_pdt2,beta,NBI".split(',')
+diags="b_0,w_p,dw_pdt,dw_pdt2,beta,NBI".split(',')
+minshot=0
 
 import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())
@@ -59,8 +65,12 @@ exec(pyfusion.utils.process_cmd_line_args())
 sz = len(dd[dd.keys()[0]])
 missing_shots = []
 good_shots =[]
+
 ctr=0
-for shot in np.unique(dd['shot']):
+ 
+shots = np.unique(dd['shot'])
+wgt = where(shots > minshot)
+for shot in shots[wgt]:
     # ws is the set of indices corresponding to the shot
     ws = np.where(shot == dd['shot'])[0]
     if len(ws)==0:   # this is an impossible condition!
@@ -78,29 +88,32 @@ for shot in np.unique(dd['shot']):
           basic_data.update({'flat_level': flat_level})
 
           good_shots.append(shot)
-       except exception:		
+       except exception, details:		
           missing_shots.append(shot)
           basic_data={}
+          logging.warning("shot {s} not processed for diags, {info}"
+                          .format(s=shot, info=details))
 
-       bsign = np.sign(basic_data['b_0'][0])
-       for key in basic_data.keys():
-           if debug>0: print(key)
-           if dd.has_key(key): 
-               ctr += 1
-               if mod(ctr,10) == 0: 
-                   print('\nMerging in key {0} {1}'.format(key, shot)),
+       if basic_data != {}:
+           bsign = np.sign(basic_data['b_0'][0])
+           for key in basic_data.keys():
+               if debug>0: print(key)
+               if dd.has_key(key): 
+                   ctr += 1
+                   if mod(ctr,10) == 0: 
+                       print('\nMerging in key {0} {1}'.format(key, shot)),
+                   else:
+                       print(key),
+               else:    
+                   print('Creating new key {0}'.format(key))               
+                   dd.update({key: array(np.zeros(sz,dtype=pyfusion.prec_med)+np.nan)})
+
+               #store it at the corresponding indices
+
+               if key in ['w_p','i_p','dw_pdt','dw_pdt2','di_pdt']:
+                   dd[key][ws] = bsign*basic_data[key].astype(pyfusion.prec_med)
                else:
-                   print(key),
-           else:    
-               print('Creating new key {0}'.format(key))               
-               dd.update({key: array(np.zeros(sz,dtype=pyfusion.prec_med)+np.nan)})
-
-           #store it at the corresponding indices
-
-           if key in ['w_p','i_p','dw_pdt','dw_pdt2','di_pdt']:
-               dd[key][ws] = bsign*basic_data[key].astype(pyfusion.prec_med)
-           else:
-               dd[key][ws] = basic_data[key].astype(pyfusion.prec_med)
+                   dd[key][ws] = basic_data[key].astype(pyfusion.prec_med)
 
 try:
     filename
@@ -110,11 +123,11 @@ except:
 
 save_name = 'saved_'+os.path.splitext(os.path.split(filename)[1])[0]
 print('Saving as {0}'.format(save_name))
-np.save(save_name,dd)
+#np.save(save_name,dd)
 
 print("{0} missing shots out of {1}".format(len(missing_shots),(len(missing_shots)+len(good_shots))))
 
 if verbose>0: print('missing shots are {0}'.format(missing_shots))
 
-for key in basic_data.keys():
+for key in diags:
         print('{0:10s}: {1:.1f}%'.format(key, 100.0*np.sum(dd[key]*0==0)/sz))

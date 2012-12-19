@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-""" job controller for preprocessing pyfusion flucstruc data.  Replaces do_range script, so
-that a nice argument form can be used, and eventually multi-processing.
+""" job controller for preprocessing pyfusion flucstruc data.  Replaces 
+do_range script, so that a nice argument form can be used, and eventually 
+multi-processing.
 """
 from warnings import warn
 import subprocess
@@ -24,6 +25,8 @@ if __name__ == '__main__':
                          help='format string to produce output file name' )
     PARSER.add_argument( '--debug', type=int, default=0, 
                          help='debug level, > 1 will prevent exceptions being hidden - useful only an manual runs, not with prepfs_range')
+    PARSER.add_argument( '--info', type=int, default=2, 
+                         help='controls how much history and config info is printed')
     PARSER.add_argument( '--quiet', type=int, default=0, 
                          help=' >0 suppresses printout of extra information' )
     PARSER.add_argument( '--separate', type=int, default=1, 
@@ -58,11 +61,11 @@ if __name__ == '__main__':
 
     cmd = str('python pyfusion/examples/gen_fs_local.py shot_range={sr} diag_name={dn} '
               'overlap={ov} n_samples={ns} exception={ex} debug={db} time_range={tr} '
-              'separate={sep} method="{nor}" > {path}/{fn}'
+              'separate={sep} info={info} method="{nor}" > {path}/{fn}'
               .format(sr=ARGS.shot_range, nor=ARGS.normalize, sep=ARGS.separate, 
                       dn = ARGS.diag_name, tr=ARGS.time_range, db=ARGS.debug,
                       ex=ARGS.exception, ov=ARGS.overlap, ns=ARGS.n_samples,
-                      path=ARGS.output_path[0],fn=filename
+                      path=ARGS.output_path[0],fn=filename, info=ARGS.info
                       )
               )
                

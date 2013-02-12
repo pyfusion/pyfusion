@@ -2,6 +2,10 @@ import pyfusion as pf
 import pylab as pl
 import numpy as np
 
+# now that get_basic is renamed and in LHD:
+from pyfusion.acquisition.LHD.get_basic_diagnostics import get_basic_diagnostics as get_basic_params
+
+_var_defaults="""
 dev_name = "LHD"
 shot=38075
 diags = ['<n_e19>', 'w_p', 'b_0']
@@ -9,16 +13,21 @@ times = np.linspace(0,4,1000)
 delay=None
 hold=1
 scale=1
+debug=0
+"""
+exec(_var_defaults)
 
-import pyfusion.utils
-exec(pyfusion.utils.process_cmd_line_args())
+#import pyfusion.utils
+#exec(pyfusion.utils.process_cmd_line_args())
+from  bdb_utils import process_cmd_line_args
+exec(process_cmd_line_args())
 
 device = pf.getDevice(dev_name)
 
 #data=dev.acq.getdata(shot,diag_name)
 #data.plot_signals()
 
-bp = get_basic_params(diags,shot=shot,times=times,delay=delay)
+bp = get_basic_params(diags,shot=shot,times=times,delay=delay,debug=debug)
 junk = bp.pop('check_tm')
 junk = bp.pop('check_shot')
 

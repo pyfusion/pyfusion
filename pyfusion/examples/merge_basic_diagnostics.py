@@ -44,18 +44,17 @@ run -i pyfusion/examples/test_lasso_fs.py
 import os.path
 from pyfusion.acquisition.LHD.get_basic_diagnostics import get_basic_diagnostics, get_flat_top
 
-import logging
-logging.basicConfig(format='%(levelname)s:%(message)s', 
-                    filename='pyfusion.log', level=logging.DEBUG)
-
 debug=0
 exception = IOError
+exception = (IOError, LookupError, ValueError)
 
 #dd={}
 #for name in ds.dtype.names: dd.update({name: ds[name]})
 diags="<n_e19>,b_0,i_p,di_pdt,w_p,dw_pdt,dw_pdt2,beta,NBI".split(',')
 diags="b_0,w_p,dw_pdt,dw_pdt2,beta,NBI".split(',')
 minshot=0
+maxshot=999999 # higher than even LHD
+shot_list = []
 
 import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())
@@ -68,9 +67,12 @@ good_shots =[]
 
 ctr=0
  
-shots = np.unique(dd['shot'])
-wgt = where(shots > minshot)
-for shot in shots[wgt]:
+if len(shot_list)==0:
+    shots = np.unique(dd['shot'])
+    wgt = where((shots >= minshot) & (shots <= maxshot))
+    shot_list = shots[wgt]
+
+for shot in shot_list:
     # ws is the set of indices corresponding to the shot
     ws = np.where(shot == dd['shot'])[0]
     if len(ws)==0:   # this is an impossible condition!
@@ -91,11 +93,12 @@ for shot in shots[wgt]:
        except exception, details:		
           missing_shots.append(shot)
           basic_data={}
-          logging.warning("shot {s} not processed for diags, {info}"
+          pyfusion.logging.warning("shot {s} not processed for diags, {info}"
                           .format(s=shot, info=details))
 
        if basic_data != {}:
-           bsign = np.sign(basic_data['b_0'][0])
+           #bsign = np.sign(basic_data['b_0'][0])  # no need to correct so far
+           # not used yet - maybe use for phases.
            for key in basic_data.keys():
                if debug>0: print(key)
                if dd.has_key(key): 
@@ -106,14 +109,18 @@ for shot in shots[wgt]:
                        print(key),
                else:    
                    print('Creating new key {0}'.format(key))               
-                   dd.update({key: array(np.zeros(sz,dtype=pyfusion.prec_med)+np.nan)})
+                   dd.update({key: (np.zeros(sz)+np.nan).astype(pyfusion.prec_med)})
 
                #store it at the corresponding indices
 
-               if key in ['w_p','i_p','dw_pdt','dw_pdt2','di_pdt']:
+               if key in ['not-yet']:#['w_p','i_p','dw_pdt','dw_pdt2','di_pdt']:
+                   # this probably doesn't need astype (as it is a scatter)
                    dd[key][ws] = bsign*basic_data[key].astype(pyfusion.prec_med)
+                       
                else:
                    dd[key][ws] = basic_data[key].astype(pyfusion.prec_med)
+               if debug: print('{key}: avg={a:.3g}'.
+                               format(key=key,a=np.average(dd[key][ws]))),
 
 try:
     filename

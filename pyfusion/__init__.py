@@ -76,11 +76,19 @@ root_dir = os.path.split(os.path.abspath( __file__ ))[0]
 
 try:
     from numpy import dtype as npdtype
-    prec_med=npdtype(config.get('global','precision_medium',vars={'precision_medium':'float32'}))
+    # Beware!  vars takes  precedence over others!
+    prec_med=npdtype(config.get('global','precision_medium')) #,vars={'precision_medium':'float32'}))
 except:
     print('unknown medium precision value')
     from numpy import dtype as npdtype
     prec_med=npdtype('float32')
+
+try:
+    COLORS=config.get('global','colors')
+except:
+    if VERBOSE>0: print('colors not in config file - no color!')
+    COLORS=None
+
 
 # We import these into the base pyfusion namespace for convenience.
 from pyfusion.devices.base import getDevice

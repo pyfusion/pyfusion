@@ -1,4 +1,28 @@
 from numpy import cumsum, pi, diff
+
+# this changes the behaviour of warnings
+import warnings
+import pyfusion
+
+# suppress this change altogether with colors=None in globals
+# can't be changed at runtime.
+if pyfusion.COLORS != None:
+    orig_show = warnings.showwarning
+    try: 
+        from IPython.utils import coloransi
+        tc=coloransi.TermColors()
+        red = tc.LightRed
+        nocolor = tc.NoColor
+    except None:
+        (red, nocolor) = ('','')
+
+    def my_show(message, category, filename, lineno, file=None, line=None):
+        orig_show(red + '**' + message.message + nocolor, 
+                  category, filename, lineno, file, line)
+
+    warnings.showwarning = my_show    
+# end of color warnings block
+
 def warn(warning, category=UserWarning ,stacklevel=2, exception=None):
     """ Similar to warnings.warn, but includes info about the exception.
     e.g.  warn('extracting data from shot %d' % (shot), exception=ex)
@@ -14,7 +38,6 @@ def warn(warning, category=UserWarning ,stacklevel=2, exception=None):
     multiple messages will be printed if the warning string changes 
     from one error to the next (unless warnings are disabled.)
     """
-    import warnings
     if exception==None: exmsg=''
     else: exmsg = 'Exception "%s, %s": ' %  (type(exception),exception)
 # need the +1 so that the caller's line is printed, not this line.

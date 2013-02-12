@@ -40,6 +40,9 @@ def find_data(file, target, skip = 0, recursion_level=0, debug=0):
 
 
 def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isinteractive(), ms=100, hold=0, debug=0, quiet=1,  exception = Exception):
+    """ Accepts a file or a list of files, returns a list of structured arrays
+    See merge ds_list to merge and convert types (float -> pyfusion.prec_med
+    """
     st = seconds(); last_update=seconds()
     file_list = files
     if len(np.shape(files)) == 0: file_list = [file_list]
@@ -51,7 +54,7 @@ def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isintera
     for filename in file_list:
         if seconds() - last_update > 30:
             last_update = seconds()
-            print('processing {f}'.format(filename))
+            print('processing {f}'.format(f=filename))
         try:
             if pl.is_string_like(target): 
                 skip = 1+find_data(filename, target,debug=debug)
@@ -68,8 +71,8 @@ def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isintera
                                     ('p', 'f8'), ('H','f8'), ('phases',ph_dtype)])
             )
             count += 1
-        except exception, info:
-            print('Error in {f} - {info}'.format(f=filename, info=info))
+        except ValueError, info:
+            print('Conversion error while reading {f} with loadtxt - {info}'.format(f=filename, info=info))
 
     print("{c} out of {t} files".format(c=count, t=len(file_list)))
     if plot>0: 
@@ -91,6 +94,8 @@ def merge_ds(ds_list):
 
     dd = {}
     for k in keys:
+        # get rid of the structure/record stuff, and convert precision
+        # warning - beware of data with very high dynamic range!
         if np.issubdtype(type(ds_list[0][k][0]), int): 
             newtype = np.dtype('int32')
         elif np.issubdtype(type(np.array(ds_list[0][k].tolist()).flatten()[0]), float): 
@@ -100,7 +105,7 @@ def merge_ds(ds_list):
             newtype = type(ds_list[0][k][0])
 
         # make sure t_mid is at least f32 (so that 100 sec shot records
-        # to a few usec
+        # accurately to a few usec
         if k == 't_mid' and np.issubdtype(newtype, np.dtype('float32')):
             newtype = np.dtype('float32')
 

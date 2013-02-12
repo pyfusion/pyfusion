@@ -60,11 +60,12 @@ class igetfile():
     filename = ""
     
 
-    def __init__(self, filename=None, fileformat=None, shot=None, verbose=0, plot=False, hold=True):
+    def __init__(self, filename=None, fileformat=None, shot=None, verbose=0, plot=False, debug=0, hold=True):
         """ read in data, optionally plot (True gets default channel, N gets ch=N
         if filename contains a {, assume it is a format
         let get_basic_params deal with .bz2 files etc for now.
         """
+        self.debug = debug
         if filename == None or "{" in filename:
             self.shot = int(shot)
             if "{" in filename: self.filename = filename.format(self.shot)
@@ -77,7 +78,8 @@ class igetfile():
             self.filename = call_igetfile(path_to_igetfile, self.filename)
                                      
         (self.data,self.vardict) = read_igetfile(filename=self.filename, 
-                                                 verbose=0, plot=plot, hold=hold)
+                                                 verbose=0, plot=plot, hold=hold,debug=debug)
+        self.valnames=self.vardict['ValName'] # shortcut
         # get rid of file if we got it from the server
         if path_to_igetfile != None and pyfusion.DEBUG<3:
             os.remove(self.filename)
@@ -86,8 +88,8 @@ class igetfile():
             if type(plot) == type(True):  self.plot()
             else: self.plot(ch=plot)
 
-    def plot(self, hold=0, ch=None, tstart=None, tend=None, tstep=None, scl=None, navg=1, debug=1, axes=None, *args, **kwargs):
-        """ Plot all the data items - can take a ling time.
+    def plot(self, hold=0, ch=-1, tstart=None, tend=None, tstep=None, scl=None, navg=1, debug=1, axes=None, *args, **kwargs):
+        """ ch=-1 -> Plot all the data items - can take a long time.
         """
         import pylab as pl
         name=self.vardict['Name']
@@ -111,7 +113,7 @@ class igetfile():
         print(shape(dim))
         if len(shape(dim))==0:
             for (p,name) in enumerate(self.vardict['ValName']):
-                if ch==None or ch==(p+1):
+                if ch==-1 or ch==(p+1):
                     ax.plot(self.data[:,0], self.data[:,p+1],
                             label="{0}:{1}".format(name, self.shot),
                             linestyle=linest[(p/8) % (len(linest))], 
@@ -150,7 +152,7 @@ class igetfile():
         if square_inches > 5: ax.legend()
         pl.title("%d:%s" % (self.vardict['ShotNo'],self.vardict['Name']))
 
-def read_igetfile(filename=None, verbose=0, plot=True, hold=True, quiet=0):
+def read_igetfile(filename=None, verbose=0, plot=True, hold=True, debug=0, quiet=0):
     """ Read LHD data from igetfile
     Note that the plot option on this call is crude, compared to in igetfile
         pseudocode: 
@@ -179,6 +181,7 @@ def read_igetfile(filename=None, verbose=0, plot=True, hold=True, quiet=0):
 
     """
     from numpy import where, diff, loadtxt, array
+    if (quiet > 0) and (debug > 0): quiet=0  # debug is stronger than quiet
     import time
     from StringIO import StringIO
 
@@ -232,7 +235,9 @@ def read_igetfile(filename=None, verbose=0, plot=True, hold=True, quiet=0):
             if verbose>1: print(parm)
             if parm.find(',')>=0: parms[p] = '= ['.join(parm.split('=')) + ']'
             try:
-                exec(parms[p],vardict)
+                # this tries to execute vvv=VVV putting the result in vardict
+                # syntax is exec(str, globaldict, localdict)
+                exec(parms[p],{},vardict)
             except SyntaxError:
                 if parm.find(',')>0:
                     print('bad syntax {%s} try to reparse' % (parms[p])),
@@ -242,7 +247,7 @@ def read_igetfile(filename=None, verbose=0, plot=True, hold=True, quiet=0):
                                + ','.join(["'%s'" % (sym.strip()) for sym in parsesyms])
                                + ']')
                     try:
-                        exec(reparse,vardict)                               
+                        exec(reparse,{},vardict)                               
                         print(': recovered {%s}' % reparse)
                     except:
                         print('Error executing reparsed [%s]' % (reparse))

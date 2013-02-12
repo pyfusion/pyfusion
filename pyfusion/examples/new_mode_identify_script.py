@@ -15,8 +15,9 @@ import numpy as np
 
 # This simple strategy works when the number is near zero +- 2Npi,
 # which is true for calculating the deviation from the cluster centre.
-def twopi(x):
-    return ((pi+np.array(x)) % (2*pi) -pi)
+# does not attempt to make jumps small (might be a good idea!)
+def twopi(x, offset=pi):
+    return ((offset+np.array(x)) % (2*pi) -offset)
 
 global modelist
 modelist=[]
@@ -35,11 +36,13 @@ def askif(message, quiet=0):
 
 class Mode():
     global modelist
-    def __init__(self,name, N, NN, cc, csd, threshold=None, shot_list=[]):
+    def __init__(self,name, N, NN, cc, csd, threshold=None, shot_list=[],MP2010=True):
         self.name = name
         self.N = N
         self.NN = NN
-        self.cc = np.array(cc)#-np.pi
+        self.cc = np.array(cc)
+        if MP2010:
+            self.cc = -twopi(self.cc + np.pi, offset=4)  # this works for MP2010 if -B is the standard
         self.csd = csd
         if threshold == None: threshold = 1
         self.threshold = threshold
@@ -50,10 +53,13 @@ class Mode():
 
         Nest = float(leng+1)/leng/(2*np.pi) * Nest
         self.comment = self.name+",<N>~{0:.1f}".format(Nest)
+        self.num_set = 0  # these are counters used when classifying
+        self.num_reset = 0
         modelist.append(self)
 
     def store(self, dd, threshold=None,Nval=None,NNval=None,shot_list=None,quiet=0):
-        """ stoe coars and fine mode (N, NN) numbers according to a threshold std and an optional shot_list.  If not specified, the internal shot_list is used.
+        """ store coarse and fine mode (N, NN) numbers according to a threshold std and an optional shot_list.  If None the internal shot_list is used.
+        which would have defaulted to [] at __init__
         """
         if shot_list == None: shot_list = self.shot_list
         if threshold == None: threshold=self.threshold
@@ -73,7 +79,8 @@ class Mode():
 
         # normally apply to all shots, but can restrict to a particular
         # range of shots - e.g. dead MP1 for shot 54186 etc.
-        if shot_list !=None:
+        if shot_list != []:  # used to be None  - be careful, there are
+                             # two shot_list's one in mode, one input here
             where_in_shot = []
             for sht in shot_list:
                 ws = where(dd['shot'][w] == sht)[0]
@@ -98,12 +105,15 @@ class Mode():
             print("NN={0} is most frequent ({1} inst.)"
                   .format(amx[-1],cnts[amx[-1]]))
             fract = len(w_already)/float(len(w))
-            if fract>0.2: askif("{0:.1f}% already set?".
+            if fract>0.2: askif("{0:.1f}% of intended insts already set?".
                                 format(fract*100),quiet=quiet)
+
+        mode.num_set += len(w)
+        mode.num_reset += len(w_already)
 
         dd['NN'][w]=NNval
         dd['N'][w]=Nval
-        print("set {s:.1f}%, total set is now {t:.1f}%".
+        print("set {s:.1f}%, total N set is now {t:.1f}%".
               format(s=100*float(len(w))/len(dd['shot']),
                      t=100*float(len(where(dd['N']>=0)[0]))/len(dd['shot'])
                      ))
@@ -211,9 +221,13 @@ for mname in 'N,NN,M,MM'.split(','):
     if not(dd.has_key(mname)):
         dd[mname]=-np.ones(len(dd['shot']),dtype=int16)
 
+tot_set, tot_reset = (0,0)
+
 for mode in modelist:
     mode.store(dd, threshold)
-
+    tot_set   += mode.num_set
+    tot_reset += mode.num_reset
+print('Total set = {t}, reset = {r}'.format(t=tot_set, r=tot_reset))
 
 """
 29th Nov method- obsolete

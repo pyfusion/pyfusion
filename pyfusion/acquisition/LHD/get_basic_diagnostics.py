@@ -17,7 +17,7 @@ from pyfusion.acquisition.LHD.read_igetfile import igetfile
 from  pyfusion.acquisition.LHD.read_igetfile import igetfile
 from matplotlib.mlab import stineman_interp
 from pyfusion.utils.read_csv_data import read_csv_data
-from warnings import warn
+from pyfusion.utils.utils import warn
 import re
 
 this_file = os.path.abspath( __file__ )
@@ -34,14 +34,26 @@ Next level keys are
 """
 file_info={}
 #file_info.update({'n_e': {'format': 'fircall@{0}.dat','name':'ne_bar(3939)'}})
+# this form should be phase out, as it is an unsuitable variable name 
 file_info.update({'<n_e19>': {'format': 'fircall@{0}.dat','name':'ne_bar\(3[0-9]+\)'}})
+file_info.update({'n_e19b0': 
+                  {'format': 'fircall@{0}.dat','name':'ne_bar\(3[0-9]+\)',
+                   'comment': 'central line avg density'}})
+# this one is an average of two ~ mid radius chords - simple way
+# to reduce dependence on major axis position.
+file_info.update({'n_e19dL5': 
+                  {'format': 'fircall@{0}.dat',
+                   'name':'average:nL\(4029|3399\)',
+                   'comment': 'mid_radius ne_dL, not nebar'}})
 file_info.update({'i_p': {'format': 'ip@{0}.dat','name':'Ip$'}})
 file_info.update({'di_pdt': {'format': 'ip@{0}.dat','name':'ddt:Ip$'}})
 file_info.update({'w_p': {'format': 'wp@{0}.dat','name':'Wp$'}})
 file_info.update({'dw_pdt': {'format': 'wp@{0}.dat','name':'ddt:Wp$'}})
 file_info.update({'dw_pdt2': {'format': 'wp@{0}.dat','name':'ddt2:Wp$'}})
 file_info.update({'beta': {'format': 'wp@{0}.dat','name':'<beta-dia>'}})
+# syntax is full regexp - so need .* not *
 file_info.update({'NBI': {'format': 'nbi@{0}.dat','name':'sum:NBI.*.Iacc.'}})
+file_info.update({'ech': {'format': 'ech@{0}.dat','name':'sum:.*'}})
 file_info.update({'b_0': {'format': 'lhd_summary_data.csv','name':'MagneticField'}})
 file_info.update({'R_ax': {'format': 'lhd_summary_data.csv','name':'MagneticAxis'}})
 file_info.update({'Quad': {'format': 'lhd_summary_data.csv','name':'Quadruple'}})
@@ -53,7 +65,10 @@ def get_flat_top(shot=54196, times=None, smooth_dt = None, maxddw = None, hold=0
     from pyfusion.data.signal_processing import smooth
 
     bp=get_basic_diagnostics(shot=shot,diags=['w_p','dw_pdt','b_0'],times=times)
-    # assume get_basic corrects the sign
+    # assume sign is OK - at the moment, the code to fix sign is in merge
+    # but it is inactive.  Probably should be in get_basic_diag..
+    # so far, it seems that w_p and i_p are corrected - not sure 
+    # about other flux loops.
     w_p = bp['w_p']
     dw = bp['dw_pdt']
     w=np.where(w_p < 1e6)[0]  # I guess this is to exclude nans
@@ -107,18 +122,19 @@ def get_delay(shot):
     return(delay)
 
 
-def get_basic_diagnostics(diags=None, shot=54196, times=None, delay=None, exception=None, debug=0):
+def get_basic_diagnostics(diags=None, shot=54196, times=None, delay=None, exception=False, debug=0):
     """ return a list of np.arrays of normally numeric values for the 
     times given, for the given shot.
     """
 
     global lhd_summary
     # if no exception given and we are not debugging
-    # note - exception=None is a valid entry, so the default we use is False
+    # note - exception=None is a valid entry, meaning tolerate no exceptions
+    # so the "default" we use is False
     if exception==False and debug==0: exception=Exception
 
     if diags == None: diags = "<n_e19>,b_0,i_p,w_p,dw_pdt,dw_pdt2".split(',')
-    
+    if len(np.shape(diags)) == 0: diags = [diags]
     if delay == None: delay = get_delay(shot)
 
     if times == None: 
@@ -151,17 +167,19 @@ def get_basic_diagnostics(diags=None, shot=54196, times=None, delay=None, except
                 val = lhd_summary[varname][shot]    
                 valarr = np.double(val)+(times*0)
             else:    
+                debug_(max(pyfusion.DEBUG, debug), level=4, key='find_data')
                 try:
 
-                    dg = igetfile(filepath, shot=shot)
+                    dg = igetfile(filepath, shot=shot, debug=debug-1)
                 except IOError:
                     try:
-                        dg = igetfile(filepath+'.bz2', shot=shot)
+                        dg = igetfile(filepath+'.bz2', shot=shot, debug=debug-1)
                     except IOError:
                         try:
-                            dg = igetfile(filepath + '.gz', shot=shot)
+                            dg = igetfile(filepath + '.gz', shot=shot, debug=debug-1)
                         except exception:
-                            #debug_(1)
+                            if debug>0: print('diag at {fp} not found'
+                                              .format(fp=filepath))
                             dg=None
                             #break  # give up and try next diagnostic
                 if dg==None:  # messy - break doesn't do what I want?

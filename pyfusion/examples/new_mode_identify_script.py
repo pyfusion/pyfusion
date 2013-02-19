@@ -19,8 +19,7 @@ import numpy as np
 def twopi(x, offset=pi):
     return ((offset+np.array(x)) % (2*pi) -offset)
 
-global modelist
-modelist=[]
+
 shot_list = []
 
 def askif(message, quiet=0):
@@ -35,13 +34,12 @@ def askif(message, quiet=0):
             raise LookupError(message)
 
 class Mode():
-    global modelist
-    def __init__(self,name, N, NN, cc, csd, threshold=None, shot_list=[],MP2010=True):
+    def __init__(self,name, N, NN, cc, csd, threshold=None, shot_list=[],MP2010_trick=False):
         self.name = name
         self.N = N
         self.NN = NN
         self.cc = np.array(cc)
-        if MP2010:
+        if MP2010_trick:  # don't use this - now separate mode lists!
             self.cc = -twopi(self.cc + np.pi, offset=4)  # this works for MP2010 if -B is the standard
         self.csd = csd
         if threshold == None: threshold = 1
@@ -55,7 +53,6 @@ class Mode():
         self.comment = self.name+",<N>~{0:.1f}".format(Nest)
         self.num_set = 0  # these are counters used when classifying
         self.num_reset = 0
-        modelist.append(self)
 
     def store(self, dd, threshold=None,Nval=None,NNval=None,shot_list=None,quiet=0):
         """ store coarse and fine mode (N, NN) numbers according to a threshold std and an optional shot_list.  If None the internal shot_list is used.
@@ -153,59 +150,115 @@ class Mode():
 
 # manually enter the mean and sd for the modes, called by color
 # n=1
-blue=Mode('N=1', N=1, NN=100, cc = [1.020, 1.488, 1.348, -0.080, 0.989], csd= [0.4, 0.2, 0.3, 0.20, 0.2 ])
+OM=[]  # old modes (pre MP2010)
+OM.append(Mode('N=1', N=1, NN=100, cc = [1.020, 1.488, 1.348, -0.080, 0.989], csd= [0.4, 0.2, 0.3, 0.20, 0.2 ]))
 #blue.csd= [0.077, 0.016, 0.048, 0.020, 0.008 ]
 
 
-blue1=Mode('N=1,46747', N=1, NN=101, cc = [0.6, 1.7, 0.8, 0.2, 0.989], csd= [0.4, 0.2, 0.3, 0.20, 0.2 ])
+OM.append(Mode('N=1,46747', N=1, NN=101, cc = [0.6, 1.7, 0.8, 0.2, 0.989], csd= [0.4, 0.2, 0.3, 0.20, 0.2 ]))
 # obscured by other noise....
 
 
-blue2=Mode('N=1,or 0?', N=1, NN=102, cc = [1.0, -0.65, 1.84, 1.8, 1.95], csd= [0.2, 0.2, 0.3, 0.20, 0.2 ])
+OM.append(Mode('N=1,or 0?', N=1, NN=102, cc = [1.0, -0.65, 1.84, 1.8, 1.95], csd= [0.2, 0.2, 0.3, 0.20, 0.2 ]))
 # very clear on 38100
 
 
-blue3=Mode('N=1 - broad', N=1, NN=103, cc =[0.3, 0.25, 1.3, 2.0, 1.8], csd=[ 0.48, 0.5, 0.5, 0.5, 0.42])
+OM.append(Mode('N=1 - broad', N=1, NN=103, cc =[0.3, 0.25, 1.3, 2.0, 1.8], csd=[ 0.48, 0.5, 0.5, 0.5, 0.42]))
 
-blue4=Mode('N=1 - residual', N=1, NN=104, cc =[1.2, 0.86, 1.8, -0.1, 1.0], csd=[ 0.2, 0.2, 0.3, 0.3, 0.3])
+OM.append(Mode('N=1 - residual', N=1, NN=104, cc =[1.2, 0.86, 1.8, -0.1, 1.0], csd=[ 0.2, 0.2, 0.3, 0.3, 0.3]))
 
 
 # n=0
-lblue=Mode('N=0', N=0, NN=50, cc =[-1.146, -1.094, 0.608, 0.880, 0.164], csd=[ 0.48, 0.33, 0.34, 0.33, 0.42])
+OM.append(Mode('N=0', N=0, NN=50, cc =[-1.146, -1.094, 0.608, 0.880, 0.164], csd=[ 0.48, 0.33, 0.34, 0.33, 0.42]))
 # mainly low 27s
 #lblue.csd=[ 0.048, 0.033, 0.034, 0.033, 0.042]
 
 
-lbluef=Mode('N=0 - fract', N=0, NN=51, cc =[0.3, -.75, 0.608, 0.880, 0.45], csd=[ 0.48, 0.33, 0.34, 0.33, 0.42])
+OM.append(Mode('N=0 - fract', N=0, NN=51, cc =[0.3, -.75, 0.608, 0.880, 0.45], csd=[ 0.48, 0.33, 0.34, 0.33, 0.42]))
 
-lbluef1=Mode('N=0 - fract1', N=0, NN=52, cc =[-2.1, -1.1, 0.5, 1.06, 0.17], csd=[ 0.3, 0.33, 0.34, 0.33, 0.25])
+OM.append(Mode('N=0 - fract1', N=0, NN=52, cc =[-2.1, -1.1, 0.5, 1.06, 0.17], csd=[ 0.3, 0.33, 0.34, 0.33, 0.25]))
 
 
 
 # n=2
-red=Mode('N=2', N=2, NN=200, cc =[2.902, 2.217, 2.823, 1.021, 2.157], csd= [0.2, 0.2, 0.2, 0.3, 0.2 ])
+OM.append(Mode('N=2', N=2, NN=200, cc =[2.902, 2.217, 2.823, 1.021, 2.157], csd= [0.2, 0.2, 0.2, 0.3, 0.2 ]))
 #red.csd= [0.023, 0.006, 0.028, 0.025, 0.007 ]
 # saved as 200  with sumsd2 <10
 
 
-redlow=Mode('N=2, LF', N=2, NN=201, cc =[2., 2.4, 2.0, 1.5, 2.2], csd= [0.2, 0.2, 0.2, 0.3, 0.2 ])
+OM.append(Mode('N=2, LF', N=2, NN=201, cc =[2., 2.4, 2.0, 1.5, 2.2], csd= [0.2, 0.2, 0.2, 0.3, 0.2 ]))
 #red.csd= [0.023, 0.006, 0.028, 0.025, 0.007 ]
 # saved 201 with sumsd2 <10 
 
 
-red60=Mode('N=2, 60k', N=2, NN=202, cc =[2.3, 2.4, 1.7, 2.1, 1.7], csd= [0.3, 0.2, 0.2, 0.2, 0.2 ])
+OM.append(Mode('N=2, 60k', N=2, NN=202, cc =[2.3, 2.4, 1.7, 2.1, 1.7], csd= [0.3, 0.2, 0.2, 0.2, 0.2 ]))
 #red.csd= [0.023, 0.006, 0.028, 0.025, 0.007 ]
 # saved NN=202 sumsd2<10  - -model is 47634 (3928 overlap with  redlow)
 
-red60MP1 = Mode('N=2, 60k MP1', N=2, NN=204, cc =[0, 2.4, 1.7, 2.1, 1.7], csd= [5, 0.2, 0.2, 0.2, 0.2 ],shot_list=[54184,54185,54194,54195,54196,54197,54198])
+OM.append(Mode('N=2, 60k MP1', N=2, NN=204, cc =[0, 2.4, 1.7, 2.1, 1.7], csd= [5, 0.2, 0.2, 0.2, 0.2 ],shot_list=[54184,54185,54194,54195,54196,54197,54198]))
 # ref60, but allow for MP1 to be dead (large csd)
 
-weird=Mode('W1', N=2, NN=203, cc =[2.5, 0.3, -1.4, 0.7, 2.2], csd =[0.5, 0.5, 0.3, 0.3, .25])
+OM.append(Mode('W1', N=2, NN=203, cc =[2.5, 0.3, -1.4, 0.7, 2.2], csd =[0.5, 0.5, 0.3, 0.3, .25]))
+# too rare to worry
+
+def f1(cc):
+    return( -twopi(np.array(cc) + np.pi, offset=4))
+    
+MP2010=[]  # old modes (pre MP2010)
+MP2010.append(Mode('N=2', N=2, NN=200, cc = f1([1.020, 1.488, 1.348, -0.080, 0.989]), csd= [0.4, 0.2, 0.3, 0.20, 0.2 ]))
+#blue.csd= [0.077, 0.016, 0.048, 0.020, 0.008 ]
+
+
+MP2010.append(Mode('N=2,46747', N=2, NN=201, cc = f1([0.6, 1.7, 0.8, 0.2, 0.989]), csd= [0.4, 0.2, 0.3, 0.20, 0.2 ]))
+# obscured by other noise....
+
+
+MP2010.append(Mode('N=2,or 0?', N=2, NN=202, cc = f1([1.0, -0.65, 1.84, 1.8, 1.95]), csd= [0.2, 0.2, 0.3, 0.20, 0.2 ]))
+# very clear on 38100
+
+
+MP2010.append(Mode('N=2 - broad', N=2, NN=203, cc =f1([0.3, 0.25, 1.3, 2.0, 1.8]), csd=[ 0.48, 0.5, 0.5, 0.5, 0.42]))
+
+MP2010.append(Mode('N=2 - residual', N=2, NN=204, cc =f1([1.2, 0.86, 1.8, -0.1, 1.0]), csd=[ 0.2, 0.2, 0.3, 0.3, 0.3]))
+
+
+# n=0
+MP2010.append(Mode('N=3', N=3, NN=300, cc =f1([-1.146, -1.094, 0.608, 0.880, 0.164]), csd=[ 0.48, 0.33, 0.34, 0.33, 0.42]))
+# mainly low 27s
+#lblue.csd=[ 0.048, 0.033, 0.034, 0.033, 0.042]
+
+
+MP2010.append(Mode('N=3 - fract', N=3, NN=301, cc =f1([0.3, -.75, 0.608, 0.880, 0.45]), csd=[ 0.48, 0.33, 0.34, 0.33, 0.42]))
+
+MP2010.append(Mode('N=-3  ', N=-3, NN=-301, cc =([-2.74, +2.1, -2.7, -2.3, -2.5]), csd=[ 0.48, 0.33, 0.34, 0.33, 0.42]))
+
+MP2010.append(Mode('N=3 - fract1', N=3, NN=302, cc =f1([-2.1, -1.1, 0.5, 1.06, 0.17]), csd=[ 0.3, 0.33, 0.34, 0.33, 0.25]))
+
+# n=2
+MP2010.append(Mode('N=1', N=1, NN=100, cc =f1([2.902, 2.217, 2.823, 1.021, 2.157]), csd= [0.2, 0.2, 0.2, 0.3, 0.2 ]))
+#red.csd= [0.023, 0.006, 0.028, 0.025, 0.007 ]
+# saved as 200  with sumsd2 <10
+
+
+MP2010.append(Mode('N=1, LF', N=1, NN=101, cc =f1([2., 2.4, 2.0, 1.5, 2.2]), csd= [0.2, 0.2, 0.2, 0.3, 0.2 ]))
+#red.csd= [0.023, 0.006, 0.028, 0.025, 0.007 ]
+# saved 201 with sumsd2 <10 
+
+
+MP2010.append(Mode('N=1, 60k', N=1, NN=102, cc =f1([2.3, 2.4, 1.7, 2.1, 1.7]), csd= [0.3, 0.2, 0.2, 0.2, 0.2 ]))
+#red.csd= [0.023, 0.006, 0.028, 0.025, 0.007 ]
+# saved NN=202 sumsd2<10  - -model is 47634 (3928 overlap with  redlow)
+
+MP2010.append(Mode('N=1, 60k MP1', N=1, NN=104, cc =f1([0, 2.4, 1.7, 2.1, 1.7]), csd= [5, 0.2, 0.2, 0.2, 0.2 ],shot_list=[54184,54185,54194,54195,54196,54197,54198]))
+# ref60, but allow for MP1 to be dead (large csd)
+
+MP2010.append(Mode('W1?', N=1, NN=103, cc =f1([2.5, 0.3, -1.4, 0.7, 2.2]), csd =[0.5, 0.5, 0.3, 0.3, .25]))
 # too rare to worry
 
 
 ind = None
-mode=redlow
+modelist = MP2010
+mode=modelist[0]
 threshold=None
 
 import pyfusion.utils

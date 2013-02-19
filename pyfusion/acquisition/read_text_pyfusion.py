@@ -50,6 +50,7 @@ def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isintera
     if ph_dtype == None: ph_dtype = [('p12',f),('p23',f),('p34',f),('p45',f),('p56',f)]
     #ph_dtype = [('p12',f)]
     ds_list =[]
+    comment_list =[]
     count = 0
     for filename in file_list:
         if seconds() - last_update > 30:
@@ -71,6 +72,7 @@ def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isintera
                                     ('p', 'f8'), ('H','f8'), ('phases',ph_dtype)])
             )
             count += 1
+            comment_list.append(filename)
         except ValueError, info:
             print('Conversion error while reading {f} with loadtxt - {info}'.format(f=filename, info=info))
 
@@ -81,9 +83,9 @@ def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isintera
         pl.scatter(ds['t_mid'],ds['freq'],ms*ds['a12'],ds['amp'])
         pl.title('{s}, colour is amp, size is a12'.format(s=ds['shot'][0]))
         pl.colorbar()
-    return(ds_list)
+    return(ds_list, comment_list)
 
-def merge_ds(ds_list):
+def merge_ds(ds_list, comment_list=[]):
     """ Take a list of structured arrays, and merge into one
     """
     if len(np.shape(ds_list)) == 0: 
@@ -93,6 +95,8 @@ def merge_ds(ds_list):
     elif type(ds_list[0]) == np.ndarray: keys = np.sort(ds_list[0].dtype.names)
 
     dd = {}
+    #  for each key in turn, make an array from the ds_list[0], then
+    #  extend it with ds_list[1:]
     for k in keys:
         # get rid of the structure/record stuff, and convert precision
         # warning - beware of data with very high dynamic range!
@@ -113,11 +117,11 @@ def merge_ds(ds_list):
         # of the record stuff and saves space (pyfusion.med_prec is in .cfg)
         for (ind, ds) in enumerate(ds_list[1:]):
             oldlen = len(arr)
-            if len(np.shape(arr))==1:
+            if len(np.shape(arr))==1:  # 1D data
                 arr.resize(oldlen+len(ds[k]))
                 arr[oldlen:] = ds[k][:]
             else:
-                arr.resize(oldlen+len(ds[k]),len(arr[0]))
+                arr.resize(oldlen+len(ds[k]),len(arr[0])) # 2D only?
                 """ 13 secs to  merge two lots of 500k lines (5 phases)
                 for j in range(len(arr[0])):
                     arr[oldlen:,j] = np.array(ds[k].tolist())[:,j]
@@ -128,5 +132,16 @@ def merge_ds(ds_list):
                     arr[oldlen:,j] = float_phases[:,j]
 
         dd.update({k: arr})
+
+    if not dd.has_key('phorig'):  # preserve the original phase ch0
+        # as an integer8 scaled by 10 to save space
+        # this way, we can play with phases (invert etc) but
+        # can always check to see what has been changed
+        # at list the first element.
+        dd['phorig'] = np.array(dd['phases'][:,0]*10).astype('int8')
+
+    dd['comment'] = np.array(comment_list)
+
+
     return(dd)
     

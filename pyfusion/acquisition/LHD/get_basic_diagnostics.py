@@ -57,10 +57,13 @@ file_info.update({'ech': {'format': 'ech@{0}.dat','name':'sum:.*'}})
 file_info.update({'b_0': {'format': 'lhd_summary_data.csv','name':'MagneticField'}})
 file_info.update({'R_ax': {'format': 'lhd_summary_data.csv','name':'MagneticAxis'}})
 file_info.update({'Quad': {'format': 'lhd_summary_data.csv','name':'Quadruple'}})
+file_info.update({'Gamma': {'format': 'lhd_summary_data.csv','name':'GAMMA'}})
 
 global lhd_summary
 
 def get_flat_top(shot=54196, times=None, smooth_dt = None, maxddw = None, hold=0, debug=0):
+    """ debug=1 gives a plot
+    """
     if times==None: times=np.linspace(0.02,8,8020) ;  
     from pyfusion.data.signal_processing import smooth
 
@@ -81,33 +84,38 @@ def get_flat_top(shot=54196, times=None, smooth_dt = None, maxddw = None, hold=0
     dt = (times[1]-times[0])
     ns = int(smooth_dt/dt)
     smootharr = [ns,ns,ns]
-    offs = len(smootharr*ns)
-    dwsm = smooth(dw,n_smooth=smootharr)
-    ddw = np.diff(dwsm)/dt
+    offs = len(smootharr*ns)  # correction for smoothing offset
+    dwsm = smooth(dw,n_smooth=smootharr)  # smooth dwdt
+    ddw = np.diff(dwsm)/dt  #second deriv
     # work away from the centroid until 2nd deriv exceeds maxddw
-    # assume 100kJ /sec is ramp, and a chage of this over a second
+    # assume 100kJ /sec is ramp, and a change of this over a second
 
     wb = int(0.5*offs) + np.nanargmax(dwsm)
     we = int(0.1*offs) + np.nanargmin(dwsm) # 
-    wgt = np.where(np.abs(ddw[0:icent])> maxddw)[0]
-    if len(wgt) < 10: 
+    wpmax = np.nanmax(w_p)
+    # used to be maxddw - too restrictive now try dwsm
+    wgtrev = np.where(np.abs(dwsm[icent-offs/2::-1])> maxddw*wpmax/100)[0]
+    wgtfor = np.where(np.abs(dwsm[icent-offs/2:])> maxddw*wpmax/100)[0]
+    if (len(wgtrev) < 10) or (len(wgtfor) < 10): 
         print('*** flat_top not found on shot {s}'.format(s=shot))
         return (0,0,(0,0,0,0,0))
 
-    wbf = offs + icent + wgt[-1]
-    wef = offs + icent + wgt[0]
+    wbf = icent - wgtrev[0]
+    wef = icent + wgtfor[0]
     if debug>0:
         pl.plot(w_p,label='w_p',hold=hold)
-        pl.plot(dwsm,label='sm(dw)')
-        pl.plot(ddw/10,label='ddw/10')
-        pl.plot(dw,label='dw_pdt)')
-        pl.scatter([wb, wbf, icent, wef, we],[0,500,1000,1500,2000])
+        pl.plot(ddw,label='ddw')
+        pl.plot(dwsm,linewidth=3,label='sm(dw)')
+        pl.plot(dw/10,label='dw_pdt/10')
+        pl.scatter([wb, wbf, icent, wef, we],[0,200,300,250,275])
         pl.plot([wb,we],[0,0],label='b--e')
-        pl.ylim(array([-1.1,1.1])*max(abs(dwsm)))
+        pl.plot([wbf,wef],np.ones(2)*maxddw*wpmax/100,'o-',linewidth=2,label='bf-ef')
+        pl.ylim(np.array([-1.1,1.1])*max(abs(dwsm)))
         pl.title(shot)
         pl.legend()
-    debug_(max(pyfusion.DEBUG, debug), key='flat_top')
-    return(times[wb], times[we],(wb,we,wbf,wef,icent))
+    debug_(max(pyfusion.DEBUG, debug),2, key='flat_top')
+    #return(times[wb], times[we],(wb,we,wbf,wef,icent)) # used to ignore wbf,wef
+    return(times[wbf], times[wef],(wb,we,wbf,wef,icent))
 
 
 def get_delay(shot):

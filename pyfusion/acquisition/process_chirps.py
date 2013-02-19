@@ -47,7 +47,7 @@ def plotdfdt(dd, inds, join=False, **kwargs):
         pl.title('Shot {0}'.format(shot))
 
         
-def process_chirps_m_shot(t_mid, freq, indx, maxd = 4, dfdtunit=1000, minlen=2, plot=0, debug=debug):
+def process_chirps_m_shot(t_mid, freq, indx, maxd = 4, dfdtunit=1000, minlen=2, plot=0, debug=0    ):
     """
     >>> indx = np.array([1,2,3,4]); freq = np.array([5,4,2,1])
     >>> t_mid = np.array([1,2,3,10])
@@ -59,24 +59,28 @@ def process_chirps_m_shot(t_mid, freq, indx, maxd = 4, dfdtunit=1000, minlen=2, 
         return(np.sqrt((fr[i_to]-fr[i_from])**2 + 
                        ((tm[i_to]-tm[i_from])*dfdtunit)**2))
 
-    lines = []
-    line = [0]
+    lines = [] # list of lists of indices for points in lines
+    line = [0] # start at the first point
     if debug>3: print("processed {0},".format(len(freq))),
     for i in range(1,len(freq)):
+        # if the current point is still coincident with the start, skip
+        # else if it is also within maxd in ft space, append it.
+        # this method has the flaw that two points at the same time 
+        # terminate the line - but that should not happen.
         if t_mid[i]!=t_mid[line[-1]] and ftdist(line[-1],i,t_mid,freq) < maxd:
             line.append(i)
         else:
-            if len(line) > 1: lines.append(line)
-            line = [i]
+            if len(line) > 1: lines.append(line) # save it if len > 1
+            line = [i]  # start a new one
 
     for line in lines:
         if plot: pl.plot(t_mid[line],freq[line],'-o')
 
         # if there are at least 3 points, and the df dt agrees with neighbours
-        #  within 1kHz/ms, set df/dt - otherwise set to 0
+        #  within 1kHz/ms, set df/dt - otherwise set to 0 (this line not impl?)
         # also should record the id of the line (-1 for no line) the points 
-        # belong to, a good choice is the index out of the original 
-        # dataset of the first point.
+        # belong to, a good choice is the index (rel to the original 
+        # dataset) of the first point.
 
     num = len(indx)
     lead = indx*0 - 1
@@ -100,13 +104,15 @@ def process_chirps_m_shot(t_mid, freq, indx, maxd = 4, dfdtunit=1000, minlen=2, 
     return(islead, lead, dfdt)
 
 def process_chirps(dd, shots=None, Ns=None, Ms=None, maxd = 4, dfdtunit=1000, minlen=2,
-                   plot=0, hold=0, clear_dfdt=False, debug=debug):
+                   plot=0, hold=0, clear_dfdt=False, debug=0, verbose=0):
     """ M and N default to all values present
     >>> 
     """
     # add islead, lead, dfdt entries
     if plot>0 and hold==0: pl.clf()  # plot(hold=0) runs slower here
     num = len(dd['shot'])
+    if not dd.has_key('indx'): raise LookupError('dd needs and indx!')
+    indx = dd['indx']
     if clear_dfdt or not dd.has_key('dfdt'):
         print('******* initialising dfdt data ************')
         dd.update({'islead': np.zeros(num, dtype=int)})
@@ -115,8 +121,11 @@ def process_chirps(dd, shots=None, Ns=None, Ms=None, maxd = 4, dfdtunit=1000, mi
         dd.update({'dfdt': np.zeros(num, dtype=np.float32)})
         dd['dfdt'][:]=np.nan
     # extract the shot, M and N
+
+    warn("need to choose a 'nan' equivalent in process_chirps")
     for k in ['shot', 'M', 'N']: 
-        w = np.where(dd[k]>=0)[0]
+
+        w = np.where(dd[k]!= -4)[0]  # right now it is -4 - but effect on colorscale?
         exec("all_{0}=np.array(dd['{0}'])[w]".format(k))
 
     if Ms == None: 
@@ -125,6 +134,7 @@ def process_chirps(dd, shots=None, Ns=None, Ms=None, maxd = 4, dfdtunit=1000, mi
     if Ns == None: 
         Ns = np.unique(all_N) 
         warn('defaulting Ns to {0}'.format(Ns))
+    debug_(debug,2,key='start_chirps')
     for shot_ in shots:    
         if verbose>0: print("\n{0}:".format(shot_)),
         for N_ in Ns:
@@ -137,11 +147,12 @@ def process_chirps(dd, shots=None, Ns=None, Ms=None, maxd = 4, dfdtunit=1000, mi
                 if verbose > 4:
                     print("shot {0}, len tord={1}".format(shot_,len(tord)))
                 for k in dd.keys(): 
-                    exec("{0}=np.array(dd['{0}'])[inds[tord]]".format(k))
+                    if not hasattr(dd[k],'keys'):
+                        exec("{0}=np.array(dd['{0}'])[inds[tord]]".format(k))
                 (islead, lead, dfdt) = \
                     process_chirps_m_shot(t_mid, freq, indx, maxd=maxd, 
                                           dfdtunit=dfdtunit, minlen=minlen,
-                                          plot=plot)
+                                          plot=plot, debug=debug)
     # write them back into the dict dd
                 if len(islead) != 0:            
                     if verbose > 2: print("indx={0}".format(indx))
@@ -149,6 +160,9 @@ def process_chirps(dd, shots=None, Ns=None, Ms=None, maxd = 4, dfdtunit=1000, mi
                     dd['lead'][indx] = lead
                     dd['dfdt'][indx] = dfdt
                 debug_(debug, 3, key='write_back')
+    print("minlen = {m}, maxd = {d}, dfdtunit={df}".
+          format(m=minlen, d=maxd, df=dfdtunit))
+    if plot>0: pl.show()
 
 if __name__ == "__main__":
     import doctest

@@ -9,7 +9,7 @@ from pyfusion.debug_ import debug_
 debug=0
 
 
-def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None, 
+def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None, nomode=-1,
        size_scale=None, dot_size=30, hold=0, seed=None, colorbar=None, marker='o'):
     """ Scatter plot front end, size_scale 
     x, y, sz, col can be keys or variables (of matching size to ds)
@@ -45,11 +45,11 @@ def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None,
         if decimate<0: np.random.seed(0)  # fixed seed for decimate<0
         ind = ind[(np.where(np.random.rand(len(ind))<abs(decimate)))[0]]
     else:  # decimate if very long array and decimate == 0
-        if (len(ind) > 1e5): 
+        if (len(ind) > 2e4):   # 2e5 for scatter, 1e5 for plot
             print('Decimating automatically as data length too long [{0}]'
                   .format(len(ind)))
             ind = ind[np.where(np.random.rand(len(ind))<(2e4/len(ind)))[0]]
-
+            
     if pl.is_string_like(x):
         x_string = x
         x = ds[x]
@@ -76,6 +76,10 @@ def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None,
             col = np.array(col)[ind]
         color_string = ''
 
+    w_not_nomode = np.where(nomode != col)[0]
+            # shrink ind further to avoid displaying unidentified modes
+    ind = ind[w_not_nomode]
+    col = col[w_not_nomode]
 
     if sz == None: sz=20 * np.ones(len(x))
     if pl.is_string_like(sz): 

@@ -8,6 +8,7 @@ run -i pyfusion/examples/merge_in_basic_params.py
    diags   List of diagnostic names as defined in the info ditcionary (below is a shorthand)
               diags="<n_e19>,b_0,i_p,di_pdt,w_p,dw_pdt,dw_pdt2,beta,NBI".split(',')
 
+Note: as of 14 Feb 2013, missing shot count is always []
 
 ===Earlier notes during development=== (obsolete now)
 shot 46365, time 1.967 s
@@ -52,16 +53,19 @@ exception = (IOError, LookupError, ValueError)
 #for name in ds.dtype.names: dd.update({name: ds[name]})
 diags="<n_e19>,b_0,i_p,di_pdt,w_p,dw_pdt,dw_pdt2,beta,NBI".split(',')
 diags="b_0,w_p,dw_pdt,dw_pdt2,beta,NBI".split(',')
+# diag _extra are the ones more likely to fail
+diag_basic="b_0,w_p,dw_pdt,dw_pdt2,beta,R_ax,Quad,Gamma".split(',')
+diag_extra="n_e19b0,n_e19dL5,ech,NBI".split(',')
 minshot=0
 maxshot=999999 # higher than even LHD
 shot_list = []
 
 import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())
-
 # now to merge the two.
+if len(np.shape(diags)) == 0: diags = [diags]
 
-sz = len(dd[dd.keys()[0]])
+sz = len(dd['shot'])
 missing_shots = []
 good_shots =[]
 

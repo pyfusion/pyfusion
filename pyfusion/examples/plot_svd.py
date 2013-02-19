@@ -2,8 +2,14 @@
 or the sequence of svds of numpts starting at start_time (sec)
 keys typed at the terminal allow stepping backward and forward.
 
+Works from RAW data.
+
 Typical usage : run  dm/plot_svd.py start_time=0.01 "normalise='v'" use_getch=0
       separate [=1] if True, normalisation is separate for each channel
+Dave's checkbuttons on plot_svd don't work unless you use hold.
+runining outside pyfusion is more reliable
+
+ot that the code is hard wired to reset hold after a "hold" so that you can continue
 
 """
 
@@ -35,6 +41,9 @@ except:
     use_getch = False
 print(" getch is %savailable" % (['not ', ''][use_getch]))
 
+plot_mag = 0
+plot_phase = 0
+
 diag_name = ''
 dev_name='H1Local'   # 'LHD'
 hold=0
@@ -58,7 +67,7 @@ if help==1:
 
 #dev_name='LHD'
 if dev_name == 'LHD': 
-    if diag_name == '': diag_name= 'MP'
+    if diag_name == '': diag_name= 'MP2010'
     if shot_number == None: shot_number = 27233
     #shot_range = range(90090, 90110)
 elif dev_name.find('H1')>=0: 
@@ -112,16 +121,17 @@ else:
             if (normalise != 0) and (normalise != '0'): 
 # the old code used to change seg, even at the beginning of a long chain.
                 proc_seg=seg.subtract_mean().normalise(normalise,separate)
-                proc_seg.svd().svdplot()
+                proc_seg.svd().svdplot(hold=hold)
             else: 
                 proc_seg=seg.subtract_mean()
-                proc_seg.svd().svdplot()
+                proc_seg.svd().svdplot(hold=hold)
             try:
-                if proc_seg.scales != None:
+                if plot_mag and (proc_seg.scales != None):
                     fig=pl.gcf()
                     oldtop=fig.subplotpars.top
                     fig.subplots_adjust(top=0.78)
-                    ax=pl.subplot(8,2,-2)
+                    ax = pl.axes([0.58,0.8,0.32,0.1])
+#                    ax=pl.subplot(8,2,-2) # try to put plot on top: doesn't work in new version
                     xticks = range(len(proc_seg.scales))
                     if pyfusion.VERBOSE>3: print('scales',len(proc_seg.scales),proc_seg.scales)
                     pl.bar(xticks, proc_seg.scales, align='center')
@@ -155,12 +165,18 @@ else:
                 print("f=%.3gkHz, t=%.3g, p=%.2f, a12=%.2f, E=%.2g, adjE=%.2g, %s" %
                       (fs.freq/1000, fs.t0, fs.p, fs.a12, fs.E,
                        fs.p*fs.E*RMS_scale**2, fs.svs()))
-# first fs?        
-            fs=fs_arr[0]    
-            ax=pl.subplot(8,2,-3)
-            fs.fsplot_phase()    
-            pl.xlabel('fs_phase')
-            pl.ylim([-np.pi,np.pi])
+            if plot_phase:
+                # first fs?        
+                fs=fs_arr[0]    
+                ax = pl.axes([0.2,0.8,0.32,0.1])
+    #            ax=pl.subplot(8,2,-3)
+                fs.fsplot_phase()    
+                pl.xlabel('fs_phase')
+                pl.ylim([-np.pi,np.pi])
+                #end if plotmsg
+
+            hold = 0 
+            print('resetting hold to 0') # for the sake of checkbuttons
             if use_getch: 
                 pl.show()
                 k=getch.getch()
@@ -174,6 +190,7 @@ else:
             elif k in 'qQeE':i=999999
             elif k in 'gG': use_getch=not(use_getch)
             elif k in 'S': separate=not(separate)
+            elif k in 'h': hold=not(hold)
             elif k in 's': # plot the signals in a new frame
                 pl.figure()
                 segs[ii].plot_signals()

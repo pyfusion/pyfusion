@@ -1,5 +1,11 @@
 """
 Note, plots (this file) doesn't have unittests
+
+Problems with checkbuttons working since 2011-2012? 
+Temporary fix is to block in svdplot when hold==1.
+This enables the function, then you kill the window to move on (see plot_svd.py)
+Also attempted to use subplots here to tidy up putting additonal graphs on top.
+See plots_1.py and svd_plots1.py - need to sovle subplot pars problem
 """
 from matplotlib.widgets import CheckButtons
 import pylab as pl
@@ -253,7 +259,7 @@ def findZero(i,x,y1,y2):
     return (xZero, yZero)
 
 @register("FlucStruc")
-def fsplot_phase(input_data, closed=True, hold=0):
+def fsplot_phase(input_data, closed=True, hold=0, block=False):
     """ plot the phase of a flucstruc, optionally replicating the last point
     at the beginning (if closed=True).
     This version does not yet attempt to take into account angles, or check 
@@ -302,12 +308,13 @@ def fsplot_phase(input_data, closed=True, hold=0):
     ax=pl.gca()
     ax.set_xticks(range(len(dp)))
     ax.set_xticklabels(short_ch12n)
-    pl.show()
+    pl.show(block=block)
 
 @register("SVDData")
 def svdplot(input_data, fmax=None, hold=0):
 
     if hold==0: pl.clf(); # erase the figure, as this is a mult- axis plot
+    else: pl.clf() # do it anyway, trying to overcome checkbuttons problem
 
     n_SV = len(input_data.svs)
 
@@ -338,10 +345,12 @@ def svdplot(input_data, fmax=None, hold=0):
     for i in [0,1]:
 	button_setting_list[i] = True
 
+        # like "self"
     check = CheckButtons(rax, tuple(button_name_list), tuple(button_setting_list))
     # hack to make check buttons square
     check_box_stretch = 7
     for i in range(len(check.rectangles)):
+    #if (1 == 0):  # this to turn off the hack
 	check.rectangles[i].set_width(check_box_stretch*check.rectangles[i].get_height())
 	for j in [0,1]: # two lines of the x
             orig_x_data = check.lines[i][j].get_xdata()
@@ -432,7 +441,11 @@ def svdplot(input_data, fmax=None, hold=0):
 	sub_plot_4_list[len(neg)+len(pos)+1], = ax4.plot([angle_array[-1]],[tmp_topo[-1]],'kx', visible= button_setting_list[sv_i],markersize=6)
 	plot_list_4[sv_i]=sub_plot_4_list
 
+    def test_action(label):
+        print(label)
+
     def button_action(label):
+        print('action')
 	# this is not very clear: but basically, the label is the str() of the element of plot_list_x we want to make / unmake visible
 	visible_status = plot_list_1[int(label)].get_visible()
 	plot_list_1[int(label)].set_visible(not visible_status)
@@ -450,10 +463,10 @@ def svdplot(input_data, fmax=None, hold=0):
 
     # action when button is clicked
     check.on_clicked(button_action)
+    #check.on_clicked(test_action)
 
     # show plot
-    pl.show()
-
+    pl.show(block=hold)
 
 
 

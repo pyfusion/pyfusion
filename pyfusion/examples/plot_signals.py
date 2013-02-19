@@ -2,6 +2,7 @@ import pyfusion as pf
 
 dev_name = "LHD"
 diag_name = 'MPflip5'
+diag_name = 'MP2010'
 shot_number=27233
 
 import pyfusion.utils

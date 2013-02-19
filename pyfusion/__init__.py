@@ -79,7 +79,8 @@ try:
     # Beware!  vars takes  precedence over others!
     prec_med=npdtype(config.get('global','precision_medium')) #,vars={'precision_medium':'float32'}))
 except:
-    print('unknown medium precision value')
+    print('defaulting medium precision value, either because of error or'\
+              ' missing value precision_medium in globals')
     from numpy import dtype as npdtype
     prec_med=npdtype('float32')
 

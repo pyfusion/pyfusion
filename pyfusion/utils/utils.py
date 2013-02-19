@@ -12,12 +12,12 @@ if pyfusion.COLORS != None:
         from IPython.utils import coloransi
         tc=coloransi.TermColors()
         red = tc.LightRed
-        nocolor = tc.NoColor
+        normal = tc.Normal
     except None:
-        (red, nocolor) = ('','')
+        (red, normal) = ('','')
 
     def my_show(message, category, filename, lineno, file=None, line=None):
-        orig_show(red + '**' + message.message + nocolor, 
+        orig_show(red + '**' + message.message + normal, 
                   category, filename, lineno, file, line)
 
     warnings.showwarning = my_show    

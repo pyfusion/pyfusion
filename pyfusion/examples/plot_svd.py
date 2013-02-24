@@ -50,11 +50,18 @@ hold=0
 exception=Exception
 time_range = None
 channel_number=0
+lowpass = None  # set to corner freq for lowpass filter
+highpass = None  # set to corner freq for lowpass filter
 start_time = None
 numpts = 512
 normalise='0'
+myfilter1p5=dict(passband=[1e3,2e3], stopband=[0.5e3,3e3], max_passband_loss=2, min_stopband_attenuation=15,btype='bandpass')
+myfilter3=dict(passband=[2e3,4e3], stopband=[1e3,6e3], max_passband_loss=2, min_stopband_attenuation=15,btype='bandpass')
+myfilter15=dict(passband=[10e3,20e3], stopband=[5e3,30e3], max_passband_loss=2, min_stopband_attenuation=15,btype='bandpass')
+filter = None  
 help=0
 separate=1
+closed=True
 verbose=0
 max_fs = 2
 shot_number = None
@@ -92,6 +99,19 @@ if old_shot>0: # we can expect the variables to be still around, run with -i
 
 if old_shot == 0: 
     d = device.acq.getdata(shot_number, diag_name) # ~ 50MB for 6ch 1MS. (27233MP)
+    if lowpass != None: 
+        if highpass ==None:
+            d = d.sp_filter_butterworth_bandpass(
+                lowpass*1e3,lowpass*2e3,2,20,btype='lowpass')
+        else:
+            bp = [1e3*lowpass,1e3*highpass]
+            bs = [0.5e3*lowpass,1.5e3*highpass]
+            d = d.sp_filter_butterworth_bandpass(bp, bs,2,20,btype='bandpass')
+    elif filter != None:
+        d = d.sp_filter_butterworth_bandpass(**filter)
+    else:
+        pass # no filter
+            
     old_shot = shot_number
     old_diag = diag_name
 
@@ -120,46 +140,55 @@ else:
 #            print("normalise = %s" % normalise)
             if (normalise != 0) and (normalise != '0'): 
 # the old code used to change seg, even at the beginning of a long chain.
-                proc_seg=seg.subtract_mean().normalise(normalise,separate)
-                proc_seg.svd().svdplot(hold=hold)
+                seg_proc=seg.subtract_mean().normalise(normalise,separate)
+                outsvd=seg_proc.svd()
+                outsvd.svdplot(hold=hold)
             else: 
-                proc_seg=seg.subtract_mean()
-                proc_seg.svd().svdplot(hold=hold)
+                seg_proc=seg.subtract_mean()
+                outsvd=seg_proc.svd()
+                outsvd.svdplot(hold=hold)
             try:
-                if plot_mag and (proc_seg.scales != None):
+                if verbose: print(outsvd.history)
+                if plot_mag and (seg_proc.scales != None):
                     fig=pl.gcf()
                     oldtop=fig.subplotpars.top
-                    fig.subplots_adjust(top=0.78)
-                    ax = pl.axes([0.58,0.8,0.32,0.1])
+                    fig.subplots_adjust(top=0.65)
+                    ax = pl.axes([0.63,0.75,0.35,0.15])
 #                    ax=pl.subplot(8,2,-2) # try to put plot on top: doesn't work in new version
-                    xticks = range(len(proc_seg.scales))
-                    if pyfusion.VERBOSE>3: print('scales',len(proc_seg.scales),proc_seg.scales)
-                    pl.bar(xticks, proc_seg.scales, align='center')
+                    xticks = range(len(seg_proc.scales))
+                    if pyfusion.VERBOSE>3: print('scales',len(seg_proc.scales),seg_proc.scales)
+                    pl.bar(xticks, seg_proc.scales, align='center')
                     ax.set_xticks(xticks)
                     # still confused - sometimes the channels are the names bdb
                     try:
-                        proc_seg.channels[0].name
-                        names = [sgch.name for sgch in proc_seg.channels]
+                        seg_proc.channels[0].name
+                        names = [sgch.name for sgch in seg_proc.channels]
+                        phi = np.array([float(pyfusion.config.get
+                                              ('Diagnostic:{cn}'.
+                                               format(cn=c.name), 
+                                               'Coords_reduced')
+                                              .split(',')[0]) 
+                                        for c in seg.channels])
                     except:
-                        names = proc_seg.channels
+                        names = seg_proc.channels
 
                     short_names,p,s = pf.data.plots.split_names(names)
-                    #short_names[0]="\n"+proc_seg.channels[0].name  # first one in full
-                    pl.xlabel('svd:' +proc_seg.channels[0].name)  # first one in full
+                    #short_names[0]="\n"+seg_proc.channels[0].name  # first one in full
+                    pl.xlabel('svd:' +seg_proc.channels[0].name)  # first one in full
                     ax.set_xticklabels(short_names)
                     ax.set_yticks(ax.get_ylim())
 # restoring it cancels the visible effect - if we restore, it should be on exit
 #                    fig.subplots_adjust(top=oldtop)
             except None:        
                 pass
-            pl.suptitle("Shot %s, t_mid=%.5g, norm=%s, sep=%d" % 
-                        (shot_number, average(proc_seg.timebase),
+            pl.suptitle("Shot %s, %s t_mid=%.5g, norm=%s, sep=%d" % 
+                        (shot_number, diag_name, average(seg_proc.timebase),
                          normalise, separate))
             # now group in flucstrucs - already normalised, so method=0
-            fs_set=proc_seg.flucstruc(method=0, separate=separate)
+            fs_set=seg_proc.flucstruc(method=0, separate=separate)
             fs_arr = order_fs(fs_set)
             for fs in fs_arr[0:min([len(fs_arr)-1,max_fs])]:
-                RMS_scale=sqrt(mean(proc_seg.scales**2))
+                RMS_scale=sqrt(mean(seg_proc.scales**2))
                 print("amp=%.3g:" % (sqrt(fs.p)*RMS_scale)),
 
                 print("f=%.3gkHz, t=%.3g, p=%.2f, a12=%.2f, E=%.2g, adjE=%.2g, %s" %
@@ -168,11 +197,11 @@ else:
             if plot_phase:
                 # first fs?        
                 fs=fs_arr[0]    
-                ax = pl.axes([0.2,0.8,0.32,0.1])
+                ax = pl.axes([0.21,0.75,0.35,0.15])
     #            ax=pl.subplot(8,2,-3)
-                fs.fsplot_phase()    
+                fs.fsplot_phase(closed=closed)    
                 pl.xlabel('fs_phase')
-                pl.ylim([-np.pi,np.pi])
+                pl.ylim([-4,4])
                 #end if plotmsg
 
             hold = 0 

@@ -31,6 +31,11 @@ def unique_id():
     except:
         return ''.join(_random.choice(string.letters) for i in range(50))
 
+def get_axes_pixcells(ax):
+    """ return the  pixcell coorindates of the axes ax
+    This is useful in determining how many characters will fit
+    """
+    return(ax.get_window_extent().bounds)
 
 def cps(a,b):
     return fft.fft(a)*conjugate(fft.fft(b))
@@ -83,6 +88,11 @@ def split_names(names, pad=' ',min_length=3):
     e.g.
     >>> split_names(['MP01','MP10'])
     (['01','10'], 'MP', '')
+    The pad char is put on the end of shorter names - a better way would be
+    to keep the end char the same, and pad in between the beginning and end
+    the per channel part is at least min_length long.  
+    This is not really needed, as the routine chooses the lenght so
+    that the results are not ambiguous  (MP01,MP02 -> 1,2 but MP01,MP12 -> 01,12
     """
     # make a new array with elements padded to the same length with <pad>
     nms = []

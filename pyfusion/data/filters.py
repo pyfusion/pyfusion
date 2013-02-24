@@ -297,6 +297,12 @@ def subtract_mean(input_data):
 ###############################
 @register("TimeseriesData")
 def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_loss, min_stopband_attenuation,btype='bandpass'):
+    """ 
+      **   Warning - fails for a single signal in the enumerate step.
+    This actually does ALL butterworth filters - just select bptype
+    and use scalars instead of [x,y] for the passband.
+     e.g df=data.sp_filter_butterworth_bandpass(2e3,4e3,2,20,btype='lowpass')
+    """
     # The SciPy signal processing module uses normalised frequencies, so we need to normalise the input values
     norm_passband = input_data.timebase.normalise_freq(passband)
     norm_stopband = input_data.timebase.normalise_freq(stopband)
@@ -306,6 +312,7 @@ def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_
     output_data = copy.deepcopy(input_data)  # was output_data = input_data
 
     for i,s in enumerate(output_data.signal):
+        if len(output_data.signal) == 1: print('bug for a single signal')
         output_data.signal[i] = sp_signal.lfilter(b,a,s)
 
     return output_data

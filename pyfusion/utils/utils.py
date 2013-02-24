@@ -1,4 +1,4 @@
-from numpy import cumsum, pi, diff
+import numpy as np
 
 # this changes the behaviour of warnings
 import warnings
@@ -43,16 +43,56 @@ def warn(warning, category=UserWarning ,stacklevel=2, exception=None):
 # need the +1 so that the caller's line is printed, not this line.
     warnings.warn(exmsg+warning, category, stacklevel=stacklevel+1)
 
-def fix2pi_skips(phase, sign='+'):
+
+def modtwopi(x, offset=np.pi):
+    """ return an angle in the range of offset +-2pi
+    >>> print("{0:.3f}".format(modtwopi( 7),offset=3.14))
+    0.717
+
+    This simple strategy works when the number is near zero +- 2Npi,
+    which is true for calculating the deviation from the cluster centre.
+    does not attempt to make jumps small (use fix2pi_skips for that)
+    """
+    return ((-offset+np.pi+np.array(x)) % (2*np.pi) +offset -np.pi)
+
+
+
+def fix2pi_skips(phase, sign='+', around=None, debug=0):
     """ ensure that phase monotonically increases (+) or decreases by
-    adding units of 2Pi - 
+    adding units of 2Pi - Use modtwopi if you want to keep in that range.
+    !!!! 2013 - fixed problem  - loss of two first points!
+    >>> ph = fix2pi_skips([1,8,3,-2]); \
+    print(', '.join(["{0:.3f}".format(p) for p in ph]))
+    1.000, 1.717, 3.000, 4.283
+    >>> ph = fix2pi_skips([4,11,7,1],around=None); \
+    print(', '.join(["{0:.3f}".format(p) for p in ph]))
+    4.000, 4.717, 7.000, 7.283
+    >>> ph = fix2pi_skips([4,11,7,1],around=0); \
+    print(', '.join(["{0:.3f}".format(p) for p in ph]))
+    -2.283, -1.566, 0.717, 1.000
+
     New method is highly vectorised and much much faster, doesn't need 
     to know the sign.
     old method is still here (for now) but not very efficient!
     """
 #    print(phase)
-    fixed_phase = cumsum((diff(phase) < -pi)*2*pi)+phase[1:]
-    fixed_phase = cumsum((diff(fixed_phase) > pi)*(-2*pi))+fixed_phase[1:]
+# had to do two steps if the jump is big - maybe should do more (or write somethingnbetter)
+    fixed_phase = np.insert(np.cumsum((np.diff(phase) < -np.pi)*2*np.pi)
+                            +phase[1:],0,phase[0])
+    fixed_phase = np.insert(np.cumsum((np.diff(phase) < -np.pi)*2*np.pi)
+                            +phase[1:],0,phase[0])
+    if debug>0: print(fixed_phase)
+    fixed_phase = np.insert(np.cumsum((np.diff(fixed_phase) > np.pi)*-2*np.pi)
+                            +fixed_phase[1:],0,fixed_phase[0])
+    fixed_phase = np.insert(np.cumsum((np.diff(fixed_phase) > np.pi)*-2*np.pi)
+                            +fixed_phase[1:],0,fixed_phase[0])
+    if around != None:
+        if np.std(fixed_phase)< 3: # use the average
+            ref = np.average(fixed_phase)
+        else:                      # use the first
+            ref = fixed_phase[0]
+
+        fixed_phase = fixed_phase - 2*np.pi*int(0.5+(ref-around)/(2*np.pi))
     return(fixed_phase)
 
 # this code is never accessed now - maybe keep for tests later
@@ -62,10 +102,10 @@ def fix2pi_skips(phase, sign='+'):
         if sign=='+':
             if pyfusion.settings.VERBOSE>3: print("fix2pi phase %d before = %4.4f" % (i, phase[i]))
             if phase[i]<phase[i-1]: 
-                for j in range(i,len(phase)): phase[j]+=2*pi
+                for j in range(i,len(phase)): phase[j]+=2*np.pi
         else: 
             if phase[i]>phase[i-1]:
-                for j in range(i,len(phase)): phase[j]-=2*pi
+                for j in range(i,len(phase)): phase[j]-=2*np.pi
 #    print(phase)
     return(phase)
 
@@ -80,3 +120,8 @@ def decimate(data, fraction=None, limit=None):
     else:
         step = max([int(len(data)/limit),1])
     return(array(data)[arange(0,len(data), step)])        
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+

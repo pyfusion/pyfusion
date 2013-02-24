@@ -8,12 +8,16 @@ Also attempted to use subplots here to tidy up putting additonal graphs on top.
 See plots_1.py and svd_plots1.py - need to sovle subplot pars problem
 """
 from matplotlib.widgets import CheckButtons
+from matplotlib.font_manager import FontProperties
 import pylab as pl
 
 import numpy as np
 
-from pyfusion.data.utils import peak_freq, split_names, make_title
+from pyfusion.data.utils import peak_freq, split_names, make_title, get_axes_pixcells
 from pyfusion.data.filters import cps
+from pyfusion.utils.utils import fix2pi_skips, modtwopi
+from pyfusion.debug_ import debug_
+
 #can't from pyfusion.config import get
 import pyfusion
 
@@ -31,11 +35,12 @@ def register(*class_names):
     return reg_item
 
 @register("TimeseriesData")
-def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspace=None, sharey=False, ylim=None, xlim=None, marker='None', markersize=0.3,linestyle=True,labelfmt="%(short_name)s", filldown=True):
+def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspace=None, sharey=False, sharex=True,ylim=None, xlim=None, marker='None', markersize=0.3,linestyle=True,labelfmt="%(short_name)s", filldown=True):
     """ 
     Plot a figure full of signals using n_columns[1], 
-        sharey [=1]  "gangs" y axes         
-        x axes are always ganged
+        sharey [=1]  "gangs" y axes  - sim for sharex - sharex=None stops this
+        x axes are ganged by default: see Note:
+
         labelfmt["%(short_name)s"] controls the channel labels.  
             The default ignores the shot and uses an abbreviated form of the channel name.  
             If the short form is very short, it becomes a y label.
@@ -46,6 +51,10 @@ def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspac
             e.g. marker of '.' and markersize<1 will produce "shaded" waveforms, 
             good to see harmonic structure even without zooming in (need to 
             adjust markersize or plot size for best results.
+        Note = sharex that to allow implicit overlay by using the same subplot
+        specs the sharex must be the same between main and overlay - hence the 
+        use of explicit sharex = None
+
     """
     import pylab as pl
     n_rows = input_data.signal.n_channels()
@@ -80,10 +89,12 @@ def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspac
             if chan_num >= input_data.signal.n_channels(): break
             if pyfusion.VERBOSE>3: print (subplot_num+1,chan_num),
             if (row==0) and (col==0):
-                ax1 = pl.subplot(n_rows, n_columns, subplot_num+1)
+                # note - sharex=None is required fo that overlays can be done
+                ax1 = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = None)
             else:
-                if sharey: axn = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = ax1, sharey=ax1)
-                else: axn = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = ax1)
+                if sharex == True: sharex = ax1
+                if sharey: axn = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = sharex, sharey=ax1)
+                else: axn = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = sharex)
 
             if downsamplefactor==1:
                 pl.plot(input_data.timebase, input_data.signal.get_channel(chan_num),
@@ -259,10 +270,10 @@ def findZero(i,x,y1,y2):
     return (xZero, yZero)
 
 @register("FlucStruc")
-def fsplot_phase(input_data, closed=True, hold=0, block=False):
-    """ plot the phase of a flucstruc, optionally replicating the last point
-    at the beginning (if closed=True).
-    This version does not yet attempt to take into account angles, or check 
+def fsplot_phase(input_data, closed=True, ax=None, hold=0, block=False):
+    """ plot the phase of a flucstruc, optionally inserting the first point
+    at the end (if closed=True). Applies to closed arrays (e.g complete 2pi).
+    Until Feb 2013, this version did not yet attempt to take into account angles, or check 
     that adjacent channels are adjacent (i.e. ch2-ch1, ch2-c2 etc).
     Channel names are taken from the fs and plotted abbreviated
 
@@ -270,44 +281,85 @@ def fsplot_phase(input_data, closed=True, hold=0, block=False):
     1/17/2011:  bdb: May be fixed - I had used channel instead of channel.name
     """
     # extract by channels
-    ch1n,ch2n,ch12n,dp = [],[],[],[]
+    ch1n,ch2n,ch21n,dp = [],[],[],[]
     # bdb this line should be replaced by a call to a routine names something
     #like <plotted_width> to help in deciding if the label will fit on the 
     #current graph.
-    if (2*len(input_data.dphase)*len(input_data.dphase[0].channel_1.name))> 50:
+    if ax == None:     ax=pl.gca()
+    # why is this repeated below
+    max_chars = get_axes_pixcells(ax)[2]/8 # assuming an 10 pt font is 8 wide.
+    if (2*len(input_data.dphase)
+        *(2+len(input_data.dphase[0].channel_1.name)))> max_chars:
         sep = '\n-'
     else: sep = '-'
+    
     #sep = '-'
+    # 2013 change order from ch1-ch2 to ch2-ch1 = ch2 - ch1
     for dpn in input_data.dphase:
         ch1n.append(dpn.channel_1.name)
         ch2n.append(dpn.channel_2.name)
-        ch12n.append(dpn.channel_1.name+sep+dpn.channel_2.name)
+        ch21n.append(dpn.channel_2.name+sep+dpn.channel_1.name)
         dp.append(dpn.delta)
 
     min_length = max(1,40/len(input_data.channels))    
+    # min_length - min_length???
     short_names_1,p,s = split_names(ch1n, min_length-min_length)  # need to break up loops to do this
     short_names_2,p,s = split_names(ch2n, min_length-min_length)  # 
 
 # need to know how big the shortened names are before deciding on the separator
-    if (2*len(input_data.dphase)*len(short_names_1[0]))> 50:
+    if (2*len(input_data.dphase)*(2+len(short_names_1[0])))> max_chars:
         sep = '\n-'
     else: sep = '-'
 
-    ch12n = [ch1n[i]+sep+ch2n[i] for i in range(len(ch1n))]
-    short_ch12n = [short_names_1[i]+sep+short_names_2[i] 
+    ch21n = [ch2n[i]+sep+ch1n[i] for i in range(len(ch1n))]
+    short_ch21n = [short_names_2[i]+sep+short_names_1[i] 
                    for i in range(len(short_names_1))]
 
-    if closed:
-        ch1n.insert(0, ch1n[-1])
-        ch2n.insert(0, ch2n[-1])
-        ch12n.insert(0, ch12n[-1])
-        short_ch12n.insert(0, short_ch12n[-1])
-        dp.insert(0,dp[-1])
+    # correct result for a diag that doesn MP1,2,3,4,5,6,1, and not closed
+    #ch21n = ['MP2-MP1', 'MP3-MP2', 'MP4-MP3', 'MP5-MP4', 'MP6-MP5', 'MP1-MP6']
+    # if closed, and only 1-6 in the file, want the same!
 
-    pl.plot(dp,hold=hold)
-    ax=pl.gca()
+    if closed:   # ch2 will be MP1, ch1 will be MP6   MP1-MP6
+        ch1n.append(ch2n[-1])
+        ch2n.append(ch1n[0])
+        ch21n.append(ch2n[-1]+sep+ch1n[0])
+        short_ch21n.append(short_names_2[-1]+sep+short_names_1[0])
+        #dp.insert(0,dp[-1])
+        # closed means use the phase diff from the ends
+        dp=-np.append(dp,modtwopi(-np.sum(dp)))
+
+    dp = fix2pi_skips(dp, around=0)
+
+    if hold == 0: ax.clear()
+    Phi = np.array([2*np.pi/360*float(pyfusion.config.get
+                                      ('Diagnostic:{cn}'.
+                                       format(cn=c.name), 
+                                       'Coords_reduced')
+                                      .split(',')[0]) 
+                    for c in input_data.channels])
+
+    if closed: 
+        Phi = np.append(Phi, Phi[0])
+
+    # expect Phi from ~.2 to twopi+.2 (if closed)
+    Phifix = fix2pi_skips(Phi,around=3.5)
+
+    # need to make sure the right dp is divided by the right dPhi
+    ax.plot(fix2pi_skips(Phifix[0:-1],around=np.pi),dp/np.diff(Phifix),
+            '+-',label='dp/dP')
+    ax.plot(fix2pi_skips(Phifix[0:-1],around=np.pi),dp,'o-', label='dPhi')
+    ax.set_xlim([0,ax.get_xlim()[1]+1])
+    ax.plot(ax.get_xlim(),[0,0],':k',linewidth=0.5)
+    tot=np.sum(dp)
+    print(tot)
+    if closed: # only makes sense to draw a mean dp line if closed
+        ax.plot(ax.get_xlim(),[tot/(2*np.pi),tot/(2*np.pi)],':b',linewidth=0.5)
+
+    ax.legend(prop=FontProperties(size='small'))
+    ax.set_title('sum = {s:.2f}'.format(s=np.sum(dp)))
+    debug_(pyfusion.DEBUG, 1, key='fs_phase')
     ax.set_xticks(range(len(dp)))
-    ax.set_xticklabels(short_ch12n)
+    ax.set_xticklabels(short_ch21n)
     pl.show(block=block)
 
 @register("SVDData")
@@ -328,7 +380,7 @@ def svdplot(input_data, fmax=None, hold=0):
     ax4 = pl.subplot(224)
 
     # allow space for check buttons
-    pl.subplots_adjust(left=0.2)
+    pl.subplots_adjust(left=0.2, right=0.98)
 
     # setup check boxes
     rax = pl.axes([0.01, 0.05, 0.09, 0.9])
@@ -413,7 +465,14 @@ def svdplot(input_data, fmax=None, hold=0):
         freq_array = nyquist_kHz*np.arange(len(tmp_fft))/(len(tmp_fft)-1)
         plot_list_3[sv_i], = ax3.plot(freq_array, abs(tmp_fft), col,visible= button_setting_list[sv_i],alpha=0.5)
         
-    if fmax == None: fmax = nyquist_kHz
+    if fmax == None: 
+        ffact = 1e3  # seems like this routine is in kHz - where does it cvt?
+        try:
+            axt = eval(pyfusion.config.get('Plots','FT_Axis'))
+            fmax = axt[3]/ffact
+        except:
+            fmax = nyquist_kHz
+        
     pl.xlim(0,fmax)
 
     # axes 4: topo

@@ -10,7 +10,7 @@ debug=0
 
 
 def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None, nomode=-1,
-       size_scale=None, dot_size=30, hold=0, seed=None, colorbar=None, marker='o'):
+       size_scale=None, dot_size=30, hold=0, seed=None, colorbar=None, legend=True, marker='o'):
     """ Scatter plot front end, size_scale 
     x, y, sz, col can be keys or variables (of matching size to ds)
     decimate = 0.1 selects 10% of the input, -0.1 uses a fixed key. 
@@ -114,10 +114,11 @@ def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None, nomode=-1,
     big=matplotlib.collections.CircleCollection([max_size])
     med=matplotlib.collections.CircleCollection([max_size/10])
     sml=matplotlib.collections.CircleCollection([max_size/100])
-    pl.legend([big,med,sml],
-           [("%s=%.3g" % (size_string,size_val(max_size))),
-            ("%.3g" % (size_val(max_size/10))),
-            ("%.3g" % (size_val(max_size/100)))])
+    if legend == True:
+        pl.legend([big,med,sml],
+                  [("%s=%.3g" % (size_string,size_val(max_size))),
+                   ("%.3g" % (size_val(max_size/10))),
+                   ("%.3g" % (size_val(max_size/100)))])
 
     pl.xlabel(x_string)
     pl.ylabel(y_string)

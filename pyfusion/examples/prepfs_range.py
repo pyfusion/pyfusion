@@ -23,6 +23,10 @@ if __name__ == '__main__':
     PARSER.add_argument( '--filename_format', type=str, 
                          default='PF2_{yy}{mm}{dd}_{dn}_{sr}_{ns}_{nor}_{sep}', 
                          help='format string to produce output file name' )
+    PARSER.add_argument( '--exe', type=str, 
+                         default='gen_fs_local.py', 
+                         help='script to run - can include extra args for'\
+                             'the exe line here too' )
     PARSER.add_argument( '--debug', type=int, default=0, 
                          help='debug level, > 1 will prevent exceptions being hidden - useful only an manual runs, not with prepfs_range')
     PARSER.add_argument( '--info', type=int, default=2, 
@@ -59,10 +63,11 @@ if __name__ == '__main__':
                                            yy=tm.tm_year-2000,mm=tm.tm_mon,dd=tm.tm_mday,hh=tm.tm_hour
                                            )
 
-    cmd = str('python pyfusion/examples/gen_fs_local.py shot_range={sr} diag_name={dn} '
+    cmd = str('python pyfusion/examples/{exe} shot_range={sr} diag_name={dn} '
               'overlap={ov} n_samples={ns} exception={ex} debug={db} time_range={tr} '
               'separate={sep} info={info} method="{nor}" > {path}/{fn}'
-              .format(sr=ARGS.shot_range, nor=ARGS.normalize, sep=ARGS.separate, 
+              .format(exe=ARGS.exe,sr=ARGS.shot_range, 
+                      nor=ARGS.normalize, sep=ARGS.separate, 
                       dn = ARGS.diag_name, tr=ARGS.time_range, db=ARGS.debug,
                       ex=ARGS.exception, ov=ARGS.overlap, ns=ARGS.n_samples,
                       path=ARGS.output_path[0],fn=filename, info=ARGS.info

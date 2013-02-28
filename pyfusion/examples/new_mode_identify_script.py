@@ -41,7 +41,7 @@ class Mode():
         self.cc = np.array(cc)
         if MP2010_trick:  # don't use this - now separate mode lists!
             self.cc = -twopi(self.cc + np.pi, offset=4)  # this works for MP2010 if -B is the standard
-        self.csd = csd
+        self.csd = np.array(csd)
         if threshold == None: threshold = 1
         self.threshold = threshold
         self.shot_list = shot_list
@@ -54,7 +54,7 @@ class Mode():
         self.num_set = 0  # these are counters used when classifying
         self.num_reset = 0
 
-    def store(self, dd, threshold=None,Nval=None,NNval=None,shot_list=None,quiet=0):
+    def store(self, dd, threshold=None,Nval=None,NNval=None,shot_list=None,quiet=0, mask=None):
         """ store coarse and fine mode (N, NN) numbers according to a threshold std and an optional shot_list.  If None the internal shot_list is used.
         which would have defaulted to [] at __init__
         """
@@ -71,7 +71,11 @@ class Mode():
             askif('convert phases to nd.array?',quiet=quiet)
             dd['phases'] = np.array(dd['phases'].tolist())
 
-        sd = self.std(dd['phases'])
+        if mask != None:
+            sd = self.std_masked(dd['phases'],mask=mask)
+        else:
+            sd = self.std(dd['phases'])
+
         w = np.where(sd<threshold)[0]
 
         # normally apply to all shots, but can restrict to a particular
@@ -115,12 +119,73 @@ class Mode():
                      t=100*float(len(where(dd['N']>=0)[0]))/len(dd['shot'])
                      ))
            
+    def storeM(self, dd, threshold=None,Mval=None,MMval=None,shot_list=None,quiet=0):
+        """ store coarse and fine mode (M, MM) numbers according to a threshold std and an optional shot_list.  If None the internal shot_list is used.
+        which would have defaulted to [] at __init__
+        """
+        if shot_list == None: shot_list = self.shot_list
+        if threshold == None: threshold=self.threshold
+        else: self.threshold=threshold  # save the last manually set.
+
+        if Mval==None: Mval = self.M
+        if MMval==None: MMval = self.MM
+        if MMval in np.unique(dd['MM']): 
+            askif('MMval {0} already used'.format(MMval),quiet=quiet)
+
+        if not(hasattr(dd['phases'],'std')):
+            askif('convert phases to nd.array?',quiet=quiet)
+            dd['phases'] = np.array(dd['phases'].tolist())
+
+        sd = self.std(dd['phases'])
+        w = np.where(sd<threshold)[0]
+
+        # normally apply to all shots, but can restrict to a particular
+        # range of shots - e.g. dead MP1 for shot 54186 etc.
+        if shot_list != []:  # used to be None  - be careful, there are
+                             # two shot_list's one in mode, one input here
+            where_in_shot = []
+            for sht in shot_list:
+                ws = where(dd['shot'][w] == sht)[0]
+                where_in_shot.extend(w[ws])
+            # this unique should not be required, but if the above logic
+            # is changed, it might
+            w = np.unique(where_in_shot)    
+
+        if len(w) == 0: 
+            print('threshold {th:.2g} is too low for phases: '
+                  'minimum std for {m} is {sd:.1f}'
+                  .format(th=threshold, m=self.name, sd=np.min(sd)))
+            return()
+
+        w_already = np.where(dd['MM'][w]>=0)[0]
+        if len(w_already)>0:
+            (cnts,bins) = np.histogram(dd['MM'][w], arange(-0.5,1.5+max(dd['MM'][w]),1))
+            amx = np.argsort(cnts)
+            print("MM already set in {0}/{1} locations {2:.1f}% of all data"
+                  .format(len(w_already), len(w),
+                          100*len(w_already)/float(len(dd['shot']))))
+            print("MM={0} is most frequent ({1} inst.)"
+                  .format(amx[-1],cnts[amx[-1]]))
+            fract = len(w_already)/float(len(w))
+            if fract>0.2: askif("{0:.1f}% of intended insts already set?".
+                                format(fract*100),quiet=quiet)
+
+        mode.num_set += len(w)
+        mode.num_reset += len(w_already)
+
+        dd['MM'][w]=MMval
+        dd['M'][w]=Mval
+        print("set {s:.1f}%, total M set is now {t:.1f}%".
+              format(s=100*float(len(w))/len(dd['shot']),
+                     t=100*float(len(where(dd['M']>=0)[0]))/len(dd['shot'])
+                     ))
+           
     def plot(self, axes=None, label=None, suptitle=None, **kwargs):
         if suptitle==None:
             pl.suptitle("{0}, cc={1} sd={2} ".
                         format(self.name,self.cc,self.csd))               
 
-        xd = arange(5)
+        xd = np.arange(len(self.cc))
         #pl.plot(xd, self.cc, label=self.name, **kwargs)
         if axes != None: ax = axes
         else: ax=pl.gca()
@@ -137,6 +202,7 @@ class Mode():
     def std(self, phase_array):
         """ Return the standard deviation normalised to the cluster sds
             a point right on the edge of each sd would return 1
+            Need to include a mask to allow dead probes to be ignored
         """
         if not(hasattr(phase_array, 'std')):
             print('make phase_array into an np arry to speed up 100x')
@@ -145,6 +211,22 @@ class Mode():
         cc = np.tile(self.cc, (shape(phase_array)[0],1))
         csd = np.tile(self.csd, (shape(phase_array)[0],1))
         sq = (twopi(phase_array-cc)/csd)**2
+        return(sqrt(average(sq,1)))
+
+    def std_masked(self, phase_array, mask=None):
+        """ Return the standard deviation normalised to the cluster sds
+            a point right on the edge of each sd would return 1
+            Innclude a mask to allow dead probes to be ignored
+        """
+        if mask == None: mask=np.arange(len(self.cc))
+
+        if not(hasattr(phase_array, 'std')):
+            print('make phase_array into an np arry to speed up 100x')
+            phase_array = np.array(phase_array.tolist())
+
+        cc = np.tile(self.cc[mask], (shape(phase_array)[0],1))
+        csd = np.tile(self.csd[mask], (shape(phase_array)[0],1))
+        sq = (twopi(phase_array[:,mask]-cc)/csd)**2
         return(sqrt(average(sq,1)))
 
 
@@ -234,7 +316,7 @@ MP2010.append(Mode('N=-3  ', N=-3, NN=-301, cc =([-2.74, +2.1, -2.7, -2.3, -2.5]
 
 MP2010.append(Mode('N=3 - fract1', N=3, NN=302, cc =f1([-2.1, -1.1, 0.5, 1.06, 0.17]), csd=[ 0.3, 0.33, 0.34, 0.33, 0.25]))
 
-# n=2
+# was n=2
 MP2010.append(Mode('N=1', N=1, NN=100, cc =f1([2.902, 2.217, 2.823, 1.021, 2.157]), csd= [0.2, 0.2, 0.2, 0.3, 0.2 ]))
 #red.csd= [0.023, 0.006, 0.028, 0.025, 0.007 ]
 # saved as 200  with sumsd2 <10
@@ -255,14 +337,25 @@ MP2010.append(Mode('N=1, 60k MP1', N=1, NN=104, cc =f1([0, 2.4, 1.7, 2.1, 1.7]),
 MP2010.append(Mode('W1?', N=1, NN=103, cc =f1([2.5, 0.3, -1.4, 0.7, 2.2]), csd =[0.5, 0.5, 0.3, 0.3, .25]))
 # too rare to worry
 
+# need to track down with MP1 should be with another shot
+MP2010.append(Mode('N=-1',N=-1, NN=-100, cc=[-0.416, -0.814, -1.386, -1.190, -1.147], csd = [4, 0.060, 0.041, 0.086, 0.072]))
+# from the N~0 cases where M was found but not M, in 65139
+MP2010.append(Mode('N~0',N=0, NN=0, cc=[-0.829, -0.068, -0.120, 0.140, -0.032],csd=  [3, 0.025, 0.044, 0.037, 0.029]))
+# and this from the other ones (N ~ -1)
+MP2010.append(Mode('N=-1',N=-1, NN=-101, cc=[-0.454, -0.775, -1.348, -1.172, -1.221],  csd=[ 3, 0.071, 0.048, 0.133, 0.113]))
 
 ind = None
 modelist = MP2010
-mode=modelist[0]
+mode=None
 threshold=None
+mask=None
+doM = False
+doN = False
 
 import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())
+
+if mode==None: mode = modelist[0]
 
 if ind == None: ind = arange(len(dd['shot']))
 phases = dd["phases"][ind]
@@ -272,12 +365,16 @@ sd = mode.std(phases)
 
 for mname in 'N,NN,M,MM'.split(','):
     if not(dd.has_key(mname)):
-        dd[mname]=-np.ones(len(dd['shot']),dtype=int16)
+        dd[mname]=-4*np.ones(len(dd['shot']),dtype=int16)
 
 tot_set, tot_reset = (0,0)
 
+if not(doM) and not(doN): raise ValueError('Need to choose doN=True and/or doM=True')
+
 for mode in modelist:
-    mode.store(dd, threshold)
+    if doN: mode.store(dd, threshold, mask=mask)
+    if doM: mode.storeM(dd, threshold)
+
     tot_set   += mode.num_set
     tot_reset += mode.num_reset
 print('Total set = {t}, reset = {r}'.format(t=tot_set, r=tot_reset))

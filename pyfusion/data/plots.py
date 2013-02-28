@@ -303,8 +303,8 @@ def fsplot_phase(input_data, closed=True, ax=None, hold=0, block=False):
 
     min_length = max(1,40/len(input_data.channels))    
     # min_length - min_length???
-    short_names_1,p,s = split_names(ch1n, min_length-min_length)  # need to break up loops to do this
-    short_names_2,p,s = split_names(ch2n, min_length-min_length)  # 
+    short_names_1,p,s = split_names(ch1n, min_length=2)  # need to break up loops to do this
+    short_names_2,p,s = split_names(ch2n, min_length=5)  # 
 
 # need to know how big the shortened names are before deciding on the separator
     if (2*len(input_data.dphase)*(2+len(short_names_1[0])))> max_chars:
@@ -326,39 +326,64 @@ def fsplot_phase(input_data, closed=True, ax=None, hold=0, block=False):
         short_ch21n.append(short_names_2[-1]+sep+short_names_1[0])
         #dp.insert(0,dp[-1])
         # closed means use the phase diff from the ends
-        dp=-np.append(dp,modtwopi(-np.sum(dp)))
+        # sign bug fixed here - made closed opposite sign to open..
+        dp=np.append(dp,modtwopi(-np.sum(dp)))
 
     dp = fix2pi_skips(dp, around=0)
 
     if hold == 0: ax.clear()
+    
     Phi = np.array([2*np.pi/360*float(pyfusion.config.get
                                       ('Diagnostic:{cn}'.
                                        format(cn=c.name), 
                                        'Coords_reduced')
                                       .split(',')[0]) 
                     for c in input_data.channels])
+    Theta = np.array([2*np.pi/360*float(pyfusion.config.get
+                                        ('Diagnostic:{cn}'.
+                                         format(cn=c.name), 
+                                         'Coords_reduced')
+                                        .split(',')[1]) 
+                      for c in input_data.channels])
 
     if closed: 
         Phi = np.append(Phi, Phi[0])
+        Theta = np.append(Theta, Theta[0])
 
+    if len(np.unique(Theta)) > 1:
+        AngName = 'Theta'
+        Ang = Theta
+        dAngfor1 = np.pi/13  #dAngfor1 is the average coil dph for M=1
+        span = (np.pi)/13  # span is the average coil spacing in radians
+    else:
+        AngName = 'Phi'
+        Ang = Phi
+        dAngfor1 = (2*np.pi)/6
+        span = 2*np.pi/6
+        
     # expect Phi from ~.2 to twopi+.2 (if closed)
-    Phifix = fix2pi_skips(Phi,around=3.5)
+    Angfix = fix2pi_skips(Ang,around=3.5)
 
     # need to make sure the right dp is divided by the right dPhi
-    ax.plot(fix2pi_skips(Phifix[0:-1],around=np.pi),dp/np.diff(Phifix),
-            '+-',label='dp/dP')
-    ax.plot(fix2pi_skips(Phifix[0:-1],around=np.pi),dp,'o-', label='dPhi')
-    ax.set_xlim([0,ax.get_xlim()[1]+1])
+    ax.plot(fix2pi_skips(Angfix[0:-1],around=np.pi),dp/np.diff(Angfix)*span,
+            '+-',label='dp/d'+AngName[0])
+    ax.plot(fix2pi_skips(Angfix[0:-1],around=np.pi),dp,'o-', label='d'+AngName)
+    ax.set_xlim([ax.get_xlim()[0],
+                 ax.get_xlim()[1]+np.average(np.diff(Angfix))])
     ax.plot(ax.get_xlim(),[0,0],':k',linewidth=0.5)
+    for N in (-3,-2,-1,1,2,3): ax.plot(ax.get_xlim(),[N*dAngfor1,N*dAngfor1],':r',linewidth=0.5)
     tot=np.sum(dp)
+    over = Angfix[-1] - Angfix[0]
     print(tot)
     if closed: # only makes sense to draw a mean dp line if closed
         ax.plot(ax.get_xlim(),[tot/(2*np.pi),tot/(2*np.pi)],':b',linewidth=0.5)
 
     ax.legend(prop=FontProperties(size='small'))
-    ax.set_title('sum = {s:.2f}'.format(s=np.sum(dp)))
+    ax.set_title('sum = {s:.2f} over {o:.2f} ~ {r:.1f}'
+                 .format(s=tot,o=over, r=tot/over))
     debug_(pyfusion.DEBUG, 1, key='fs_phase')
-    ax.set_xticks(range(len(dp)))
+    #ax.set_xticks(range(len(dp)))
+    ax.set_xticks(Angfix)
     ax.set_xticklabels(short_ch21n)
     pl.show(block=block)
 
@@ -433,19 +458,34 @@ def svdplot(input_data, fmax=None, hold=0):
     pl.ylabel('Singular Value')
 #    pl.figtext(0.75,0.83,'1/H = %.2f' %(1./entropy),fontsize=12, color='r')
 #    pl.figtext(0.75,0.81,'H = %.2f' %(entropy),fontsize=12, color='b')
-# Use kwargs so that most formatting is common to all three labels.    
-    kwargs={'fontsize':12,'transform':ax2.transAxes,
-            'horizontalalignment':'right'}
-    
-    ax2.text(0.96,0.91,'tmid = %.1fms' %(1e3*np.average(input_data.chrono_labels)), color='r', **kwargs)
-    ax2.text(0.96,0.83,'1/H = %.2f' %(1./entropy), color='r', **kwargs)
-    ax2.text(0.96,0.75,'H = %.2f' %(entropy), color='b', **kwargs)
-    energy = Energy(input_data.p,button_setting_list)
     # this is done in two places - potential for inconsistency - wish I knew better -dgp
     # These changes make it easier to adjust the subplot layout
     # was pl.figtext(0.75,0.78, (relative to figure), make it relative to axes
-    energy_label = ax2.text(0.96,0.67,'E = %.1f %%' %(100.*energy.value),
+# Use kwargs so that most formatting is common to all three labels.    
+    kwargs={'fontsize':8,'transform':ax2.transAxes,
+            'horizontalalignment':'right', 'verticalalignment':'top'}
+    bsl = np.array(button_setting_list)
+    RMS_scale=np.sqrt(np.mean(
+            (input_data.scales[:,0]*bsl)**2))
+    ### Note: amp is dodgy - calcualted roughly here
+    ## reconsider how fs p is calculated!  maybe factor scales in before sum
+    ## Note also - a12 is calcuated differently here  but looks OK
+    # Also, shold update these like Dave does with Energy
+    amp=np.sqrt(np.sum(input_data.p*bsl))*RMS_scale
+    print("amp=%.3g:" % (amp)),
+    energy = Energy(input_data.p,bsl)
+    energy_label = ax2.text(0.96,0.98,'E = %.1f %%' %(100.*energy.value),
                             color='b', **kwargs)
+
+    labstr = str('tmid = {tm:.1f} ms, 1/H = {invH:.2f}, below for 0,1, '\
+                     '?Amp = {Amp:.2g}, a12 = {a12:.2f} '
+                 .replace(', ','\n')
+                 .format(tm=1e3*np.average(input_data.chrono_labels),
+                         invH=(1./entropy), 
+                         Amp = np.sqrt(np.sum(input_data.p*bsl))*RMS_scale,
+                         a12 = np.sqrt(input_data.p[1]/input_data.p[0])))
+    ax2.text(0.96,0.85,labstr, color='r', **kwargs)
+
     # grid('True')
     for sv_i in range(n_SV):
 	col = plot_list_1[sv_i].get_color()
@@ -499,6 +539,7 @@ def svdplot(input_data, fmax=None, hold=0):
 	# show repeated val
 	sub_plot_4_list[len(neg)+len(pos)+1], = ax4.plot([angle_array[-1]],[tmp_topo[-1]],'kx', visible= button_setting_list[sv_i],markersize=6)
 	plot_list_4[sv_i]=sub_plot_4_list
+        debug_(pyfusion.DEBUG, 2, key='svdplot')
 
     def test_action(label):
         print(label)

@@ -3,7 +3,8 @@ from pyfusion.utils.utils import fix2pi_skips, modtwopi
 from pyfusion.visual.sp import sp
 from pyfusion.data.convenience import between, bw, decimate, his, broaden
 
-DA300=DA('PF2_121206MPRMSv2_Par_fixModes_chirp_ff.npz',load=1)
-dd=DA300.copyda() 
-DA300.extract(locals())
-DA300.info()
+DAfilename='DA65MP2010HMPno612b5_M_N_fmax.npz'
+DA65=DA(DAfilename,load=1)
+dd=DA65.copyda() 
+DA65.extract(locals())
+DA65.info()

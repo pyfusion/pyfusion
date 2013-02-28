@@ -4,9 +4,13 @@ function). Need to figure out a better way to do this.
 """
 from datetime import datetime
 from pyfusion.debug_ import debug_
+from pyfusion.utils.utils import warn
 import copy
 from numpy import searchsorted, arange, mean, resize, repeat, fft, conjugate, linalg, array, zeros_like, take, argmin, pi, cumsum
 from numpy import correlate as numpy_correlate
+import numpy as np
+
+
 try:
     from scipy import signal as sp_signal
 except:
@@ -317,6 +321,93 @@ def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_
 
     return output_data
 
+@register("TimeseriesData")
+def filter_fourier_bandpass(input_data, passband, stopband, taper=None, debug=None):
+    """ 
+    Use a fourier space taper/tophat or pseudo gaussian filter to perform 
+    narrowband filtering (much narrower than butterworth.  
+    Problem is that bursts may generate ringing. (should be better with taper=2)  
+    >>> tb = dummytb(np.linspace(0,20,512))
+    >>> w = 2*np.pi* 1  # 1 Hertz
+    >>> dat = dummysig(tb,np.sin(w*tb.timebase)*(tb.timebase<np.max(tb.timebase)/3))
+    >>> fop = filter_fourier_bandpass(dat,[0.9,1.1],[0.8,1.2],debug=2).signal[0]
+
+    """
+    if debug == None: debug = pyfusion.DEBUG
+# normalise makes the thinking easier
+    norm_passband = input_data.timebase.normalise_freq(np.array(passband))
+    norm_stopband = input_data.timebase.normalise_freq(np.array(stopband))
+    ns = len(input_data.signal[0])
+    mask = np.zeros(ns)
+    # define the 4 key points 
+    #         /npblow-------------npbhi\
+    # ___nsbl/                          \nsbhi____
+    n_sb_low = int(norm_stopband[0]*ns/2)
+    n_pb_low = int(norm_passband[0]*ns/2)
+    n_pb_hi = int(norm_passband[1]*ns/2)
+    n_sb_hi = int(norm_stopband[1]*ns/2)
+
+    wid = max(n_pb_low - n_sb_low,n_sb_hi - n_pb_hi)
+    if wid < 4: 
+        if taper == 2: 
+            raise ValueError(
+            'taper 2 requres a bigger margin between stop and pass') 
+        elif taper == None:
+            warn('defaulting taper to 1 as band edges are sharp')
+            taper = 1
+    else: 
+        if taper == None:
+            taper = 2
+
+    if taper==1:
+        for n in range(n_sb_low,n_pb_low+1):
+            if n_pb_low == n_sb_low:  # allow for pass=stop on low side
+                mask[n]=1.
+            else:
+                mask[n] = float(n - n_sb_low)/(n_pb_low - n_sb_low) # trapezoid
+        for n in range(n_pb_hi,n_sb_hi+1):
+            mask[n] = float(n_sb_hi - n)/(n_sb_hi - n_pb_hi) # trapezoid
+        for n in range(n_pb_low,n_pb_hi+1):
+            mask[n] = 1
+    elif taper == 2:
+        # symmetrise (so that cumsum works)
+
+        n_pb_low = n_sb_low+wid
+        n_sb_hi = n_pb_hi+wid
+
+        for n in range(n_sb_low,n_pb_low+1):
+            mask[n] = float(n - n_sb_low)/(n_pb_low - n_sb_low) # trapezoid
+            mask[2*n_pb_low-n+1] = mask[n] #down ramp
+        wid_up = n_sb_hi - n_pb_hi
+        for n in range(n_pb_hi,n_sb_hi+1):
+            mask[n] = -float(n_sb_hi - n)/(n_sb_hi - n_pb_hi) # trapezoid
+            mask[2*n_pb_hi - n - 1] = mask[n]
+        mask = np.cumsum(mask) # integrate
+        mask = mask/np.max(mask)
+    mask[:ns/2:-1] = mask[1:(ns/2)]
+
+    output_data = copy.deepcopy(input_data)  # was output_data = input_data
+
+    for i,s in enumerate(output_data.signal):
+        #if len(output_data.signal) == 1: print('bug for a single signal')
+        FT = np.fft.fft(s)
+        IFT = np.fft.ifft(mask*FT)
+        if np.max(np.abs(IFT.imag)) > 1e-6*np.max(np.abs(IFT.real)):
+            pyfusion.logger.warning("inverse fft imag part > 1e-6")
+
+        output_data.signal[i] = IFT.real
+        
+    if debug>2: 
+        import pylab as pl
+        pl.plot(mask,'ro-')
+        pl.plot(np.abs(FT)/len(mask))
+        pl.plot(input_data.signal[0])
+        pl.plot(output_data.signal[0])
+        pl.show()
+    debug_(debug, 1, key='filter_fourier')
+    if np.max(mask) == 0: raise ValueError('Filter blocks all signals')
+    return output_data
+
 
 #########################################
 ## wrappers to numpy signal processing ##
@@ -325,3 +416,26 @@ def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_
 def correlate(input_data, index_1, index_2, **kwargs):
     return numpy_correlate(input_data.signal[index_1],
                            input_data.signal[index_2], **kwargs)
+
+if __name__ == "__main__":
+# this is a pain - I can see the benefit of unit tests/nose tests. bdb
+    class dummytb():
+        def normalise_freq(self, freq):
+            return(2*freq*np.average(np.diff(self.timebase)))
+
+        def __init__(self, tb):
+            self.timebase = tb
+
+    class dummysig():
+        def __init__(self, tb,sig):
+            self.timebase = tb
+            self.signal = [sig]
+
+    import doctest
+    doctest.testmod()
+    import pylab as pl
+    pl.figure()
+    tb = dummytb(np.linspace(0,20,2048))
+    w = 2*np.pi* 10  # 10 Hertz
+    dat = dummysig(tb,np.sin(w*tb.timebase)*(tb.timebase<np.max(tb.timebase)/3))
+    fop = filter_fourier_bandpass(dat,[9,11],[8,12],debug=2).signal[0]

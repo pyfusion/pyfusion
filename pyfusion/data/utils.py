@@ -2,6 +2,10 @@ import os, string
 import random as _random
 from numpy import fft, conjugate, array, mean, arange, searchsorted, argsort, pi
 from pyfusion.utils.utils import warn
+from pyfusion.debug_ import debug_
+import pyfusion
+
+import numpy as np
 
 try:
     import uuid
@@ -39,6 +43,88 @@ def get_axes_pixcells(ax):
 
 def cps(a,b):
     return fft.fft(a)*conjugate(fft.fft(b))
+
+def subdivide_interval(pts, overlap= None, debug=0):
+    """ return several intervals which straddle pts
+    with overlap of ov
+    The lowest x value is special - the point of division is much closer
+    to that x then zero.
+    overlap is a tuple (minoverlap, max), and describes the total overlap 
+    """
+    if overlap == None: overlap = [np.max(pts)/50, np.max(pts)/20]
+    if len(overlap) == 1:
+        warn('overlap should have a min and a max')
+        overlap = [overlap/3.0, overlap]
+
+    if (np.diff(pts)<0).any(): 
+        warn('points out of order - reordering')
+    pts = np.sort(pts)
+    begins = []
+    ends = []
+    for (i, x) in enumerate(pts):
+        if i == 0:
+            divider = x * 0.8 - overlap[1]/2.
+        else:
+            divider = (x + pts[i-1])/2.
+
+        if i == 0: 
+            begins.append(0)
+            ends.append(divider + overlap[1]/2.)
+        else:
+            this_overlap = min(max((divider - last_divider)/20,overlap[0]), 
+                               overlap[1])/2.
+            begins.append(last_divider - this_overlap)
+            ends.append(divider + this_overlap)
+        last_divider = divider
+
+    if debug>1: print(begins, pts, ends)
+    if debug>2: 
+        import pylab as pl
+        pl.figure()
+        for i in range(len(pts)):
+            pl.plot([begins[i],ends[i]],[i,i])
+            if i>0: pl.plot([pts[i-1],pts[i-1]],[i,i],'o')
+            pl.ylim(-1,20)
+            pl.show()
+    return(begins, ends)
+
+def find_peaks(arr, minratio=.001, debug=0):
+    """ find the peaks in the data in arr, by selecting points
+    where the slope changes sign, and the value is > minratio*max(arr) """
+    darr = np.diff(arr)
+    wnz = np.where(darr != 0)[0]
+    w_ch_sign = np.where(darr[wnz][0:-1]*darr[wnz][1:] < 0)[0]
+    # now check these to find the max
+    maxarr = np.max(arr[1:])  # to avoid zero freq
+    maxi = []
+
+    for i in w_ch_sign:
+        darr_left = darr[wnz[i]]
+        darr_right = darr[wnz[i]+1]
+        if darr_left > 0:  # have a maximum
+            imax = np.argmax(arr[wnz[i]:wnz[i]+2])
+            iarrmax = wnz[i]+imax  # imax was relative to subarray
+            if arr[iarrmax] > minratio*maxarr:
+                maxi.append(iarrmax)
+                if debug>1: print('arr elt {ii} = {v:.2f}'
+                                  .format(ii=iarrmax, 
+                                          v=arr[iarrmax]))
+    debug_(pyfusion.DEBUG,1, key='find_peaks')
+    return(np.array(maxi))
+
+
+def find_signal_spectral_peaks(timebase, signal, minratio = .001, debug=0):
+    ns = len(signal)
+    FT = np.fft.fft(signal-np.average(signal))/ns
+    ipks = find_peaks(np.abs(FT)[0:ns/2], minratio = minratio, debug=1)
+    fpks = ipks/np.average(np.diff(timebase))/float(ns)
+    if debug>1:
+        import pylab as pl
+        pl.semilogy(np.abs(FT))
+        pl.semilogy(ipks,np.abs(FT)[ipks],'o')
+
+    return(ipks, fpks, np.abs(FT)[ipks])
+
 
 def peak_freq(signal,timebase,minfreq=0,maxfreq=1.e18):
     """
@@ -169,3 +255,13 @@ def make_title(formatstr, input_data, channum=None, dict = {}, min_length=3):
         warn('in make_title for format="%s", dict=%s' % (formatstr, dict),
              exception=ex)
         return('')
+
+if __name__ == '__main__':
+
+# test program
+    import pyfusion
+    x=find_peaks([1,2,3,4,2,1,1,10,5,4,3,4,5])
+    tb = np.linspace(0,1e-3,1000)
+    signal = np.cos(2*np.pi*20e3*tb) + np.sin(2*np.pi*40e3*tb)
+    (ip,fp,ap) = find_signal_spectral_peaks(tb, signal, debug=2)
+    subdivide_interval([.5,1,1.2,2,3], debug=2)

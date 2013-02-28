@@ -8,6 +8,7 @@ from pyfusion.data.utils import cps, peak_freq, remap_periodic, list2bin, bin2li
 from pyfusion.data.base import PfMetaData
 import pyfusion
 from pyfusion.orm.utils import orm_register
+from pyfusion.debug_ import debug_
 
 try:
     from sqlalchemy import Table, Column, Integer, ForeignKey, Float
@@ -214,6 +215,7 @@ class FlucStruc(BaseData):
         self.p = np.sum(svd_data.svs.take(sv_list)**2)/svd_data.E
         self.H = svd_data.H
         self.E = svd_data.E
+        debug_(pyfusion.DEBUG, 4, key='FlucStruc')
         super(FlucStruc, self).__init__()
 
     def save(self):
@@ -228,6 +230,7 @@ class FlucStruc(BaseData):
         remap to [min_dphase, min_dphase+2pi]
         """
         phases = np.array([self._get_single_channel_phase(i) for i in range(self.signal.shape[0])])
+        debug_(pyfusion.DEBUG, 2, key='_get_dphase')
         if self.phase_pairs != None:
             tmp = []
             for a,b in self.phase_pairs:
@@ -257,7 +260,9 @@ class FlucStruc(BaseData):
     def _get_single_channel_phase(self, ch_id):
         data_fft = np.fft.fft(self.signal[ch_id])
         d_val = data_fft[self.freq_elmt]
-        phase_val = np.arctan2(d_val.real,d_val.imag)
+        # big change, flipped phase sign 
+        # was real, imag up until Feb 24 2013 - bdb
+        phase_val = np.arctan2(d_val.imag,d_val.real)
         return phase_val
 
 @orm_register()

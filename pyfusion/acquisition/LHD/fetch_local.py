@@ -61,7 +61,9 @@ class LHDTimeseriesDataFetcher(LHDBaseDataFetcher):
         else:
             signal_dict = newload(self.basename)
             
-        if ((chan_name == array(['MP5','HMP13','HMP05'])).any()):  flip = -1.
+        if ((chan_name == array(['MP5','HMP13','HMP05'])).any()):  
+            flip = -1.
+            print('flip')
         else: flip = 1.
         if self.diag_name[0]=='-': flip = -flip
 #        coords = get_coords_for_channel(**self.__dict__)

@@ -58,6 +58,8 @@ normalise='0'
 myfilter1p5=dict(passband=[1e3,2e3], stopband=[0.5e3,3e3], max_passband_loss=2, min_stopband_attenuation=15,btype='bandpass')
 myfilter3=dict(passband=[2e3,4e3], stopband=[1e3,6e3], max_passband_loss=2, min_stopband_attenuation=15,btype='bandpass')
 myfilter15=dict(passband=[10e3,20e3], stopband=[5e3,30e3], max_passband_loss=2, min_stopband_attenuation=15,btype='bandpass')
+myfilterN = dict(centre=30e3,bw=1e3,taper=2)
+
 filter = None  
 help=0
 separate=1
@@ -108,7 +110,13 @@ if old_shot == 0:
             bs = [0.5e3*lowpass,1.5e3*highpass]
             d = d.sp_filter_butterworth_bandpass(bp, bs,2,20,btype='bandpass')
     elif filter != None:
-        d = d.sp_filter_butterworth_bandpass(**filter)
+        if filter.has_key('btype'):
+            d = d.sp_filter_butterworth_bandpass(**filter)
+        else:
+            (fc,df) = (filter['centre'],filter['bw']/2.)
+            d = d.filter_fourier_bandpass(
+                passband=[fc-df,fc+df], stopband = [fc-2*df, fc+2*df], 
+                taper = filter['taper'])
     else:
         pass # no filter
             
@@ -147,7 +155,7 @@ else:
                 seg_proc=seg.subtract_mean()
                 outsvd=seg_proc.svd()
                 outsvd.svdplot(hold=hold)
-            try:
+            try: # plotting mag
                 if verbose: print(outsvd.history)
                 if plot_mag and (seg_proc.scales != None):
                     fig=pl.gcf()
@@ -184,7 +192,7 @@ else:
             pl.suptitle("Shot %s, %s t_mid=%.5g, norm=%s, sep=%d" % 
                         (shot_number, diag_name, average(seg_proc.timebase),
                          normalise, separate))
-            # now group in flucstrucs - already normalised, so method=0
+            # now group in flucstrucs - Note: already normalised, so method=0
             fs_set=seg_proc.flucstruc(method=0, separate=separate)
             fs_arr = order_fs(fs_set)
             for fs in fs_arr[0:min([len(fs_arr)-1,max_fs])]:

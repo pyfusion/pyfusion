@@ -64,12 +64,32 @@ def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isintera
             if quiet == 0:
                 print('{t:.1f} sec, loading data from line {s} of {f}'
                       .format(t = seconds()-st, s=skip, f=filename))
+            #  this little bit to determine layout of data
+            # very inefficient to read twice, but in a hurry!
+            txt = np.loadtxt(fname=filename, skiprows=skip-1, dtype=str, 
+                             delimiter='FOOBARWOOBAR')
+            header_toks = txt[0].split()
+            # is the first character of the 2nd last a digit?
+            if header_toks[-2][0] in '0123456789': 
+                print('found new header including number of phases')
+                n_phases = int(header_toks[-2])
+                ph_dtype = [('p{n}{np1}'.format(n=n,np1=n+1), f) for n in range(n_phases)]
+                
+            if 'frlow' in header_toks:  # add the two extra fields
+                fs_dtype= [ ('shot','i8'), ('t_mid','f8'), 
+                            ('_binary_svs','i8'), 
+                            ('freq','f8'), ('amp', 'f8'), ('a12','f8'),
+                            ('p', 'f8'), ('H','f8'), 
+                            ('frlow','f8'), ('frhigh', 'f8'),('phases',ph_dtype)]
+            else:
+                fs_dtype= [ ('shot','i8'), ('t_mid','f8'), 
+                            ('_binary_svs','i8'), 
+                            ('freq','f8'), ('amp', 'f8'), ('a12','f8'),
+                            ('p', 'f8'), ('H','f8'), ('phases',ph_dtype)]
+
             ds_list.append(
                 np.loadtxt(fname=filename, skiprows = skip, 
-                           dtype= [ ('shot','i8'), ('t_mid','f8'), 
-                                    ('_binary_svs','i8'), 
-                                    ('freq','f8'), ('amp', 'f8'), ('a12','f8'),
-                                    ('p', 'f8'), ('H','f8'), ('phases',ph_dtype)])
+                           dtype= fs_dtype)
             )
             count += 1
             comment_list.append(filename)
@@ -112,6 +132,9 @@ def merge_ds(ds_list, comment_list=[]):
         # accurately to a few usec
         if k == 't_mid' and np.issubdtype(newtype, np.dtype('float32')):
             newtype = np.dtype('float32')
+        # until binary svs are properly binary, need 64 bits for 10 channels or more
+        if k == '_binary_svs' and np.issubdtype(newtype, np.dtype(int)):
+            newtype = np.dtype('int64')
 
         arr = np.array(ds_list[0][k].tolist(),dtype=newtype)  # this gets rid 
         # of the record stuff and saves space (pyfusion.med_prec is in .cfg)
@@ -140,7 +163,8 @@ def merge_ds(ds_list, comment_list=[]):
         # at list the first element.
         dd['phorig'] = np.array(dd['phases'][:,0]*10).astype('int8')
 
-    dd['comment'] = np.array(comment_list)
+    # put the comments in a dictionary, so that operations on arrays won't be atttempted
+    dd['info'] = {'comment': np.array(comment_list)}
 
 
     return(dd)

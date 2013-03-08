@@ -453,6 +453,9 @@ def svdplot(input_data, fmax=None, hold=0):
     pl.axes(ax2)
     sv_sv = [input_data.svs[i] for i in range(n_SV)]
     ax2.semilogy(np.arange(n_SV),sv_sv,'ko',markersize=3)
+    # avoid extreme ylim ranges - start with no more than 10^3
+    (ymin,ymax) = ax2.get_ylim()
+    ax2.set_ylim(max(ymin, ymax/1000), ymax)
     entropy = input_data.H
     pl.xlabel('Singular Value number')
     pl.ylabel('Singular Value')

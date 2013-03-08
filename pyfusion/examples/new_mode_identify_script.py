@@ -93,7 +93,7 @@ class Mode():
         if len(w) == 0: 
             print('threshold {th:.2g} is too low for phases: '
                   'minimum std for {m} is {sd:.1f}'
-                  .format(th=threshold, m=self.name, sd=np.min(sd)))
+                  .format(th=threshold, m=self.name, sd=1*np.min(sd))) # format bug fix
             return()
 
         w_already = np.where(dd['NN'][w]>=0)[0]
@@ -218,10 +218,10 @@ class Mode():
             a point right on the edge of each sd would return 1
             Innclude a mask to allow dead probes to be ignored
         """
-        if mask == None: mask=np.arange(len(self.cc))
+        if mask is None: mask=np.arange(len(self.cc))
 
         if not(hasattr(phase_array, 'std')):
-            print('make phase_array into an np arry to speed up 100x')
+            print('make phase_array into an np array to speed up 100x')
             phase_array = np.array(phase_array.tolist())
 
         cc = np.tile(self.cc[mask], (shape(phase_array)[0],1))
@@ -365,7 +365,9 @@ sd = mode.std(phases)
 
 for mname in 'N,NN,M,MM'.split(','):
     if not(dd.has_key(mname)):
-        dd[mname]=-4*np.ones(len(dd['shot']),dtype=int16)
+        use_dtype=int16
+        minint = np.iinfo(use_dtype).min
+        dd[mname] = minint*np.ones(len(dd['shot']),dtype=use_dtype)
 
 tot_set, tot_reset = (0,0)
 

@@ -24,6 +24,7 @@ def between(var, lower, upper, closed=True):
             return ((avar > lower) & (avar < upper))
 
 bw = between
+btw = between
 
 def decimate(data, fraction=None, limit=None):
     """ reduce the number of items to a limit or by a fraction

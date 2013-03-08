@@ -59,6 +59,7 @@ diag_extra="n_e19b0,n_e19dL5,ech,NBI".split(',')
 minshot=0
 maxshot=999999 # higher than even LHD
 shot_list = []
+diags=diag_basic
 
 import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())

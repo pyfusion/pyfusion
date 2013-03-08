@@ -9,7 +9,7 @@ from pyfusion.debug_ import debug_
 debug=0
 
 
-def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None, nomode=-1,
+def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None, nomode=None,
        size_scale=None, dot_size=30, hold=0, seed=None, colorbar=None, legend=True, marker='o'):
     """ Scatter plot front end, size_scale 
     x, y, sz, col can be keys or variables (of matching size to ds)
@@ -75,6 +75,17 @@ def sp(ds, x=None, y=None, sz=None, col=None, decimate=0, ind = None, nomode=-1,
         else:
             col = np.array(col)[ind]
         color_string = ''
+
+    if nomode == None:
+        if hasattr(col, 'dtype'):
+            col_dtype = col.dtype
+            minint = np.iinfo(col_dtype).min
+            nomode = minint
+        else:
+            if len(col) != 0:
+                nomode = dp.iinfo(col[0]).min
+            else:
+                nomode = dp.iinfo(col).min
 
     w_not_nomode = np.where(nomode != col)[0]
             # shrink ind further to avoid displaying unidentified modes

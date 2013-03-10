@@ -42,7 +42,6 @@ fs_id = 0
 
 # ideally should be a direct call, passing the local dictionary
 exec(pf.utils.process_cmd_line_args())
-#execfile('process_cmd_line_args.py')
 
 for shot in shot_range:
     try:

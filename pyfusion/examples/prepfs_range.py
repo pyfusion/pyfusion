@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # note - default= for positional arg requires nargs = '?' or '*'
     PARSER.add_argument( 'output_path', metavar='output_path', help=' path to store output text files', default='.', nargs=1, type=str) # just 1 for now
     PARSER.add_argument( '--filename_format', type=str, 
-                         default='PF2_{yy}{mm}{dd}_{dn}_{sr}_{ns}_{nor}_{sep}', 
+                         default='PF2_{yy:02d}{mm:02d}{dd:02d}_{dn}_{sr}_{ns}_{nor}_{sep}', 
                          help='format string to produce output file name' )
     PARSER.add_argument( '--exe', type=str, 
                          default='gen_fs_local.py', 

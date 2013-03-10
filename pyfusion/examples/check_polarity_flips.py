@@ -28,6 +28,7 @@ import pyfusion
 #pyfusion.settings.SHOT_T_MIN=1.
 #pyfusion.settings.SHOT_T_MAX=3.
 
+_var_default = """
 dev_name= 'LHD' # 'H1Local'
 shot_number=None
 diag_name = ""
@@ -41,10 +42,12 @@ aphase=True
 flips=[]
 markersize=0.05
 ref_index=None
+"""
 
-#execfile('process_cmd_line_args.py')
-import pyfusion.utils
-exec(pyfusion.utils.process_cmd_line_args())
+exec(_var_default)
+
+from pyfusion.utils import process_cmd_line_args
+exec(process_cmd_line_args())
 
 device = pyfusion.getDevice(dev_name)
 if dev_name=='TestDevice':

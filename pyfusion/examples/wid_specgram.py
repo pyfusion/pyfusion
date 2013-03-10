@@ -101,7 +101,7 @@ def get_local_shot_numbers(partial_name):
     global shot_list
     return(shot_list)
 
-# defaults
+_var_default="""
 wild_card = ''
 
 dev_name= 'LHD' # 'H1Local'
@@ -125,10 +125,11 @@ fmod=0
 # t_max=0.08
 
 chan_name=''
+"""
+exec(_var_default)
 
-#execfile('process_cmd_line_args.py')
-import pyfusion.utils
-exec(pyfusion.utils.process_cmd_line_args())
+from pyfusion.utils import process_cmd_line_args
+exec(process_cmd_line_args())
 
 device = pyfusion.getDevice(dev_name)
 
@@ -172,9 +173,7 @@ if pyfusion.VERBOSE>2:
 if channel_number==None: channel_number=0
 
 # tweak above parameters according to command line args
-#execfile('process_cmd_line_args.py')
-exec(pyfusion.utils.process_cmd_line_args())
-
+exec(process_cmd_line_args())
 # arrays for test signal
 tm=arange(0,0.02,1e-6)
 y=sin((2e5 + 5e3*sin(fmod*2*pi*tm))*2*pi*tm)

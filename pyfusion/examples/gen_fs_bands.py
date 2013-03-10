@@ -19,7 +19,7 @@ from time import sleep
 import os
 from pyfusion.data.utils import find_signal_spectral_peaks, subdivide_interval
 
-
+_var_default="""
 lhd = pyfusion.getDevice('LHD')
 
 #min_shot = 84000
@@ -47,11 +47,12 @@ max_bands = 4
 
 # ids are usually handled by sqlalchemy, without SQL we need to look after them ourselves
 fs_id = 0
+"""
+exec(_var_default)
 
 # ideally should be a direct call, passing the local dictionary
 import pyfusion.utils
 exec(pyfusion.utils.process_cmd_line_args())
-#execfile('process_cmd_line_args.py')
 
 count = 0  #  we print the header right before the first data
 

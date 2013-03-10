@@ -11,10 +11,10 @@
 import pyfusion as pf
 import pylab as pl
 
+_var_default="""
 dev_name='H1Local'   # 'LHD'
 dev_name='LHD'
 # ideally should be a direct call, passing the local dictionary
-import pyfusion.utils
 
 shot_number = None
 diag_name = None
@@ -23,10 +23,12 @@ noverlap=None
 time_range = None
 channel_number=0
 hold=0
+"""
 
+exec(_var_default)
 
-exec(pf.utils.process_cmd_line_args())
-#execfile('process_cmd_line_args.py')
+from pf.utils import process_cmd_line_args
+exec(process_cmd_line_args())
 
 device = pf.getDevice(dev_name)
 

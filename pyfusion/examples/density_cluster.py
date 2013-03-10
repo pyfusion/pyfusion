@@ -102,7 +102,7 @@ except:
 """
 exec(_var_default)
 
-from  bdb_utils import process_cmd_line_args
+from pyfusion.utils import process_cmd_line_args
 exec(process_cmd_line_args())
 
 if hold == 0: pl.clf()

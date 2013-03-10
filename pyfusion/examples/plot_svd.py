@@ -68,7 +68,6 @@ verbose=0
 max_fs = 2
 shot_number = None
 
-#execfile('process_cmd_line_args.py')
 exec(pf.utils.process_cmd_line_args())
 if help==1: 
     print(__doc__) 

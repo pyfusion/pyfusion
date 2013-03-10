@@ -4,7 +4,7 @@ from pyfusion.visual.sp import sp
 from pyfusion.data.convenience import between, bw, btw, decimate, his, broaden
 
 DAfilename='PF2_121206MPRMSv2_Par_fixModes_chirp_ff.npz'
-from  bdb_utils import process_cmd_line_args
+from  pyfusion.utils import process_cmd_line_args
 exec(process_cmd_line_args())
 
 DA300=DA('DAfilename,load=1)

@@ -16,7 +16,7 @@ hold=0
 """
 exec(_var_defaults)
 
-from  bdb_utils import process_cmd_line_args
+from  pyfusion.utils import process_cmd_line_args
 exec(process_cmd_line_args())
 
 def eff(th, phH):

@@ -256,7 +256,7 @@ get_basic_diagnostics.__doc__ += 'Some diagnostics are \n' + ', '.join(file_info
 
 
 if __name__ == "__main__":
-
+    _var_default = """
     numints=100
     times=np.linspace(2,3,numints)
     localigetfilepath = '/LINUX23/home/bdb112/datamining/cache/'
@@ -267,10 +267,12 @@ if __name__ == "__main__":
     diags="<n_e19>,b_0,i_p,w_p,dw_pdt,dw_pdt2,beta".split(',')
     exception = IOError
     verbose = 0
+    """
 
+    exec(_var_default)
 
-    import pyfusion.utils
-    exec(pyfusion.utils.process_cmd_line_args())
+    from pyfusion.utils import process_cmd_line_args
+    exec(process_cmd_line_args())
 
     missing_shots = []
     good_shots =[]

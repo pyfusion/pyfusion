@@ -4,15 +4,20 @@ from glob import glob
 import numpy as np
 from pyfusion.debug_ import debug_
 
+_var_default="""
 debug=0
 target='^Shot .*'  # to allow searches for e.g. '^Shot .*'  or skip lines ==4
 quiet=1
 Append = False
 exception=Exception
 file_list = [pyfusion.root_dir+'/acquisition/PF2_121206_54185_384_rms_1.dat.bz2']
+"""
 
-import pyfusion.utils
-exec(pyfusion.utils.process_cmd_line_args())
+exec(_var_default)
+
+from pyfusion.utils import process_cmd_line_args
+exec(process_cmd_line_args())
+
 if len(np.shape(file_list)) == 0: file_list=[file_list]
 
 

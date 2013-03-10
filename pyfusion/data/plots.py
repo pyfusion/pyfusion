@@ -91,6 +91,7 @@ def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspac
             if (row==0) and (col==0):
                 # note - sharex=None is required fo that overlays can be done
                 ax1 = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = None)
+                axn = ax1
             else:
                 if sharex == True: sharex = ax1
                 if sharey: axn = pl.subplot(n_rows, n_columns, subplot_num+1, sharex = sharex, sharey=ax1)
@@ -114,6 +115,15 @@ def plot_signals(input_data, filename=None,downsamplefactor=1,n_columns=1, hspac
                 else: displace = ''  # use \n to make two line label to displace every second one
 
                 mylabel(make_title(labelfmt+displace, input_data, chan_num),**fontkwargs)
+
+            if n_rows>3: 
+                #print('locator_params',int(25/np.sqrt(n_rows)))
+                axn.locator_params(prune='both', axis = 'y',
+                                   nbins=min(5,int(25/np.sqrt(n_rows))))
+                # this gets rid of the x labels at either end until wee 
+                # can suppress xlabels on all but the lowest
+
+                if n_rows>1: axn.locator_params(prune='both', axis = 'x')
 
             if ylim != None: pl.ylim(ylim)
             if xlim != None: pl.xlim(xlim)

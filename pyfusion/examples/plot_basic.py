@@ -17,9 +17,7 @@ debug=0
 """
 exec(_var_defaults)
 
-#import pyfusion.utils
-#exec(pyfusion.utils.process_cmd_line_args())
-from  bdb_utils import process_cmd_line_args
+from  pyfusion.utils import process_cmd_line_args
 exec(process_cmd_line_args())
 
 device = pf.getDevice(dev_name)

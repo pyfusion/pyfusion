@@ -53,6 +53,11 @@ def list_vars(locdict, Stop):
     if locdict.has_key('_var_defaults'):
         print('\n=========== Variables, and default values =========')
         print(locdict['_var_defaults'])
+    # check the global namespace too - can't see _var_default when
+    # running with "run -i" (but it hasn't helped).    
+    if globals().has_key('_var_defaults'):
+        print('\n=========== Variables, and default values =========')
+        print(globals()['_var_defaults'])
     else:
 
         _user_locals=[]

@@ -52,10 +52,11 @@ def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isintera
     ds_list =[]
     comment_list =[]
     count = 0
-    for filename in file_list:
+    for (i,filename) in enumerate(file_list):
         if seconds() - last_update > 30:
             last_update = seconds()
-            print('processing {f}'.format(f=filename))
+            print('reading {n}/{t}: {f}'
+                  .format(f=filename, n=i, t=len(file_list)))
         try:
             if pl.is_string_like(target): 
                 skip = 1+find_data(filename, target,debug=debug)
@@ -71,7 +72,8 @@ def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isintera
             header_toks = txt[0].split()
             # is the first character of the 2nd last a digit?
             if header_toks[-2][0] in '0123456789': 
-                print('found new header including number of phases')
+                if pyfusion.VERBOSE > 0: 
+                    print('found new header including number of phases')
                 n_phases = int(header_toks[-2])
                 ph_dtype = [('p{n}{np1}'.format(n=n,np1=n+1), f) for n in range(n_phases)]
                 

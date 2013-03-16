@@ -1,14 +1,26 @@
+""" Performance - with 18M x 14 phases CWGM dataset float32, with int indices, used 16GB to density cluster, and other ops took and additional 5GB swap.
+At face value, this is 1k/entry, much higher than the typical 200-300 bytes.
+Loading (copying dd, and extracting) the float32 version alone takes 5.6GB.
+loading the float16 version alone (bare: no b_0)takes 3.3GB.
+As these include 3 copies, space can be reduced to 40% by dd=0, DA300=0
+
+30 secs for 20 million 
+25ns
+time for i in range(20*1000*1000): d.update({tuple(random.random(14).tolist()):i
+New "unsafe" method takes 680 sec and 1.4GB for 16M of 18M phases
+2.5GB after 0.85 Before - so  1.65GB for 16M entries
+})
+"""
 import numpy as np
 import pylab as pl
 
 from pyfusion.data.histogramHD import histogramHD
 
 colorset=('b,g,r,c,m,y,k,orange,purple,lightgreen,gray'.split(',')) # to be rotated
-def twopi(x, offset=pi):
-    return ((offset+np.array(x)) % (2*pi) -offset)
+from pyfusion.utils.utils import fix2pi_skips, modtwopi
 
 def dist2(a,b, method='euler'):
-    return(np.sum(((np.array(a)- np.array(b))**2)))
+    return(np.sum((modtwopi((np.array(a)- np.array(b)))**2)))
 
 def dists(a, instances, mask = None, method='euler'):
     """ calculate the distance of the phase set to all phase sets
@@ -23,7 +35,7 @@ def dists(a, instances, mask = None, method='euler'):
         instances = np.array(instances.tolist())
 
     cc = np.tile(a[mask], (shape(instances)[0],1))
-    sq = (twopi(instances[:,mask]-a))**2
+    sq = (modtwopi(instances[:,mask]-a))**2
     return(np.sqrt(np.average(sq,1)))
 
 
@@ -86,6 +98,8 @@ def group_clustersold(instances, radius=None):
 
 _var_default="""
 
+method='unsafe'
+mincount=3
 hold=0
 horiz=True  # horizontal legend
 n_bins = 48
@@ -108,12 +122,27 @@ exec(process_cmd_line_args())
 if hold == 0: pl.clf()
 
 if result is None:
-    hHD = histogramHD(phases[:,sel],bins = n_bins)
+    hHD = histogramHD(phases[:,sel],bins = n_bins,method=method)
     phslist = hHD.d.keys()
     counts = array([hHD.d[k] for k in phslist])
+    w3 = np.where(counts>=mincount)[0]
+    if len(w3)>1000:
+        print('only processing where counts >= {mc}'.format(mc=mincount))
+        phslist=[phslist[w] for w in w3]
+        counts=counts[w3]
+
     inds = np.argsort(counts)
     result = n_bins
-    phs = -np.pi+2*np.pi/n_bins*np.array(phslist,dtype=float32)  # this is a slow step (1 sec for 150k)
+    if method == 'safe':
+        # this is a slow step (1 sec for 150k) - should include eps here too!
+        phs = -np.pi+2*np.pi/n_bins*np.array(phslist,dtype=float32)
+    else:
+        phs = []
+        # there is probably a faster way than "ord" using numpy.char
+        for phi in phslist:
+            indices = [ord(c) for c in phi]
+            phs.append(-np.pi+2*np.pi/n_bins*np.array(indices,dtype=float32))
+        phs = np.array(phs,dtype=float32)
 
 else:
     print('Using previous data')
@@ -149,13 +178,14 @@ subset_counts = counts[inds[-n_plot:][::-1]]
 clinds = group_clusters(subset)
 
 for (i,clind) in enumerate(clinds):
-    linestyle=['-','--','.-.'][int((i/len(colorset)))]
+    linestyle=['-','--','.-.',':',"''","' '"][np.mod(int((i/len(colorset))),6)]
     for (p,ind) in enumerate(clind):
         if p==0: label = str("{c}:{nc},{pop}"
                              .format(c=i,nc=len(clind),
                                      pop=np.sum(subset_counts[clind])))
         else: label = ''
-        pl.plot(subset[ind],color=colorset[i % len(colorset)], linestyle=linestyle,label=label,linewidth=scale*n_bins*sqrt(subset_counts[ind]))
+        pl.plot(subset[ind],color=colorset[i % len(colorset)], linestyle=linestyle,label=label,linewidth=scale*n_bins*4*(subset_counts[ind])**0.25)
+
 pl.legend()
 pl.show()
 

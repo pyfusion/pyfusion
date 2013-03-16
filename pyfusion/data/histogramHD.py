@@ -1,7 +1,47 @@
 import numpy as np
 import pylab as pl
+import pyfusion
+from pyfusion.debug_ import debug_
 
-# there is really no need for a class, unless we want to check bounds.
+""" 
+Tests:
+Memory: 10M 2 element tuple: -> 1.3GB 130b/elt, 10M 14 elt 2.2G = 220 b/elt
+  for i in range(10000000): d.update({(i,10,):i})
+  12x8 = 96 bytes extra = about right.
+  
+  Precalculate random indices:
+  10M x14 in range 0-100 takes 110 secs and 1.9 gig to calc, and 12 sec to 
+  put in dict, occupying 1gB (as monitored by ubuntu)
+inds = []; d={}
+time for i in range(2*1000*1000): inds.append(tuple(array(random.random(14)*100,dtype=int).tolist()))
+time for ind in inds: d.update({ind:ind[0]})
+2M, tuple -> 1340M.  cf 117M 
+  add another 10M by reversing tuples.  +1.3GB - about 130 bytes/entry
+  this compares with 1100M/2 million for on the fly calculation (550 bytes/ent).
+time for i in range(2*1000*1000): dd.update({tuple(random.random(14).tolist()):i}
+n_bins = 60
+eps=.001
+
+pmax=256  # scale factor separating bins
+
+
+# this approach vectorises over instances AND signals but uses too
+# much space in the conversion to indices 
+scalevec=np.tile(np.logspace(0,16,9),2)
+scalemat=np.tile(scalevec[0:nsig],[ninsts,1])
+
+inds=np.zeros((ninsts,2),dtype=int)
+fact = n_bins/(2*(np.pi+eps))
+inds[:,0] = np.array(sum((scalemat*(phases+np.pi)*fact)[:,0:9],1),dtype=int)
+inds[:,1] = np.array(sum((scalemat*(phases+np.pi)*fact)[:,9:],1),dtype=int)
+
+inds = [tuple(p) for p in inds]
+for ind in inds: d.update({ind:ind[0]})
+
+"""
+
+# there is really no need for a class, unless we want to check bounds
+# but that is a good reason!
 class CoordHD():
     def __init__(self, dims, debug=0):
         self.dims = dims
@@ -25,8 +65,52 @@ class CoordHD():
         self.d[indices] = val
 
 
+# This version uses strings as indicies, and doesn't check bounds on the fly
+# Instead there is a check_bounds rouitine which can be run after the fact  
+# each index may span up to 255.      
+class CoordHDs():
+    def __init__(self, dims, debug=0):
+        self.dims = dims
+        self.d = {}
+        self.debug = debug
 
-def histogramHD(d, bins=None):
+    def get(self, indices):
+        """ string version doesn't require the tuple notation (*)  """
+        if self.debug>0: print('get indices', indices)
+        if not self.d.has_key(indices): return(0)
+        return(self.d[indices])
+    
+    def set(self, indices, val):
+        """ set(inds,49.)  """
+        self.d[indices] = val
+
+
+def find_eps(x,value=None):
+    """ find the smallest number that will always exceed the representational
+    accuracy of x in the range around value.
+    """
+    num = 10000
+
+    xx = np.repeat(x.copy(), num)
+    if value is not None: 
+        xx[:] = value
+    xxt = np.repeat(x.copy(), num)
+    t_eps = np.logspace(-50,-1, num)
+
+    xxt[:] = xx[:] + t_eps[:]
+    wgt = np.where(xxt>xx)[0]
+
+    xxt[:] = xx[:] - t_eps[:]
+    wlt = np.where(xxt<xx)[0]
+
+    if (len(wgt)==0 or len(wlt)==0): 
+        raise Exception("can't determine precision of {x}"
+                        .format(x=x))
+    
+    return(t_eps[wlt[0]]+t_eps[wgt[0]])
+
+
+def histogramHD(d, bins=None, method='safe'):
     """ make a histogram of data too high in dimension to use histogramdd,
     by successive calls to histogramdd().
     The simplest implementation is to assume all bins are equal and in the 
@@ -42,9 +126,12 @@ def histogramHD(d, bins=None):
     (n_instances, n_signals) = np.shape(d)
     maxdim_dd = 3
     if bins is None: bins = 12
+    eps = find_eps(d[0,0],value=np.pi)
+    # note - at present, this chunk (bins) is not used (speed)
     if np.isscalar(bins): 
         n_bins = bins
-        bins = np.pi * np.linspace(-1, 1, bins)  
+        # small overlap to allow for finite precision (only matters for float16)
+        bins = np.pi * np.linspace(-(1+eps), 1+eps, bins)  
 
     # For each cell, we need the number that lie in that range for each signal
     # for each dimension
@@ -75,13 +162,77 @@ def histogramHD(d, bins=None):
     """    
     
     dims = n_signals*(n_bins,)
-    hdd = CoordHD(dims)
-    print('histograms into {s:.2g} bins'.format(s=np.product(np.array(dims).astype(float))))
-    for phase in d[:]:
-        inds = tuple(np.array((phase+np.pi)*n_bins/(2*np.pi),dtype=int))
-        hdd.set((inds), hdd.get(*inds) + 1)
+    fact = n_bins/(2*(np.pi+eps))
+
+
+    if method=='safe':
+        hdd = CoordHD(dims)
+        hdd.eps=eps
+        print('histograms into {s:.2g} bins'.
+              format(s=np.product(np.array(dims).astype(float))))
+        for phase in d[:]:
+            inds = tuple(np.array((phase+np.pi)*fact,
+                                  dtype=int))
+            hdd.set((inds), hdd.get(*inds) + 1)
+
+    else:
+        #string method - 2GB for 16M x 16 in 270 secs (E4300)  best so 
+        # far (no-check store - no increment)
+        """
+        fact = n_bins/(2*(np.pi+eps))
+        inds = [str(bytearray(np.array((phase+np.pi)*fact,dtype=np.int8))) 
+                for phase in phases]
+        d={}
+        for ind in inds: d.update({ind:ind[0]})
+
+        # do it on the fly takes 1.5G for 16Mx16
+        time for phase in phases:  d.update({str(
+                    bytearray(np.array((phase+np.pi)*fact,dtype=np.int8))):1})
+        """
+        hdd = CoordHDs(dims)
+        print('histograms (str) into {s:.2g} bins'.
+              format(s=np.product(np.array(dims).astype(float))))
+        for phase in d[:]:
+            inds = str( bytearray(np.array((phase+np.pi)*fact,dtype=np.int8)))
+            hdd.set((inds), hdd.get(inds) + 1)
+        
+        """
+    # this is a complicated but faster executing version, which
+    # seems to consume less memory, but expanding the dictionary
+    # only in bursts, with no calculations in between updates.
+    # misses counts which occur more than once in the same batch.
+    batch_size = 10000  # 2.3 sec for 100kx16 inds, 2.7sec for update
+    for batch in range(1 + (len(d)/batch_size)):
+        print(batch)
+        last = min((batch+1)*batch_size, len(d))
+        inds_list = [tuple(np.array((phase+np.pi)*n_bins
+                                    /(2*(np.pi+eps)),dtype=int))
+                     for phase in d[batch*batch_size:last]]
+        #for inds in inds_list: hdd.set((inds), hdd.get(*inds) + 1)
+        #for inds in inds_list:hdd.d.update({inds:1}) 1.25sec fo 1Mx16!!
+        # starts at 5secs/100k, 23 secs for 100K at 
+        # end still 4.6GB, 15minutes for 4MB (note - as implemented misses 
+        # counts in the same batch - very important.
+        vals = []
+        for inds in inds_list:
+            #debug_(max(pyfusion.DEBUG, hdd.debug), key='histogramHD')
+            if hdd.d.has_key(inds): 
+                vals.append(hdd.d[inds])
+            else: 
+                vals.append(0)
+        for (i,inds) in enumerate(inds_list):
+            hdd.d.update({inds: vals[i]+1})
+    """        
 
     return(hdd)
+
+# make inds list - 23usec   
+# update line 27us (16 elt)
+# simple update 1.2us
+# simple dict access 0.5 sec
+# hdd.get 14us
+# so most of the time is in subscript maths and list creation
+# 4Mx16 4.1GB 355 sec - same either way.
 
 if __name__ == '__main__':
 

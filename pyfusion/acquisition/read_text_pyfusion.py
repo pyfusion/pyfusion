@@ -3,6 +3,7 @@ import pylab as pl
 import pyfusion
 from time import time as seconds
 import re
+import sys
 
 def find_data(file, target, skip = 0, recursion_level=0, debug=0):
     """ find the first line number which contains the string (regexp) target 
@@ -107,8 +108,10 @@ def read_text_pyfusion(files, target='^Shot .*', ph_dtype=None, plot=pl.isintera
         pl.colorbar()
     return(ds_list, comment_list)
 
-def merge_ds(ds_list, comment_list=[]):
+def merge_ds(ds_list, comment_list=[], old_dd=None, debug=True, force=False):
     """ Take a list of structured arrays, and merge into one
+    Adding to an existing dd is not fully tested - may be memory intensive
+    and does not check for keys being different in the ds and dd
     """
     if len(np.shape(ds_list)) == 0: 
         raise ValueError("{d} should be a list".format(d=ds_list))
@@ -116,31 +119,52 @@ def merge_ds(ds_list, comment_list=[]):
     if type(ds_list[0]) == type({}): keys = np.sort(ds_list[0].keys())
     elif type(ds_list[0]) == np.ndarray: keys = np.sort(ds_list[0].dtype.names)
 
-    dd = {}
+    if old_dd is None: 
+        dd = {}
+    else: 
+        if debug>0: print('appending')
+        dd = old_dd
+        ddkeys = np.sort(dd.keys())
+        if (len(ddkeys) != len(keys)) or (not np.char.equal(keys, ddkeys)):
+            msg = str('keys are not the same: \n {kds}\n{kdd}'
+                      .format(kds = keys, kdd = ddkeys))
+            if force: pyfusion.utils.warn(msg)
+            else: raise LookupError(msg)
+
     #  for each key in turn, make an array from the ds_list[0], then
     #  extend it with ds_list[1:]
     for k in keys:
         # get rid of the structure/record stuff, and convert precision
         # warning - beware of data with very high dynamic range!
-        if np.issubdtype(type(ds_list[0][k][0]), int): 
-            newtype = np.dtype('int32')
-        elif np.issubdtype(type(np.array(ds_list[0][k].tolist()).flatten()[0]), float): 
-            newtype = pyfusion.prec_med
-        else: 
-            print("defaulting {0} to its type in ds_list".format(k))
-            newtype = type(ds_list[0][k][0])
+        if old_dd is None:
+            if np.issubdtype(type(ds_list[0][k][0]), int): 
+                newtype = np.dtype('int32')
+            elif np.issubdtype(type(np.array(ds_list[0][k].tolist()).flatten()[0]), float): 
+                newtype = pyfusion.prec_med
+            else: 
+                print("defaulting {0} to its type in ds_list".format(k))
+                newtype = type(ds_list[0][k][0])
 
-        # make sure t_mid is at least f32 (so that 100 sec shot records
-        # accurately to a few usec
-        if k == 't_mid' and np.issubdtype(newtype, np.dtype('float32')):
-            newtype = np.dtype('float32')
-        # until binary svs are properly binary, need 64 bits for 10 channels or more
-        if k == '_binary_svs' and np.issubdtype(newtype, np.dtype(int)):
-            newtype = np.dtype('int64')
+            # make sure t_mid is at least f32 (so that 100 sec shot records
+            # accurately to a few usec
+            if k == 't_mid' and np.issubdtype(newtype, np.dtype('float32')):
+                newtype = np.dtype('float32')
+            # until binary svs are properly binary, need 64 bits for 10 channels or more
+            if k == '_binary_svs' and np.issubdtype(newtype, np.dtype(int)):
+                newtype = np.dtype('int64')
 
-        arr = np.array(ds_list[0][k].tolist(),dtype=newtype)  # this gets rid 
+            arr = np.array(ds_list[0][k].tolist(),dtype=newtype)# this gets rid 
         # of the record stuff and saves space (pyfusion.med_prec is in .cfg)
-        for (ind, ds) in enumerate(ds_list[1:]):
+            start = 1 # the first DS is now in the array
+        else: 
+            arr = dd[k].copy()  # could be wasteful?
+            start = 0 # the first DS is NOT in the array - it is the old_dd 
+
+
+        for (ind, ds) in enumerate(ds_list[start:]):
+            if debug>0: 
+                print(ind, k),
+                if k == 'shot': sys.stdout.flush()
             oldlen = len(arr)
             if len(np.shape(arr))==1:  # 1D data
                 arr.resize(oldlen+len(ds[k]))

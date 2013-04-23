@@ -8,7 +8,8 @@ _var_default="""
 debug=0
 target='^Shot .*'  # to allow searches for e.g. '^Shot .*'  or skip lines ==4
 quiet=1
-Append = False
+append = False
+append_old_method =False   # not sure if the old method ever worked - takes a lot of mem
 exception=Exception
 file_list = [pyfusion.root_dir+'/acquisition/PF2_121206_54185_384_rms_1.dat.bz2']
 """
@@ -25,7 +26,19 @@ if len(np.shape(file_list)) == 0: file_list=[file_list]
 
 if len(ds_list) == 0: raise LookupError('no files found for {f}'.format(f=file_list))
 
-if Append:
+if append_old_method:
     ds_list.append(dd)
-    comment_list.extend(dd['comment'])
-dd = merge_ds(ds_list, comment_list)
+    comment_list.extend(dd['info']['comment'])
+if append:
+    dd = merge_ds(ds_list, comment_list, old_dd=dd)
+else:
+    dd = merge_ds(ds_list, comment_list)
+
+
+
+
+
+
+
+
+

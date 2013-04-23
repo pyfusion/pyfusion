@@ -47,12 +47,55 @@ class MetaFilter(type):
         return super(MetaFilter, cls).__new__(cls, name, bases, attrs)
 """
 
+def get_optimum_time_range(input_data, new_time_range):
+    from pyfusion.utils.primefactors import fft_time_estimate
+
+    nt_args = searchsorted(input_data.timebase, new_time_range)
+    # try for 20 more points
+    extension = ((new_time_range[1]-new_time_range[0])
+                *float(20)/(nt_args[1]-nt_args[0]))
+    (dum,trial_upper) = searchsorted(input_data.timebase, 
+                                  [new_time_range[0],
+                                   new_time_range[1]+extension])
+    # if not consider using less than the original request
+    trial_lower = trial_upper - 20
+    times = []
+    for num in range(trial_lower, trial_upper):
+        times.append(fft_time_estimate(num - nt_args[0]))
+
+    newupper = trial_lower+np.argmin(times)
+    if newupper != nt_args[1]: 
+        pyfusion.utils.warn('Interval fft optimized from {old} to {n} points'
+                            .format(n=newupper-nt_args[0], 
+                                    old=nt_args[1]-nt_args[0]))
+
+    best_upper_time = input_data.timebase[newupper]
+    new_time_range[1] = (best_upper_time 
+                         - 0.5*np.average(np.diff(input_data.timebase)))
+    if pyfusion.VERBOSE>0: 
+        print('returning new time range={n}'.format(n=new_time_range))
+    return(new_time_range)
+
 @register("TimeseriesData", "DataSet")
-def reduce_time(input_data, new_time_range):
+def reduce_time(input_data, new_time_range, fftopt=False):
+    """ reduce the time range of the input data in place(copy=False)
+    or the returned Dataset (copy=True - default at present). 
+    if fftopt, then extend time if possible, or if not reduce it so that
+    ffts run reasonably fast. Should consider moving this to actual filters?
+    But this way users can obtain optimum fft even without filters.
+    The fftopt is only visited when it is a dataset, and this isn't happening
+    """
     from pyfusion.data.base import DataSet
+    if pyfusion.VERBOSE>1: 
+        print('Entering reduce_time, fftopt={0}, isinst={1}'
+              .format(fftopt,isinstance(input_data, DataSet) ))
+        pyfusion.logger.warning("Testing: can I see this?")
     if isinstance(input_data, DataSet):
+        if fftopt: new_time_range = get_optimum_time_range(input_data, new_time_range)
+
         #output_dataset = input_data.copy()
         #output_dataset.clear()
+        print('****new time range={n}'.format(n=new_time_range))
         output_dataset = DataSet(input_data.label+'_reduce_time')
         for data in input_data:
             try:
@@ -61,12 +104,17 @@ def reduce_time(input_data, new_time_range):
                 pyfusion.logger.warning("Data filter 'reduce_time' not applied to item in dataset")
         return output_dataset
 
+    #??? this should not need to be here - should only be called from
+    # above when passed as a dataset (more efficient)
+    if fftopt: new_time_range = get_optimum_time_range(input_data, new_time_range)
     new_time_args = searchsorted(input_data.timebase, new_time_range)
     input_data.timebase =input_data.timebase[new_time_args[0]:new_time_args[1]]
     if input_data.signal.ndim == 1:
         input_data.signal = input_data.signal[new_time_args[0]:new_time_args[1]]
     else:
         input_data.signal = input_data.signal[:,new_time_args[0]:new_time_args[1]]
+    if pyfusion.VERBOSE>1: print('reduce_time to length {l}'
+                                 .format(l=np.shape(input_data.signal))),
     return input_data
 
 
@@ -324,8 +372,9 @@ def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_
 @register("TimeseriesData")
 def filter_fourier_bandpass(input_data, passband, stopband, taper=None, debug=None):
     """ 
-    Use a fourier space taper/tophat or pseudo gaussian filter to perform 
-    narrowband filtering (much narrower than butterworth.  
+    Note: Would be MUCH (2.2x faster) more efficient to use real ffts, 
+    Use a Fourier space taper/tophat or pseudo gaussian filter to perform 
+    narrowband filtering (much narrower than butterworth).  
     Problem is that bursts may generate ringing. (should be better with taper=2)  
     >>> tb = dummytb(np.linspace(0,20,512))
     >>> w = 2*np.pi* 1  # 1 Hertz
@@ -334,7 +383,7 @@ def filter_fourier_bandpass(input_data, passband, stopband, taper=None, debug=No
 
     """
     if debug == None: debug = pyfusion.DEBUG
-# normalise makes the thinking easier
+# normalising makes it easier to think about - also for But'w'h 
     norm_passband = input_data.timebase.normalise_freq(np.array(passband))
     norm_stopband = input_data.timebase.normalise_freq(np.array(stopband))
     ns = len(input_data.signal[0])
@@ -384,8 +433,9 @@ def filter_fourier_bandpass(input_data, passband, stopband, taper=None, debug=No
             mask[2*n_pb_hi - n - 1] = mask[n]
         mask = np.cumsum(mask) # integrate
         mask = mask/np.max(mask)
-    mask[:ns/2:-1] = mask[1:(ns/2)]
-
+    # this even and odd is not totally thought through...but it seems OK
+    if np.mod(ns,2)==0: mask[:ns/2:-1] = mask[1:(ns/2)]   # even
+    else:            mask[:1+ns/2:-1] = mask[1:(ns/2)] # odd 
     output_data = copy.deepcopy(input_data)  # was output_data = input_data
 
     for i,s in enumerate(output_data.signal):

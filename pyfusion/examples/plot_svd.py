@@ -7,10 +7,12 @@ Works from RAW data.
 Typical usage : run  dm/plot_svd.py start_time=0.01 "normalise='v'" use_getch=0
       separate [=1] if True, normalisation is separate for each channel
 Dave's checkbuttons on plot_svd don't work unless you use hold.
-runining outside pyfusion is more reliable
+running outside pyfusion is more reliable
 
-ot that the code is hard wired to reset hold after a "hold" so that you can continue
+Note that the code is hard wired to reset hold after a "hold" so that you can continue
 
+Note: Unless deepcopy is used in data/base.py,  data is changed after processing, so it will be a little different when revisited.
+Better to re-run WITHOUT -i to check 
 """
 
 def order_fs(fs_set, by='p'):
@@ -32,6 +34,7 @@ import pyfusion as pf
 import pyfusion.utils
 import pylab as pl
 import numpy as np
+from copy import deepcopy
 
 
 try:
@@ -58,6 +61,7 @@ normalise='0'
 myfilter1p5=dict(passband=[1e3,2e3], stopband=[0.5e3,3e3], max_passband_loss=2, min_stopband_attenuation=15,btype='bandpass')
 myfilter3=dict(passband=[2e3,4e3], stopband=[1e3,6e3], max_passband_loss=2, min_stopband_attenuation=15,btype='bandpass')
 myfilter15=dict(passband=[10e3,20e3], stopband=[5e3,30e3], max_passband_loss=2, min_stopband_attenuation=15,btype='bandpass')
+# taper filter takes 13 sec cf 6.5 sec without for 17 channels on shot 31169
 myfilterN = dict(centre=30e3,bw=1e3,taper=2)
 
 filter = None  
@@ -86,44 +90,45 @@ elif dev_name.find('H1')>=0:
 device = pf.getDevice(dev_name)
 
 try:
-    old_shot
+    shot_cache
 except:
-    old_shot=0
+    print('shot cache not available - use run -i next time to enable')
+    shot_cache = {}
 
 
 print(" %s using getch" % (['not', 'yes, '][use_getch]))
 if use_getch: print('plots most likely will be suppressed - sad!')
 else: print('single letter commands need to be followed by a CR')
 
-if old_shot>0: # we can expect the variables to be still around, run with -i
-    if (old_diag != diag_name) or (old_shot != shot_number): old_shot=0
-
-if old_shot == 0: 
+this_key = "{s}:{d}".format(s=shot_number, d=diag_name)
+if shot_cache.has_key(this_key): # we can expect the variables to be still around, run with -i
+    d = deepcopy(shot_cache[this_key])
+else:
+    print('get data for {k}'.format(k=this_key))
     d = device.acq.getdata(shot_number, diag_name) # ~ 50MB for 6ch 1MS. (27233MP)
-    if lowpass != None: 
-        if highpass ==None:
-            d = d.sp_filter_butterworth_bandpass(
-                lowpass*1e3,lowpass*2e3,2,20,btype='lowpass')
-        else:
-            bp = [1e3*lowpass,1e3*highpass]
-            bs = [0.5e3*lowpass,1.5e3*highpass]
-            d = d.sp_filter_butterworth_bandpass(bp, bs,2,20,btype='bandpass')
-    elif filter != None:
-        if filter.has_key('btype'):
-            d = d.sp_filter_butterworth_bandpass(**filter)
-        else:
-            (fc,df) = (filter['centre'],filter['bw']/2.)
-            d = d.filter_fourier_bandpass(
-                passband=[fc-df,fc+df], stopband = [fc-2*df, fc+2*df], 
-                taper = filter['taper'])
-    else:
-        pass # no filter
-            
-    old_shot = shot_number
-    old_diag = diag_name
+    shot_cache.update({this_key: deepcopy(d)})
 
 if time_range != None:
-    d.reduce_time(time_range)
+    d = d.reduce_time(time_range, fftopt=True)  # could use d.reduce_time(copy=False,time_range)
+
+if lowpass != None: 
+    if highpass ==None:
+        d = d.sp_filter_butterworth_bandpass(
+            lowpass*1e3,lowpass*2e3,2,20,btype='lowpass')
+    else:
+        bp = [1e3*lowpass,1e3*highpass]
+        bs = [0.5e3*lowpass,1.5e3*highpass]
+        d = d.sp_filter_butterworth_bandpass(bp, bs,2,20,btype='bandpass')
+elif filter != None:
+    if filter.has_key('btype'):
+        d = d.sp_filter_butterworth_bandpass(**filter)
+    else:
+        (fc,df) = (filter['centre'],filter['bw']/2.)
+        d = d.filter_fourier_bandpass(
+            passband=[fc-df,fc+df], stopband = [fc-2*df, fc+2*df], 
+            taper = filter['taper'])
+else:
+    pass # no filter
 
 if start_time == None:
     sv = d.svd()
@@ -216,17 +221,21 @@ else:
             if use_getch: 
                 pl.show()
                 k=getch.getch()
-            else: k=raw_input('enter one of "npqegsS" (return->next time segment)')
+            else: k=raw_input('enter one of "npqegshS?" (return->next time segment)')
             if k=='': k='n'
             if k in 'bBpP': i-=1
             # Note - if normalise or separate is toggled, it doesn't
             #    affect segs already done.
+            elif k=='?': print('s[signals in new frame], h[toggle hold], q[quit] b/p[back] S[toggle separate]')
             elif k in 'tT': 
                 if (normalise==0) or (normalise=='0'): normalise ='rms'
             elif k in 'qQeE':i=999999
             elif k in 'gG': use_getch=not(use_getch)
             elif k in 'S': separate=not(separate)
-            elif k in 'h': hold=not(hold)
+            elif k in 'h': 
+                hold=not(hold)
+                if hold: pl.figure() # make a new figure so that we don't overwrite the old.
+                else: pass 
             elif k in 's': # plot the signals in a new frame
                 pl.figure()
                 segs[ii].plot_signals()

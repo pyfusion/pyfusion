@@ -20,7 +20,7 @@ colorset=('b,g,r,c,m,y,k,orange,purple,lightgreen,gray'.split(',')) # to be rota
 from pyfusion.utils.utils import fix2pi_skips, modtwopi
 
 def dist2(a,b, method='euler'):
-    return(np.sum((modtwopi((np.array(a)- np.array(b)))**2)))
+    return(np.sum((modtwopi((np.array(a)- np.array(b)),offset=0)**2)))
 
 def dists(a, instances, mask = None, method='euler'):
     """ calculate the distance of the phase set to all phase sets
@@ -177,14 +177,17 @@ subset = phs[inds[-n_plot:][::-1]]  # order so that highest is first
 subset_counts = counts[inds[-n_plot:][::-1]]
 clinds = group_clusters(subset)
 
+# number in the smallest clinds bin
+baseline = np.min([np.sum(subset_counts[clinds[i]]) 
+                   for i in range(len(clinds))]) 
 for (i,clind) in enumerate(clinds):
-    linestyle=['-','--','.-.',':',"''","' '"][np.mod(int((i/len(colorset))),6)]
+    linestyle=['-','--','-.',':',"-","--"][np.mod(int((i/len(colorset))),6)]
     for (p,ind) in enumerate(clind):
         if p==0: label = str("{c}:{nc},{pop}"
                              .format(c=i,nc=len(clind),
                                      pop=np.sum(subset_counts[clind])))
         else: label = ''
-        pl.plot(subset[ind],color=colorset[i % len(colorset)], linestyle=linestyle,label=label,linewidth=scale*n_bins*4*(subset_counts[ind])**0.25)
+        pl.plot(subset[ind],color=colorset[i % len(colorset)], linestyle=linestyle,label=label,linewidth=scale*n_bins*(subset_counts[ind]-baseline*0.95)**0.5)
 
 pl.legend()
 pl.show()

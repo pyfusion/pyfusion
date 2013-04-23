@@ -37,7 +37,10 @@ def history_reg_method(method):
         do_copy = kwargs.pop('copy', True)
         if do_copy:
             original_hist = input_data.history
-            input_data = copy.copy(input_data)
+            # bdb testing copy - was
+            # input_data = copy.copy(input_data)
+            pyfusion.utils.warn('using deepcopy - bdb')
+            input_data = copy.deepcopy(input_data)
             copy_history_string = "\n%s > (copy)" %(datetime.now())
             input_data.history = original_hist + copy_history_string
         

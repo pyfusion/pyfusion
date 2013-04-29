@@ -23,7 +23,7 @@ DEFAULT_SEGMENT_OVERLAP = 1.0
 
 
 def cps(a,b):
-    return fft.fft(a)*conjugate(fft.fft(b))
+    return fft.fft(a)*conjugate(fft.fft(b))  # bdb 30% fft
 
 
 filter_reg = {}
@@ -47,7 +47,24 @@ class MetaFilter(type):
         return super(MetaFilter, cls).__new__(cls, name, bases, attrs)
 """
 
+def next_nice_number(N):
+    """ return the next highest power of 2 including nice fractions (e.g. 2**n *5/4)
+    takes about 30us  - should rewrite to calculate starting from smallest
+    power of 2 less than N.
+    """
+    nice = [2**p * n/16 for p in range(10,30) for n in [16, 18, 20, 24, 27]]
+    if N is None: return(np.array(nice))
+    for n in nice:
+        if n>=N: return(n)
+
 def get_optimum_time_range(input_data, new_time_range):
+    """ This grabs a few more (or a few less, if enough not available)
+    points so that the FFT is more efficient.  For FFTW, it is more
+    efficient to zero pad to a nice number above even if it is a long
+    way away.  This is always true for Fourier filtering, in which
+    case you never see the zeros.  For general applications, the zeros
+    might be confusing if you forget they have been put there.
+    """
     from pyfusion.utils.primefactors import fft_time_estimate
 
     nt_args = searchsorted(input_data.timebase, new_time_range)
@@ -372,7 +389,7 @@ def sp_filter_butterworth_bandpass(input_data, passband, stopband, max_passband_
 @register("TimeseriesData")
 def filter_fourier_bandpass(input_data, passband, stopband, taper=None, debug=None):
     """ 
-    Note: Would be MUCH (2.2x faster) more efficient to use real ffts, 
+    Note: Is MUCH (2.2x faster) more efficient to use real ffts, (implemented April)
     Use a Fourier space taper/tophat or pseudo gaussian filter to perform 
     narrowband filtering (much narrower than butterworth).  
     Problem is that bursts may generate ringing. (should be better with taper=2)  
@@ -386,15 +403,18 @@ def filter_fourier_bandpass(input_data, passband, stopband, taper=None, debug=No
 # normalising makes it easier to think about - also for But'w'h 
     norm_passband = input_data.timebase.normalise_freq(np.array(passband))
     norm_stopband = input_data.timebase.normalise_freq(np.array(stopband))
-    ns = len(input_data.signal[0])
-    mask = np.zeros(ns)
+    NS = len(input_data.signal[0])
+    NA = next_nice_number(NS)
+    # take a little more to speed up FFT
+
+    mask = np.zeros(NA)
     # define the 4 key points 
     #         /npblow-------------npbhi\
     # ___nsbl/                          \nsbhi____
-    n_sb_low = int(norm_stopband[0]*ns/2)
-    n_pb_low = int(norm_passband[0]*ns/2)
-    n_pb_hi = int(norm_passband[1]*ns/2)
-    n_sb_hi = int(norm_stopband[1]*ns/2)
+    n_sb_low = int(norm_stopband[0]*NA/2)
+    n_pb_low = int(norm_passband[0]*NA/2)
+    n_pb_hi = int(norm_passband[1]*NA/2)
+    n_sb_hi = int(norm_stopband[1]*NA/2)
 
     wid = max(n_pb_low - n_sb_low,n_sb_hi - n_pb_hi)
     if wid < 4: 
@@ -433,28 +453,77 @@ def filter_fourier_bandpass(input_data, passband, stopband, taper=None, debug=No
             mask[2*n_pb_hi - n - 1] = mask[n]
         mask = np.cumsum(mask) # integrate
         mask = mask/np.max(mask)
+    # reflection only required for complex data
     # this even and odd is not totally thought through...but it seems OK
-    if np.mod(ns,2)==0: mask[:ns/2:-1] = mask[1:(ns/2)]   # even
-    else:            mask[:1+ns/2:-1] = mask[1:(ns/2)] # odd 
+    if np.mod(NA,2)==0: mask[:NA/2:-1] = mask[1:(NA/2)]   # even
+    else:            mask[:1+NA/2:-1] = mask[1:(NA/2)] # odd 
     output_data = copy.deepcopy(input_data)  # was output_data = input_data
+
+    if (pyfusion.fft_type == 'fftw3'):
+        # should migrate elsewhere
+        import pyfftw
+        tdtype = np.float32
+        fdtype = np.complex64
+        # this could be useful to cache.
+        simd_align =  pyfftw.simd_alignment  # 16 at the moment.
+        tdom = pyfftw.n_byte_align(np.zeros(NA,dtype=tdtype), simd_align)
+        FT = pyfftw.n_byte_align_empty(NA/2+1, simd_align, fdtype)
+        ids = [[id(tdom),id(FT)]]  # check to see if it moves out of alignment
+        fwd = pyfftw.FFTW(tdom, FT, direction='FFTW_FORWARD',
+                          **pyfusion.fftw3_args)
+        rev = pyfftw.FFTW(FT, tdom, direction='FFTW_BACKWARD',
+                          **pyfusion.fftw3_args)
+    else:
+        tdtype = np.float32
+        tdom = np.zeros(NA,dtype=tdtype)
+
+        # example of tuning
+        #pyfusion.fftw3_args= {'planning_timelimit': 50.0, 'threads':1, 'flags':['FFTW_MEASURE']}
 
     for i,s in enumerate(output_data.signal):
         #if len(output_data.signal) == 1: print('bug for a single signal')
-        FT = np.fft.fft(s)
-        IFT = np.fft.ifft(mask*FT)
-        if np.max(np.abs(IFT.imag)) > 1e-6*np.max(np.abs(IFT.real)):
-            pyfusion.logger.warning("inverse fft imag part > 1e-6")
 
-        output_data.signal[i] = IFT.real
+        #time run -i  pyfusion/examples/plot_svd.py "dev_name='LHD'" start_time=.497 "normalise='r'" shot_number=90091 numpts=512 diag_name=MP2010HMPno612 "filter=dict(centre=8e3,bw=5e3,taper=2)" plot_mag=1 plot_phase=1 separate=1 closed=0 time_range=[0.0000,4.]
+        # 4.5 cf 15.8diag_name=MP2010HMPno612, time_range=[0.0000,2.80000] 
+        # 0, 4.194304 2**21 samples, 21.8 cf 6.8 1thr
+        # (0,2)secs 90091 =2000000 samples 17 np, 5.73 2thread, nosimd, 6.1 1thread (mem bw?) 3.2 sec no filt
+        # note - the above are on an intermeittently loaded E4300 2 processor, below on 4 core 5/760
+        # 0, 4.194304 2**21 samples, 10.9 cf 3.16 thr2 3.47 1thr and 2.0 secs no filter
+        # for 17 fft/ifft takes about 1.16 sec 2 threads - should be (27.5ms+28.6)*17 = 952ms (14.2 2thr) OK
+        # duplicate the fft execute lines  4.3(3.47)  2thr 3.7(3.16) extra 810ms (expect 14.2ms * 2 * 17) =482
+        # the difference between 2 and 1thr should be 14*2*17 ms 500ms.
+        # orignall - 90ms/channel extra in reverse trasnform - maybe the 50 sec limit stopped optimization
+        # next _nice: 5.74 for 10 sec lenny 
+        #  E4300: 1thr  9.3 (39np) for 10 sec 90091;    5.5 for 4 sec (19.6 np)
+        if (pyfusion.fft_type == 'fftw3'):  # fftw3 nosim, no thread 2.8s cf 10s
+            tdom[0:NS]=s  # indexed to make sure tdom stays put
+            if NS != NA: tdom[NS:]=0.
+            fwd.execute()
+            FT[:] = FT * mask[0:NA/2+1] # 12ms
+            rev.execute()
+            output_data.signal[i] = tdom[0:NS]
+            ids.append([id(tdom),id(FT)])
+
+        else: # default to numpy
+            tdom[0:NS] = s
+            FT = np.fft.fft(tdom)
+            IFT = np.fft.ifft(mask*FT)
+            if np.max(np.abs(IFT.imag)) > 1e-6*np.max(np.abs(IFT.real)):
+                pyfusion.logger.warning("inverse fft imag part > 1e-6")
+
+            output_data.signal[i] = IFT.real[0:NS]
         
-    if debug>2: 
+    if debug>2: print('ids of fftw3 input and output: {t}'.format(t=ids))
+    if debug>0: 
         import pylab as pl
-        pl.plot(mask,'ro-')
-        pl.plot(np.abs(FT)/len(mask))
-        pl.plot(input_data.signal[0])
-        pl.plot(output_data.signal[0])
+        pl.figure()
+        pl.plot(mask,'r.-',label='mask')
+        pl.plot(np.abs(FT)/len(mask),label='FT')
+        pl.plot(input_data.signal[0],label='input')
+        pl.plot(output_data.signal[0],label='output')
+        pl.legend()
         pl.show()
-    debug_(debug, 1, key='filter_fourier')
+    debug_(debug, 2, key='filter_fourier')
     if np.max(mask) == 0: raise ValueError('Filter blocks all signals')
     return output_data
 

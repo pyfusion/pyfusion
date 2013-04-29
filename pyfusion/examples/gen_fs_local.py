@@ -6,14 +6,30 @@ python dm/gen_fs.py shot_range=[27233] exception=None
 71 secs to sqlite.txt (9MB) (21.2k in basedata, 3.5k fs, 17.7k float_delta
 34 secs with db, but no fs_set.save()
 17 secs to text 86kB - but only 1k fs
+Apr 2013 - checked timing - deepcopy was slowing it down. 32/41 54185 prepfs.py
 """
 import subprocess, sys, warnings
 from numpy import sqrt, mean, argsort, average, random
 import pyfusion
 from pyfusion.debug_ import debug_
 import sys
-from time import sleep
+from time import sleep, time as seconds
 import os
+
+def timeinfo(message):
+    if show_times == 0: return
+    global st, st_0
+    try:
+        dt = seconds()-st
+    except:
+        print('Time:' + message + '(first call)')
+        st = seconds()
+        st_0 = seconds()
+        return
+    print("Time: {m} in {dt:.2f}/{t:.2f}".format(m=message, dt=dt, t=seconds()-st_0))
+    st = seconds()
+    return
+    
 
 _var_default="""
 lhd = pyfusion.getDevice('LHD')
@@ -25,6 +41,7 @@ lhd = pyfusion.getDevice('LHD')
 #shot_range = range(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
 
 debug=0
+show_times=1
 shot_range = [27233]
 #shot_range = range(90090, 90110)
 n_samples = 512
@@ -55,8 +72,10 @@ for shot in shot_range:
         print('paused until '+ pyfusion.root_dir+'/pause'+ ' is removed')
         sleep(int(20*(1+random.uniform())))  # wait 20-40 secs, so they don't all start together
 
+    timeinfo('start shot {s}'.format(s=shot))
     try:
         d = lhd.acq.getdata(shot, diag_name)
+        timeinfo('data read')
         if time_range != None:
             d.reduce_time(time_range, copy=False)
         sections = d.segment(n_samples, overlap)
@@ -71,6 +90,7 @@ for shot in shot_range:
         for ii,t_seg in enumerate(sections):
             ord_segs.append(t_seg)
         ord = argsort([average(t_seg.timebase) for t_seg in ord_segs])
+        timeinfo('beginning flucstruc loop')
         for idx in ord:
             t_seg = ord_segs[idx]
             fs_set = t_seg.flucstruc(method=method, separate=separate)
@@ -112,3 +132,5 @@ if pyfusion.orm_manager.IS_ACTIVE:
 
     pyfusion.orm_manager.Session().commit()
     pyfusion.orm_manager.Session().close_all()
+
+timeinfo('finished')

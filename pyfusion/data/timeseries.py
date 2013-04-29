@@ -258,7 +258,7 @@ class FlucStruc(BaseData):
 
 
     def _get_single_channel_phase(self, ch_id):
-        data_fft = np.fft.fft(self.signal[ch_id])
+        data_fft = np.fft.fft(self.signal[ch_id])  # bdb 30% ffts
         d_val = data_fft[self.freq_elmt]
         # big change, flipped phase sign 
         # was real, imag up until Feb 24 2013 - bdb

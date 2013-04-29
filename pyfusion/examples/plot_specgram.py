@@ -27,7 +27,7 @@ hold=0
 
 exec(_var_default)
 
-from pf.utils import process_cmd_line_args
+from pyfusion.utils import process_cmd_line_args
 exec(process_cmd_line_args())
 
 device = pf.getDevice(dev_name)

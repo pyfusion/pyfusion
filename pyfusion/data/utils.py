@@ -42,7 +42,7 @@ def get_axes_pixcells(ax):
     return(ax.get_window_extent().bounds)
 
 def cps(a,b):
-    return fft.fft(a)*conjugate(fft.fft(b))
+    return fft.fft(a)*conjugate(fft.fft(b))    # bdb fft 10%
 
 def subdivide_interval(pts, overlap= None, debug=0):
     """ return several intervals which straddle pts
@@ -115,7 +115,7 @@ def find_peaks(arr, minratio=.001, debug=0):
 
 def find_signal_spectral_peaks(timebase, signal, minratio = .001, debug=0):
     ns = len(signal)
-    FT = np.fft.fft(signal-np.average(signal))/ns
+    FT = np.fft.fft(signal-np.average(signal))/ns  # bdb 0% fft?
     ipks = find_peaks(np.abs(FT)[0:ns/2], minratio = minratio, debug=1)
     fpks = ipks/np.average(np.diff(timebase))/float(ns)
     if debug>1:
@@ -133,7 +133,7 @@ def peak_freq(signal,timebase,minfreq=0,maxfreq=1.e18):
     the correct freq in a simple case.
     """
     timebase = array(timebase)
-    sig_fft = fft.fft(signal)
+    sig_fft = fft.fft(signal)    # bdb 5% fft
     sample_time = float(mean(timebase[1:]-timebase[:-1]))
     fft_freqs = (1./sample_time)*arange(len(sig_fft)).astype(float)/(len(sig_fft)-1)
     # only show up to nyquist freq

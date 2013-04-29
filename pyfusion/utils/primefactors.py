@@ -106,12 +106,20 @@ def primefactors(x, limit=2**63):
 
     return factorlist
 
-def fft_time_estimate(n):
+def fft_time_estimate(n, fft_type='numpy'):
     """ time in sec """
     # FFT is supposed to be N.log N, (FMM) is O(n)
     facts = primefactors(n)
-    time_cal = 2.6e-10 #  ohead-7, oheadlog=1 E4300, float64 complex fft numpy
-    ohead,oheadlog = 34,-.5 
+    if fft_type == 'numpy':
+        time_cal = 2.6e-10 #  ohead-7, oheadlog=1 E4300, float64 complex fft numpy
+        ohead,oheadlog = 34,-.5 
+    elif fft_type=='fftw3':
+        time_cal = 1.9e-13
+        ohead,oheadlog = 2.3e4,-1
+        print('Warning- this is a lousy fit!')
+
+    else: raise ValueError('fft_type {f} not understood'.format(f=fft_type))
+
     # ohead=7 and +1 are empirical - mid range (100*t0) time estimates are high 
     # replace with optimised values - a lot better
     cost = n*np.sum((ohead+np.array(facts)) * np.log((np.array(facts)+oheadlog)))
@@ -119,9 +127,12 @@ def fft_time_estimate(n):
 
 def nice_FFT_size_above(n,max_iterations=None):
     """ 
-    Note: better to use the more accurate "fft_time_estimate" above
+    Note: Using numpy.fft, it may be better to use the more accurate 
+    "fft_time_estimate" above
     assume cost is \Product{N x log(N)} with Ni the factors of n.
     default max_iterations is ln(N)
+
+    See also next_nice_number in filters.py - more general and simpler
     """
     if max_iterations == None:
         max_iterations = 10*int(np.log(n))
@@ -158,6 +169,45 @@ def optimise_fit(atimes):
     plsq = leastsq(residuals, p0, args=(atimes[0], atimes[1]))
     print(plsq)
 
+def get_fftw3_speed(arr, iters=10, direction=None, **kwargs):
+    """ measure the fftw3 speed for various data sizes by using
+    plan with estimate, and running one instance.  If arr is int,
+    then the elements are different array sizes, otherwise use the
+    array.
+    direction default - just fwd - use 'both' for both
+    To "train": - the print allows you to ^c out.
+    from pyfusion.data.filters import next_nice_number
+    from pyfusion.utils.primefactors import get_fftw3_speed
+    for n in next_nice_number(None): print(n); get_fftw3_speed(n, flags=['FFTW_MEASURE'],direction='both')
+
+    Accepts all pyfftw.FFTW args e.g. planning_timelimit
+    """
+    import pyfftw
+    from time import time as seconds
+    if np.isscalar(arr): arr = np.array([arr])
+    if np.issubdtype(arr.dtype, int):
+        atimes = []
+        for n in arr:
+            atimes.append([n, get_fftw3_speed(np.ones(n, dtype=np.float32),
+                                              direction=direction, iters=iters, **kwargs)])
+        return(np.array(atimes))
+    else:  # do one example
+        build_kwargs = dict(flags=['FFTW_ESTIMATE'])
+        build_kwargs.update(kwargs)
+        simd_align =  pyfftw.simd_alignment  # 16 at the moment.
+        arr = pyfftw.n_byte_align(arr,  simd_align)
+        out =  pyfftw.n_byte_align(np.ones(len(arr)/2+1, dtype=np.complex64), 
+                                   simd_align)
+        fwd = pyfftw.FFTW(arr, out, **build_kwargs)
+        if direction == 'both':
+            rev = pyfftw.FFTW(out, arr, direction='FFTW_BACKWARD', **build_kwargs)
+        st = seconds()
+        for i in range(iters):
+            fwd.execute()
+            if direction == 'both':
+                rev.execute()
+        return((seconds()-st)/iters)
+
 if __name__ == "__main__":
     import timeit 
     import pylab as pl
@@ -169,7 +219,7 @@ if __name__ == "__main__":
                        [  1.90901756e+03,   2.06589699e+04,   9.19699669e+03,
                           3.41683602e+06]])
 
-    optimise_fit(atimes)
+    #optimise_fit(atimes)
 
     maxprime = 2**20-3
     primes = primesfrom2to2(maxprime+1)
@@ -207,7 +257,7 @@ if __name__ == "__main__":
         print("prime factor tests successful, probably will take ~{t} more secs"
               .format(t=int(estimate_total*iters)))
 
-    stmt = "y=np.fft.fft(x)"
+    stmt = "y=np.fft.rfft(x)"
     for i in nvals:
         timer = timeit.Timer(stmt,
                              "import numpy as np\nx=np.arange({n})".format(n=i))
@@ -223,6 +273,8 @@ if __name__ == "__main__":
     nfactors = [len(primefactors(n)) for n in atimes[0]]
     wprime = np.where(np.array(nfactors)==1)[0]
     pl.semilogy(atimes[0][wprime],atimes[1][wprime],'s',label='prime N')
+    fftw3_times = get_fftw3_speed(atimes[0].astype(int))
+    pl.semilogy(atimes[0], 1e6*fftw3_times.T[1], label='fftw3 plan(est)')
     pl.legend()
     pl.show()
 

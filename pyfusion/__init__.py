@@ -46,7 +46,7 @@ USER_CONFIG_FILE = os.path.join(USER_PYFUSION_DIR, 'pyfusion.cfg')
 # a PYFUSION_CONFIG_FILE environment variable
 USER_ENV_CONFIG_FILE = os.getenv('PYFUSION_CONFIG_FILE','')
 if not(os.path.exists(USER_ENV_CONFIG_FILE)): 
-    raise IOError('Error - cfg file {f} ponted to by USER_ENV_CONFIG_FILE'
+    raise IOError('Error - cfg file {f} pointed to by USER_ENV_CONFIG_FILE'
                   ' not found!  Check/delete the env var {v}'
                   .format(f=USER_ENV_CONFIG_FILE,v="PYFUSION_CONFIG_FILE"))
 
@@ -74,6 +74,7 @@ VERBOSE = int(os.getenv('PYFUSION_VERBOSE',
 
 root_dir = os.path.split(os.path.abspath( __file__ ))[0]
 
+
 try:
     from numpy import dtype as npdtype
     # Beware!  vars takes  precedence over others!
@@ -84,12 +85,41 @@ except:
     from numpy import dtype as npdtype
     prec_med=npdtype('float32')
 
+# warning - may need to move this earlier - for some reason the fftw3 import 
+# doesn't work if it is ahead of this one.
 try:
     COLORS=config.get('global','colors')
 except:
     if VERBOSE>0: print('colors not in config file - no color!')
     COLORS=None
 
+try:
+    import pyfftw
+    fft_type = 'fftw3'
+except:
+    fft_type = 'default numpy'
+
+print('Using {f} for FFT'.format(f=fft_type))
+
+if fft_type == 'fftw3':
+    try: 
+        from pyfusion.utils.fftw3_bdb_utils import save_wisdom, load_wisdom
+        load_wisdom()
+    except:
+        print('using fftw3, but no saved wisdom')
+        
+    #pyfftw.fftw_set_timelimit(10)  # limit time spent planning to 10 secs -
+    #                                hopefully next time it will get further.
+
+    try:
+        fftw3_args=config.get('global','fftw3_limit')
+        print('fftw3_args not yet implemented in config')
+    except:
+        if VERBOSE>0: print('fftw3_args not in config file e.g. planning time limit')
+        fftw3_args = None
+
+fftw3_args = dict(planning_timelimit=10.)
+# pyfusion.fftw3_args= {'planning_timelimit': 50.0, 'threads':1, 'flags':['FFTW_MEASURE']}
 
 # We import these into the base pyfusion namespace for convenience.
 from pyfusion.devices.base import getDevice

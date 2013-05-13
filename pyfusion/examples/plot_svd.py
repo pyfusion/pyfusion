@@ -68,6 +68,8 @@ filter = None
 help=0
 separate=1
 closed=True
+offset=0   # the approx delta phase expected (helps check aliasing)
+
 verbose=0
 max_fs = 2
 shot_number = None
@@ -211,7 +213,7 @@ else:
                 fs=fs_arr[0]    
                 ax = pl.axes([0.21,0.75,0.35,0.15])
     #            ax=pl.subplot(8,2,-3)
-                fs.fsplot_phase(closed=closed)    
+                fs.fsplot_phase(closed=closed,offset=offset)    
                 pl.xlabel('fs_phase')
                 pl.ylim([-4,4])
                 #end if plotmsg

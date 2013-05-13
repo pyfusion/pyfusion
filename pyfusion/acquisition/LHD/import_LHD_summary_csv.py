@@ -7,6 +7,7 @@ will cause errors if longer strings are added afterwards.
 """
 
 from pyfusion.utils import read_csv_data
+import numpy as np
 import re
 
 print('reading..')
@@ -49,7 +50,7 @@ err=0
 str_summary=[]
 
 wnotnull = np.where(lhd['nShotnumber'] != '')[0]  # cautiously convert to int
-shots_tmp = lhd['nShotnumber'][wnotnull].astype(int32)
+shots_tmp = lhd['nShotnumber'][wnotnull].astype(np.int32)
 # need unique here, are there are 2 shot 100's ! (what does this mean?)
 shots_test,ws = np.unique(shots_tmp, return_index=1)
 # reorder the strings in a new dict, in shot number order.
@@ -57,7 +58,7 @@ for k in lhd.keys(): tmp.update({k: lhd[k][ws]})
 
 # now prepare the final shot array
 arrlen = np.max(shots_tmp)+1  # need a spot for all shots including 0
-shots = np.zeros(arrlen, dtype=int32) -1  # initialise to shot=-1
+shots = np.zeros(arrlen, dtype=np.int32) -1  # initialise to shot=-1
 shots[shots_tmp] = shots_tmp
 LHD.update({'Shot': shots})
 

@@ -280,7 +280,7 @@ def findZero(i,x,y1,y2):
     return (xZero, yZero)
 
 @register("FlucStruc")
-def fsplot_phase(input_data, closed=True, ax=None, hold=0, block=False):
+def fsplot_phase(input_data, closed=True, ax=None, hold=0, offset=0, block=False):
     """ plot the phase of a flucstruc, optionally inserting the first point
     at the end (if closed=True). Applies to closed arrays (e.g complete 2pi).
     Until Feb 2013, this version did not yet attempt to take into account angles, or check 
@@ -337,9 +337,10 @@ def fsplot_phase(input_data, closed=True, ax=None, hold=0, block=False):
         #dp.insert(0,dp[-1])
         # closed means use the phase diff from the ends
         # sign bug fixed here - made closed opposite sign to open..
-        dp=np.append(dp,modtwopi(-np.sum(dp)))
+        dp=np.append(dp,modtwopi(-np.sum(dp),offset=offset))
 
-    dp = fix2pi_skips(dp, around=0)
+    #dp = fix2pi_skips(dp, around=offset)
+    dp = modtwopi(dp, offset=offset)
 
     if hold == 0: ax.clear()
     
@@ -374,7 +375,9 @@ def fsplot_phase(input_data, closed=True, ax=None, hold=0, block=False):
     # expect Phi from ~.2 to twopi+.2 (if closed)
     Angfix = fix2pi_skips(Ang,around=3.5)
 
-    # need to make sure the right dp is divided by the right dPhi
+    # Here use fix2pi_skips, as we want the coil location angle to 
+    # increase monotonically - the raw numbers in .cfg may not start at zero 
+    # need to make sure the right dp is divided by the right dPhi!
     ax.plot(fix2pi_skips(Angfix[0:-1],around=np.pi),dp/np.diff(Angfix)*span,
             '+-',label='dp/d'+AngName[0])
     ax.plot(fix2pi_skips(Angfix[0:-1],around=np.pi),dp,'o-', label='d'+AngName)

@@ -26,13 +26,15 @@ def between(var, lower, upper, closed=True):
 bw = between
 btw = between
 
-def decimate(data, fraction=None, limit=None):
+def decimate(data, limit=None, fraction=None):
     """ reduce the number of items to a limit or by a fraction
     returns the same data every call
     """
     if (fraction == None and limit==None):
-        limit=2000
-    if fraction != None:
+        limit=500
+    if fraction != None: 
+        if fraction>1: raise ValueError('fraction ({f}) must be < 1'
+                                        .format(f=faction))
         step = np.max([int(1/fraction),1])
     else:
         step = np.max([int(len(data)/limit),1])

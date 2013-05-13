@@ -43,6 +43,7 @@ run -i pyfusion/examples/test_lasso_fs.py
 """
 
 import os.path
+import numpy as np
 from pyfusion.acquisition.LHD.get_basic_diagnostics import get_basic_diagnostics, get_flat_top
 
 debug=0

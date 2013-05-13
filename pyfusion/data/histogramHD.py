@@ -122,7 +122,15 @@ def histogramHD(d, bins=None, method='safe'):
     
     Second - use a dictionary to store the results - 120ns lookup in a 100k dict
     Assume we can do a rank R array with histogramdd
+    Should really store the bin boundaries for later reference
     """
+
+    """
+    higher speed potential (but need to do in chunks) - large interm. result
+    timeit xxx=bytearray(array((ph5+3.14)*4.33,dtype=int8)) 1.05us/instance
+    timeit str(xxx[1000])  225ns
+    """ 
+
     (n_instances, n_signals) = np.shape(d)
     maxdim_dd = 3
     if bins is None: bins = 12
@@ -168,8 +176,9 @@ def histogramHD(d, bins=None, method='safe'):
     if method=='safe':
         hdd = CoordHD(dims)
         hdd.eps=eps
-        print('histograms into {s:.2g} bins'.
-              format(s=np.product(np.array(dims).astype(float))))
+        print('histogramming (int index) {ni:,d} instances into {s:.2g} bins'.
+              format(ni = n_instances, 
+                     s=np.product(np.array(dims).astype(float))))
         for phase in d[:]:
             inds = tuple(np.array((phase+np.pi)*fact,
                                   dtype=int))
@@ -190,10 +199,15 @@ def histogramHD(d, bins=None, method='safe'):
                     bytearray(np.array((phase+np.pi)*fact,dtype=np.int8))):1})
         """
         hdd = CoordHDs(dims)
-        print('histograms (str) into {s:.2g} bins'.
-              format(s=np.product(np.array(dims).astype(float))))
+        print('histogramming (str index) {ni:,d} instances into {s:.2g} bins'.
+              format(ni = n_instances, 
+                     s=np.product(np.array(dims).astype(float))))
+
         for phase in d[:]:
+            # see higher speed version in comment below the doc
+            #~14us suprisingly takes 3us for str(bytarr, 3-4us each for + and *
             inds = str( bytearray(np.array((phase+np.pi)*fact,dtype=np.int8)))
+            # I think this is ~ 5us
             hdd.set((inds), hdd.get(inds) + 1)
         
         """

@@ -3,7 +3,7 @@ import numpy as np
 
 # first, arrange a debug one way or another
 try: 
-    from debug_ import debug_
+    from pyfusion.debug_ import debug_
 except:
     def debug_(debug, msg='', *args, **kwargs):
         print('attempt to debug ' + msg + 

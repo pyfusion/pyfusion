@@ -53,7 +53,8 @@ import numpy as np
 import pylab as pl
 import timeit as Tmt
 from time import time as seconds
-from bdb_utils import process_cmd_line_args
+#from bdb_utils import process_cmd_line_args
+from pyfusion.utils import process_cmd_line_args
 
 pyfftw.interfaces.cache.enable()
 

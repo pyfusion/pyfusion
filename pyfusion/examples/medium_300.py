@@ -1,4 +1,4 @@
-from DA_datamining import DA
+from pyfusion.data.DA_datamining import DA
 from pyfusion.utils.utils import fix2pi_skips, modtwopi
 from pyfusion.visual.sp import sp
 from pyfusion.data.convenience import between, bw, btw, decimate, his, broaden

@@ -1,6 +1,10 @@
 """ flip the phase of flucstructs according to the magnetic field direction
 checks against phorig to make sure that phase is not flipped twice.
   works on dictionary of arrays "dd"
+quick check:
+(dd['phorig']*dd['b_0']*dd['phases'][:,0] >= 0).all() # True if with B
+
+
 """
 
 

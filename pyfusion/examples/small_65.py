@@ -2,7 +2,7 @@
 and the extract() both duplicate data, which is good for development
 and debugging, but wasteful of space.
 """
-from DA_datamining import DA
+from pyfusion.data.DA_datamining import DA
 from pyfusion.utils.utils import fix2pi_skips, modtwopi
 from pyfusion.visual.sp import sp
 from pyfusion.data.convenience import between, btw, bw, decimate, his, broaden

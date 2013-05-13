@@ -13,7 +13,7 @@ import numpy as np
 from warnings import warn
 # first, arrange a debug one way or another
 try: 
-    from debug_ import debug_
+    from pyfusion.debug_ import debug_
 except:
     def debug_(debug,level=2,key=None,msg='',*args, **kwargs):
         if debug>level:

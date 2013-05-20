@@ -146,16 +146,22 @@ def modtwopi(x, offset=np.pi):
     if not hasattr(x,'std'):
         x = np.array(x)
 
-    #faster
+    """ fmod implementation - remainder is what we really want    
+    #faster than %
     mininp = np.min(x)
-    # fmod is faster, (26ns cf 43 float32)  but has different behaviour below 0
+    # remainder is fastest, (18ns cf 26ns (fmod) cf 43 (%) for float32) 
+    # 14 May 2013 can't repeat this! all are about 18-19ns
+    # fmod needs more work as it has different behaviour below 0
+    # note also c version of remainder does it -1/2 to +1/2
     if (mininp-offset)<0: 
         add_pos =  2*np.pi * (1 + int((-(mininp-offset))/(2*np.pi)))
     else:
         add_pos = 0
     return (offset - np.pi + np.fmod(add_pos-offset+np.pi+x, 2*np.pi))
+    """
+    # original
     #return (offset -np.pi + (-offset+np.pi+x) % (2*np.pi))
-
+    return (offset -np.pi + np.remainder(-offset + np.pi + x , 2*np.pi))
 
 
 def fix2pi_skips(phase, sign='+', around=None, debug=0):

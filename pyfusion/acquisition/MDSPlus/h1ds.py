@@ -41,9 +41,8 @@ header_dict = {'signal_min':'X-H1DS-signal-min',
                'dim_units':'X-H1DS-dim-units'}
                
 class H1MDSData:
-    def __init__(self, shot, shottime, tree, path, data):
+    def __init__(self, shot, tree, path, data):
         self.shot = shot
-        self.shottime = shottime
         self.tree = tree
         self.path = path
         self.data = data
@@ -104,20 +103,23 @@ simple_xml_value = lambda doc, tag: doc.getElementsByTagName(tag)[0].firstChild.
 def data_from_url(url):
     """Retrieve data object from H1DS URL."""
     # We use the XML view here, so make sure the URL has view=xml GET query.
-    url = add_query_to_url(url, 'view=xml')
+    url = add_query_to_url(url, 'format=xml')
 
     xml_doc = minidom.parse(urlopen(url))
 
-    shot_number   = int(simple_xml_value(xml_doc, 'shot_number'))
-    shot_time_str = simple_xml_value(xml_doc, 'shot_time')
-    mds_tree      = simple_xml_value(xml_doc, 'mds_tree')
-    mds_path      = simple_xml_value(xml_doc, 'mds_path')
+    shot_number   = int(simple_xml_value(xml_doc, 'shot'))
+    ## shot time now stored as metadata
+    #shot_time_str = simple_xml_value(xml_doc, 'shot_time')
+    mds_tree      = simple_xml_value(xml_doc, 'tree')
+    mds_path      = simple_xml_value(xml_doc, 'path')
 
-    shot_time = datetime.strptime(shot_time_str, "%d-%b-%Y %H:%M:%S.%f")
+    #shot_time = datetime.strptime(shot_time_str, "%d-%b-%Y %H:%M:%S.%f")
     
     data_node = xml_doc.getElementsByTagName('data')[0]
-    data_node_type = data_node.getAttribute('type')
-
+    ndim = int(data_node.getAttribute('ndim'))
+    """
+    if ndim == 0: # scalar
+        pass
     if data_node_type == 'signal':
         data_url = data_node.firstChild.nodeValue
         data = signal_from_binary_url(data_url)
@@ -126,16 +128,20 @@ def data_from_url(url):
         data = float(data_node.firstChild.nodeValue)
     elif data_node_type == 'text':
         data = data_node.firstChild.nodeValue
-    data_obj = H1MDSData(shot_number, shot_time, mds_tree, mds_path, data)
+    #data_obj = H1MDSData(shot_number, shot_time, mds_tree, mds_path, data)
+    """
+    # TODO: update this code for new h1ds xml schema
+    data = None
+    data_obj = H1MDSData(shot_number, mds_tree, mds_path, data)
     return data_obj
 
 def data_from_mds(mds_tree, mds_path, shot_number):
-    query = '?shot=%(shot)d&mds-tree=%(mds_tree)s&mds-path=%(mds_path)s' %{'shot':int(shot_number),
+    query = '?shot=%(shot)d&tree=%(mds_tree)s&path=%(mds_path)s' %{'shot':int(shot_number),
                                                                           'mds_tree':mds_tree,
                                                                           'mds_path':mds_path}
-    url = 'http://h1svr.anu.edu.au/mdsplus/request_url'+query
+    url = 'http://h1svr.anu.edu.au/_/request_url'+query
     xml_doc = minidom.parse(urlopen(url))
-    mds_url_path = simple_xml_value(xml_doc, 'mds_url')
+    mds_url_path = simple_xml_value(xml_doc, 'url')
     mds_url = 'http://h1svr.anu.edu.au'+mds_url_path
     return data_from_url(mds_url)
 
@@ -146,7 +152,9 @@ def data_from_mds(mds_tree, mds_path, shot_number):
 def do_test():
     #test_url = 'http://h1svr/mdsplus/h1data/58623/OPERATIONS/MIRNOV/A14_14/INPUT_2/'
     #return data_from_url(test_url)
-    return data_from_mds('h1data', '.operations.mirnov:a14_14:input_2', 58623)
+    #return data_from_mds('h1data', '.operations.mirnov:a14_14:input_2', 58623)
+    return data_from_mds('h1data', '.operations.mirnov:a14_14:pts', 58623)
+
 #######################################
 # Uncomment these lines to run tests: #
 # From here...                        #

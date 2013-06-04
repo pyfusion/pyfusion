@@ -102,36 +102,40 @@ def list_vars(locdict, Stop):
 if verbose>1: print ('%d args found') % (len(_sys.argv))
 if verbose>1: print(' '.join([_arg for _arg in _sys.argv]))
 _rhs=None
-# this would be a way to ignore spaces around equals, but need to preserve 
-# spaces between statements! leave for now
-#_expr=string.join(_sys.argv[1:])
-for _expr in _sys.argv[1:]:
-    if (array(_expr.upper().split('-')) == "HELP").any():
-        if locals().has_key('__doc__'): 
-            print(" ==================== printing local __doc__ (from caller's source file) ===")
-            print locals()['__doc__']
-        else: print('No local help')
-        list_vars(locals(), Stop=True)
-    else:
-        if verbose>3: print('assigning %s from command line') % _expr
-        _words=_expr.split('=')
-        _firstw=_words[0]
-        _lhs=_firstw.strip()  # remove excess spaces
-        if len(_words)>1:_lastw=_words[1]
-        else: _lastw = ""
-        _rhs=_lastw.strip()
-        try:
-            exec(_lhs)  # this tests for existence of the LHS (target)
-            exec('is_str = is_string_like('+_lhs+')')
-            if is_str and _rhs[0]!="'" and _rhs[0]!='"':
-                _expr_to_exec = _lhs+'="'+_rhs+'"'
-            else: _expr_to_exec = _expr
-            if verbose>3: print('actual statement: %s') % _expr_to_exec
-            exec(_expr_to_exec)
-        except Exception, _info: # _info catches the exception info
-            print("##########Target variable [%s] not set or non-existent!#########") % _lhs 
-            print('< %s > raised the exception < %s >' % (_expr,_info))
-            _loc_dict=locals().copy() # need to save, as the size changes
-# list_vars will also offer to enter a debugger..
-            list_vars(_loc_dict, Stop=True)
 
+def main():
+    # this would be a way to ignore spaces around equals, but need to preserve 
+    # spaces between statements! leave for now
+    #_expr=string.join(_sys.argv[1:])
+    for _expr in _sys.argv[1:]:
+        if (array(_expr.upper().split('-')) == "HELP").any():
+            if locals().has_key('__doc__'): 
+                print(" ==================== printing local __doc__ (from caller's source file) ===")
+                print locals()['__doc__']
+            else: print('No local help')
+            list_vars(locals(), Stop=True)
+        else:
+            if verbose>3: print('assigning %s from command line') % _expr
+            _words=_expr.split('=')
+            _firstw=_words[0]
+            _lhs=_firstw.strip()  # remove excess spaces
+            if len(_words)>1:_lastw=_words[1]
+            else: _lastw = ""
+            _rhs=_lastw.strip()
+            try:
+                exec(_lhs)  # this tests for existence of the LHS (target)
+                exec('is_str = is_string_like('+_lhs+')')
+                if is_str and _rhs[0]!="'" and _rhs[0]!='"':
+                    _expr_to_exec = _lhs+'="'+_rhs+'"'
+                else: _expr_to_exec = _expr
+                if verbose>3: print('actual statement: %s') % _expr_to_exec
+                exec(_expr_to_exec)
+            except Exception, _info: # _info catches the exception info
+                print("##########Target variable [%s] not set or non-existent!#########") % _lhs 
+                print('< %s > raised the exception < %s >' % (_expr,_info))
+                _loc_dict=locals().copy() # need to save, as the size changes
+    # list_vars will also offer to enter a debugger..
+                list_vars(_loc_dict, Stop=True)
+
+if __name__ == '__main__':
+    main()

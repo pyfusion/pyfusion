@@ -58,7 +58,7 @@ class ThreadWorker():
 
 from time import sleep, time as seconds
 
-
+import pyximport; pyximport.install()
 from dist_nogil import dist
 
 def dist_mp(cl_instance, instances, squared = None, averaged = None, threads=None, debug=0):

@@ -15,3 +15,6 @@ NOTES
 pyfusion/test/benchmarks/stats
 
 pyfusion.egg-info
+
+# coverage db
+.coverage
